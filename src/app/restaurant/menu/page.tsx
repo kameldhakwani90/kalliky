@@ -26,7 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Pencil, Trash2, X, AudioWaveform } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Wand2, Tag } from 'lucide-react';
 
 type MenuItemComponent = {
   name: string;
@@ -42,7 +42,7 @@ type MenuItem = {
   description: string;
   image: string;
   imageHint: string;
-  audioUrl?: string;
+  tags?: string[];
   components?: MenuItemComponent[];
 };
 
@@ -55,7 +55,7 @@ const initialMenuItems: MenuItem[] = [
         description: 'Un classique indémodable avec un steak haché frais, cheddar fondant, salade croquante, oignons rouges, cornichons, et notre sauce burger secrète, servi avec des frites maison.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'classic burger',
-        audioUrl: '#',
+        tags: ['Populaire', 'Soir', 'Famille'],
         components: [
             { name: 'Steak', quantity: 1, maxQuantity: 3 },
             { name: 'Cheddar', quantity: 1, maxQuantity: 2 },
@@ -70,7 +70,8 @@ const initialMenuItems: MenuItem[] = [
         price: '12.50€', 
         description: 'Laitue romaine croquante, poulet grillé, croûtons à l\'ail, copeaux de parmesan et notre sauce César maison.',
         image: 'https://placehold.co/600x400.png',
-        imageHint: 'caesar salad'
+        imageHint: 'caesar salad',
+        tags: ['Léger', 'Midi', 'Froid'],
     },
     { 
         id: 3,
@@ -88,11 +89,15 @@ const initialMenuItems: MenuItem[] = [
         price: '8.50€', 
         description: 'Biscuit cuillère imbibé de café, crème mascarpone onctueuse et cacao en poudre.',
         image: 'https://placehold.co/600x400.png',
-        imageHint: 'tiramisu'
+        imageHint: 'tiramisu',
+        tags: ['Sucré', 'Fait maison']
     },
 ];
 
 const categories = ['Tout', ...new Set(initialMenuItems.map(item => item.category))];
+
+// Simule le plan actuel de l'utilisateur. 'starter', 'pro', ou 'business'
+const currentUserPlan = 'pro'; 
 
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
@@ -106,11 +111,9 @@ export default function MenuPage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestion du Menu</h1>
-          <p className="text-muted-foreground">Gérez votre menu, ajoutez de nouveaux plats et synchronisez avec l\'IA.</p>
-        </div>
+       <header>
+        <h1 className="text-3xl font-bold tracking-tight">Gestion du Menu</h1>
+        <p className="text-muted-foreground">Gérez votre menu, ajoutez de nouveaux plats et synchronisez avec l'IA.</p>
       </header>
        <Card>
         <CardHeader>
@@ -217,22 +220,33 @@ export default function MenuPage() {
                       data-ai-hint={selectedItem.imageHint}
                       className="w-full rounded-lg object-cover shadow-lg"
                   />
-                  {selectedItem.audioUrl && (
-                      <Card>
-                          <CardHeader>
-                              <CardTitle className="text-base">Audio pour Commande Vocale</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                              <div className="flex items-center gap-4">
-                                  <AudioWaveform className="text-primary" />
-                                  <audio controls className="w-full h-10">
-                                      <source src={selectedItem.audioUrl} type="audio/mpeg" />
-                                      Votre navigateur ne supporte pas l'élément audio.
-                                  </audio>
-                              </div>
-                          </CardContent>
-                      </Card>
-                  )}
+                 {(currentUserPlan === 'pro' || currentUserPlan === 'business') && (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center justify-between">
+                                <span>Tags de Vente</span>
+                                <Button variant="ghost" size="sm">
+                                    <Wand2 className="mr-2 h-4 w-4" />
+                                    Suggérer par IA
+                                </Button>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                           <div className="flex flex-wrap gap-2">
+                                {selectedItem.tags && selectedItem.tags.length > 0 ? (
+                                    selectedItem.tags.map((tag, index) => (
+                                        <Badge key={index} variant="outline" className="text-base py-1 px-3">
+                                            <Tag className="mr-2 h-3 w-3" />
+                                            {tag}
+                                        </Badge>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">Aucun tag. Utilisez l'IA pour en générer.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                 )}
               </div>
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Composition du plat</h3>
@@ -267,4 +281,3 @@ export default function MenuPage() {
     </div>
   );
 }
-
