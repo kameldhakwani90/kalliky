@@ -62,6 +62,7 @@ export default function RestaurantLayout({
     { href: "/restaurant/dashboard", label: "Aperçu", icon: Home },
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
     { href: "/restaurant/stores", label: "Boutiques", icon: Store },
+    { href: "/restaurant/users", label: "Utilisateurs", icon: Users },
     { href: "#", label: "Automatisation", icon: Bot },
     { href: "#", label: "Clients", icon: Users },
   ];
