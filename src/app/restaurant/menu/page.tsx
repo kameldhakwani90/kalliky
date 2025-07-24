@@ -22,11 +22,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud } from 'lucide-react';
 
 type CompositionOption = {
   name: string;
@@ -234,6 +235,7 @@ export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
   
   // State for composition navigation
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
@@ -279,50 +281,57 @@ export default function MenuPage() {
       </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Outils de Synchronisation IA</CardTitle>
-          <CardDescription>
-            Ajoutez ou mettez à jour votre menu rapidement grâce à l'intelligence artificielle.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Tabs defaultValue="excel">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="add">Ajouter un plat</TabsTrigger>
-                    <TabsTrigger value="excel">Importer un fichier</TabsTrigger>
-                    <TabsTrigger value="scan">Scanner une image</TabsTrigger>
-                </TabsList>
-                <TabsContent value="add" className="pt-4">
-                    <div className="flex flex-col items-center justify-center text-center p-6 border-2 border-dashed rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-4">
-                           Ajoutez manuellement un nouveau plat à votre menu.
-                        </p>
-                        <Button>
-                          <PlusCircle className="mr-2" />
-                          Créer un nouveau plat
-                        </Button>
-                    </div>
-                </TabsContent>
-                <TabsContent value="excel" className="pt-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Notre IA va analyser votre fichier Excel (.xls, .xlsx) pour extraire les catégories, plats, descriptions et prix.
-                  </p>
-                  <MenuSyncForm />
-                </TabsContent>
-                <TabsContent value="scan" className="pt-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Scannez votre menu papier ou un flyer. L'IA détectera et ajoutera les plats pour vous.
-                  </p>
-                   <MenuSyncForm />
-                </TabsContent>
-            </Tabs>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Votre Menu</CardTitle>
-          <CardDescription>Cliquez sur un plat pour voir les détails et le modifier.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Votre Menu</CardTitle>
+            <CardDescription>Cliquez sur un plat pour voir les détails et le modifier.</CardDescription>
+          </div>
+           <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UploadCloud className="mr-2 h-4 w-4" />
+                Ajouter ou Synchroniser
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Outils de Synchronisation IA</DialogTitle>
+                    <DialogDescription>
+                        Ajoutez ou mettez à jour votre menu rapidement grâce à l'intelligence artificielle.
+                    </DialogDescription>
+                </DialogHeader>
+                 <Tabs defaultValue="excel" className="pt-4">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="add">Ajouter un plat</TabsTrigger>
+                        <TabsTrigger value="excel">Importer un fichier</TabsTrigger>
+                        <TabsTrigger value="scan">Scanner une image</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="add" className="pt-4">
+                        <div className="flex flex-col items-center justify-center text-center p-6 border-2 border-dashed rounded-lg">
+                            <p className="text-sm text-muted-foreground mb-4">
+                               Ajoutez manuellement un nouveau plat à votre menu.
+                            </p>
+                            <Button>
+                              <PlusCircle className="mr-2" />
+                              Créer un nouveau plat
+                            </Button>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="excel" className="pt-4">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Notre IA va analyser votre fichier Excel (.xls, .xlsx) pour extraire les catégories, plats, descriptions et prix.
+                      </p>
+                      <MenuSyncForm />
+                    </TabsContent>
+                    <TabsContent value="scan" className="pt-4">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Scannez votre menu papier ou un flyer. L'IA détectera et ajoutera les plats pour vous.
+                      </p>
+                       <MenuSyncForm />
+                    </TabsContent>
+                </Tabs>
+            </DialogContent>
+           </Dialog>
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="border-b">
@@ -443,3 +452,5 @@ export default function MenuPage() {
     </div>
   );
 }
+
+    
