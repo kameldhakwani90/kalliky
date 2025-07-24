@@ -198,13 +198,13 @@ export default function RestaurantDashboard() {
                               {order.customer.phone}
                               {order.customer.name && <span className="text-xs text-muted-foreground"> ({order.customer.name})</span>}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted-foreground">
                               {order.items} article(s)
                               {order.customer.status && 
                                 <Badge variant="outline" className={`ml-2 ${order.customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
                                   {order.customer.status}
                                 </Badge>}
-                            </p>
+                            </div>
                          </div>
                       </div>
                       <div className="text-right">
