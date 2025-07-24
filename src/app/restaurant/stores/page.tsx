@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
 
 type Store = {
     id: number;
@@ -26,6 +27,8 @@ const initialStores: Store[] = [
     { id: 2, name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active' },
     { id: 3, name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive' },
 ];
+
+const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 
 export default function StoresPage() {
@@ -140,31 +143,73 @@ export default function StoresPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{selectedStore ? 'Modifier la boutique' : 'Ajouter une nouvelle boutique'}</DialogTitle>
                         <DialogDescription>
-                            Renseignez les informations de votre point de vente.
+                            Renseignez toutes les informations de votre point de vente pour une configuration optimale.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSaveStore}>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Nom de la boutique</Label>
-                                <Input id="name" name="name" defaultValue={selectedStore?.name || ''} placeholder="Ex: Restaurant du Centre" required />
+                        <div className="space-y-6 py-4 px-1">
+                             <div className="space-y-4">
+                                <h4 className="font-medium">🏪 Informations générales</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name">Nom du restaurant</Label>
+                                        <Input id="name" name="name" defaultValue={selectedStore?.name || ''} placeholder="Ex: Le Gourmet Parisien" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="cuisine-type">Type de cuisine</Label>
+                                        <Input id="cuisine-type" name="cuisine-type" placeholder="Ex: Pizza, Sushi, Burger..." />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="address">Adresse complète</Label>
+                                    <Input id="address" name="address" defaultValue={selectedStore?.address || ''} placeholder="123 Rue Principale, 75000 Ville" required />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="phone">Téléphone fixe</Label>
+                                        <Input id="phone" name="phone" type="tel" defaultValue={selectedStore?.phone || ''} placeholder="01 23 45 67 89" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email de contact</Label>
+                                        <Input id="email" name="email" type="email" placeholder="contact@exemple.com" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Logo / Visuel</Label>
+                                    <Input id="logo" name="logo" type="file" className="h-auto"/>
+                                    <p className="text-xs text-muted-foreground">Recommandé pour une meilleure présentation.</p>
+                                </div>
+                             </div>
+                            
+                            <Separator />
+
+                            <div className="space-y-4">
+                                <h4 className="font-medium">Jours et horaires d’ouverture</h4>
+                                <div className="space-y-3">
+                                    {daysOfWeek.map(day => (
+                                        <div key={day} className="grid grid-cols-3 items-center gap-4">
+                                            <Label htmlFor={`hours-${day}`} className="col-span-1">{day}</Label>
+                                            <div className="col-span-2 grid grid-cols-2 gap-2">
+                                                 <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" />
+                                                 <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Clock className="h-4 w-4" />
+                                        <span>Utilisé pour accepter ou refuser les commandes automatiquement.</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Adresse</Label>
-                                <Input id="address" name="address" defaultValue={selectedStore?.address || ''} placeholder="123 Rue Principale, Ville" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Numéro de téléphone</Label>
-                                <Input id="phone" name="phone" type="tel" defaultValue={selectedStore?.phone || ''} placeholder="01 23 45 67 89" required />
-                            </div>
+
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="mt-6">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-                            <Button type="submit">Enregistrer</Button>
+                            <Button type="submit">Enregistrer la boutique</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
