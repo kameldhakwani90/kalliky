@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
     TableRow,
   } from "@/components/ui/table"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const chartData = [
   { name: "Jan", revenue: 2800 },
@@ -41,10 +43,30 @@ const chartData = [
 ]
 
 const recentOrders = [
-    { id: "#1024", customer: "Alice Martin", amount: "67.00€", status: "Payée", items: 3 },
-    { id: "#1023", customer: "Bob Dupont", amount: "57.90€", status: "Payée", items: 2 },
-    { id: "#1022", customer: "Carla Durand", amount: "22.50€", status: "En attente", items: 1 },
-    { id: "#1021", customer: "David Petit", amount: "89.00€", status: "Payée", items: 5 },
+    { 
+      id: "#1024", 
+      customer: { phone: "06 12 34 56 78", name: "Alice Martin", status: "Fidèle", avgBasket: "72.50€" }, 
+      amount: "67.00€", 
+      items: 3 
+    },
+    { 
+      id: "#1023", 
+      customer: { phone: "07 87 65 43 21", name: "Bob Dupont" }, 
+      amount: "57.90€", 
+      items: 2 
+    },
+    { 
+      id: "#1022", 
+      customer: { phone: "06 01 02 03 04", name: "", status: "Nouveau" }, 
+      amount: "22.50€", 
+      items: 1 
+    },
+    { 
+      id: "#1021", 
+      customer: { phone: "06 55 44 33 22", name: "David Petit" }, 
+      amount: "89.00€", 
+      items: 5 
+    },
 ]
 
 
@@ -118,8 +140,8 @@ export default function RestaurantDashboard() {
             </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-5">
-            <Card className="col-span-full lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Performance des Ventes</CardTitle>
                 <CardDescription>Revenus mensuels de votre restaurant.</CardDescription>
@@ -156,38 +178,44 @@ export default function RestaurantDashboard() {
               </CardContent>
             </Card>
 
-             <Card className="col-span-full lg:col-span-2">
+             <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle>Commandes Récentes</CardTitle>
                 <CardDescription>
-                  Les dernières commandes passées.
+                  Les dernières commandes passées par téléphone.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Client</TableHead>
-                            <TableHead className="text-center">Articles</TableHead>
-                            <TableHead className="text-right">Montant</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {recentOrders.map(order => (
-                            <TableRow key={order.id}>
-                                <TableCell className="font-medium">{order.customer}</TableCell>
-                                <TableCell className="text-center">{order.items}</TableCell>
-                                <TableCell className="text-right">{order.amount}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                <div className="space-y-4">
+                  {recentOrders.map(order => (
+                    <div key={order.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                         <Avatar className="hidden h-9 w-9 sm:flex">
+                           <AvatarFallback>{order.customer.name ? order.customer.name.charAt(0) : order.customer.phone.slice(-2)}</AvatarFallback>
+                         </Avatar>
+                         <div className="grid gap-1">
+                            <p className="text-sm font-medium leading-none">
+                              {order.customer.phone}
+                              {order.customer.name && <span className="text-xs text-muted-foreground"> ({order.customer.name})</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {order.items} article(s)
+                              {order.customer.status && 
+                                <Badge variant="outline" className={`ml-2 ${order.customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
+                                  {order.customer.status}
+                                </Badge>}
+                            </p>
+                         </div>
+                      </div>
+                      <div className="text-right">
+                         <p className="text-sm font-bold">{order.amount}</p>
+                         <Button variant="link" size="sm" className="h-auto p-0 text-muted-foreground">
+                           Voir la fiche
+                         </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
         </div>
