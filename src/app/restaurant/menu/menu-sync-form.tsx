@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { menuSync } from '@/ai/flows/menu-sync-ai';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, UploadCloud } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 export default function MenuSyncForm() {
@@ -34,7 +35,7 @@ export default function MenuSyncForm() {
     if (!file) {
       toast({
         title: 'Aucun fichier sélectionné',
-        description: 'Veuillez sélectionner un fichier Excel à importer.',
+        description: 'Veuillez sélectionner un fichier à importer.',
         variant: 'destructive',
       });
       return;
@@ -68,26 +69,33 @@ export default function MenuSyncForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="menu-file" className="sr-only">Fichier du menu</Label>
-        <Input
-          id="menu-file"
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileChange}
-          disabled={loading}
-        />
-        {file && <p className="text-xs text-muted-foreground mt-1">Fichier sélectionné: {file.name}</p>}
-      </div>
-      <Button type="submit" disabled={loading || !file} className="w-full">
-        {loading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Upload className="mr-2 h-4 w-4" />
-        )}
-        {loading ? 'Analyse en cours...' : 'Lancer la synchronisation'}
-      </Button>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="border-dashed border-2 border-muted rounded-lg p-6 text-center">
+            <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+            <Label htmlFor="menu-file" className="mt-4 block text-sm font-medium text-foreground">
+                Glissez-déposez un fichier ou cliquez pour sélectionner
+            </Label>
+            <Input
+            id="menu-file"
+            type="file"
+            accept=".xlsx, .xls, .png, .jpg, .jpeg"
+            onChange={handleFileChange}
+            disabled={loading}
+            className="sr-only"
+            />
+            {file && <p className="text-xs text-muted-foreground mt-2">Fichier sélectionné: {file.name}</p>}
+        </div>
+        <Button type="submit" disabled={loading || !file} className="w-full">
+          {loading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <UploadCloud className="mr-2 h-4 w-4" />
+          )}
+          {loading ? 'Analyse en cours...' : 'Lancer la synchronisation'}
+        </Button>
+      </form>
+
       {result && (
         <div className="mt-4">
             <h4 className="font-semibold mb-2">Résultat de l'analyse :</h4>
@@ -98,6 +106,6 @@ export default function MenuSyncForm() {
             </pre>
         </div>
       )}
-    </form>
+    </div>
   );
 }
