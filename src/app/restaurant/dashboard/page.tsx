@@ -3,122 +3,279 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Clock, CheckCircle, CookingPot, Utensils, XCircle, Send } from 'lucide-react';
+import { 
+    Clock, 
+    CheckCircle, 
+    CookingPot, 
+    Utensils, 
+    RefreshCw, 
+    ChevronDown, 
+    MoreVertical, 
+    Circle,
+    Bell,
+    Settings,
+    Link as LinkIcon,
+    FileText,
+    Power,
+    HelpCircle,
+    Wifi,
+    BarChart2,
+    Percent,
+    Timer,
+    Users
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const orders = [
   {
     id: "#1024",
-    time: "12:35",
-    customer: "0612345678",
-    status: "Payée",
+    time: "28:47",
     items: [
-      { name: "Pizza Margherita", quantity: 1, mods: [] },
-      { name: "Coca-Cola", quantity: 2, mods: [] },
+      { name: "Item 1", price: "47.50€" },
+      { name: "Item 2", price: "15.50€" },
     ],
-    payment: { method: "Lien Stripe", status: "Payé" },
+    total: "67.00€",
+    status: "awaiting_pay",
   },
   {
     id: "#1023",
-    time: "12:32",
-    customer: "0687654321",
-    status: "En cours",
+    time: "28:42",
     items: [
-      { name: "Burger Le Classic", quantity: 1, mods: ["+ cheddar", "- oignons"] },
+      { name: "Item 1", price: "32.90€" },
+      { name: "Item 2", price: "25.00€" },
     ],
-    payment: { method: "Espèces", status: "En attente" },
-  },
-  {
-    id: "#1022",
-    time: "12:28",
-    customer: "0711223344",
-    status: "Prête",
-    items: [
-      { name: "Salade César", quantity: 1, mods: ["sans gluten"] },
-      { name: "Evian", quantity: 1, mods: [] },
-    ],
-    payment: { method: "Lien Stripe", status: "Payé" },
-  },
-  {
-    id: "#1021",
-    time: "12:25",
-    customer: "0699887766",
-    status: "Annulée",
-    items: [
-      { name: "Menu Enfant", quantity: 1, mods: [] },
-    ],
-    payment: { method: "Lien Stripe", status: "Annulé" },
+    total: "57.90€",
+    status: "paid",
   },
 ];
 
-const statusConfig = {
-    'En attente': { icon: <Clock className="h-4 w-4" />, color: 'bg-gray-500' },
-    'Payée': { icon: <CheckCircle className="h-4 w-4 text-green-600" />, color: 'bg-green-500' },
-    'En cours': { icon: <CookingPot className="h-4 w-4 text-blue-600" />, color: 'bg-blue-500' },
-    'Prête': { icon: <Utensils className="h-4 w-4 text-emerald-600" />, color: 'bg-emerald-500' },
-    'Annulée': { icon: <XCircle className="h-4 w-4 text-red-600" />, color: 'bg-red-500' },
-};
+const quickActions = [
+    { label: "Gestion du Menu", icon: CookingPot },
+    { label: "Lien de Paiement", icon: LinkIcon },
+    { label: "Historique Paiements", icon: FileText },
+    { label: "Paramètres Restaurant", icon: Settings },
+]
 
 
 export default function RestaurantDashboard() {
   return (
-    <div className="space-y-6">
-        <header>
-            <h1 className="text-3xl font-bold tracking-tight">Commandes en temps réel</h1>
-            <p className="text-muted-foreground">Vue d'ensemble des commandes de votre restaurant.</p>
+    <div className="flex h-screen bg-background">
+      <div className="flex-1 flex flex-col">
+        <header className="p-4 border-b">
+            <div className="flex justify-between items-center">
+                <h1 className="text-xl font-semibold">Tableau de Bord</h1>
+                <div className="flex items-center gap-2">
+                    <p className="text-sm">Menu ouvert</p>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">●</Badge>
+                </div>
+            </div>
         </header>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {orders.map((order) => {
-          const config = statusConfig[order.status as keyof typeof statusConfig] || statusConfig['En attente'];
-          return (
-            <Card key={order.id} className="flex flex-col">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-bold">{order.id}</CardTitle>
-                <Badge variant="outline" className="flex items-center gap-2">
-                    <span className={ `h-2 w-2 rounded-full ${config.color}` }></span>
-                    {order.status}
-                </Badge>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <div className="text-sm text-muted-foreground mb-4">
-                  <p>Heure: {order.time}</p>
-                  <p>Client: {order.customer}</p>
-                </div>
-                <Separator />
-                <div className="mt-4 space-y-2 text-sm">
-                  {order.items.map((item, index) => (
-                    <div key={index}>
-                      <div className="flex justify-between">
-                        <span className="font-semibold">{item.quantity}x {item.name}</span>
-                      </div>
-                      {item.mods.length > 0 && (
-                        <p className="text-xs text-muted-foreground pl-2">{item.mods.join(', ')}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
-                 <div className="w-full text-xs">
-                    <p>Paiement: <span className="font-semibold">{order.payment.method}</span></p>
-                    <p>Statut: <span className="font-semibold">{order.payment.status}</span></p>
-                </div>
-                {order.payment.method === "Lien Stripe" && order.payment.status !== "Payé" && (
-                    <Button variant="outline" size="sm" className="w-full">
-                        <Send className="h-3 w-3 mr-2" />
-                        Renvoyer le lien de paiement
+        <main className="flex-1 p-4 space-y-4">
+            <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Commandes</h2>
+                <div className="flex items-center gap-4">
+                     <Button variant="ghost" size="sm" className="text-muted-foreground">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Actualiser
                     </Button>
-                )}
-              </CardFooter>
+                    <Button variant="outline" size="sm">
+                        Plus récentes
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-sm text-muted-foreground">En attente</p>
+                        <p className="text-2xl font-bold">1</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-sm text-muted-foreground">Payées</p>
+                        <p className="text-2xl font-bold">1</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                     <CardContent className="p-4">
+                        <p className="text-sm text-muted-foreground">En prép.</p>
+                        <p className="text-2xl font-bold">1</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                     <CardContent className="p-4">
+                        <p className="text-sm text-muted-foreground">Prêtes</p>
+                        <p className="text-2xl font-bold">1</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {orders.map((order) => (
+            <Card key={order.id}>
+                <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                       <div className="space-y-2">
+                            {order.items.map((item, index) => (
+                                <p key={index} className="text-sm">{item.name}</p>
+                            ))}
+                       </div>
+                       <div className="text-right">
+                           <div className="flex items-center gap-4">
+                                <p className="text-sm text-muted-foreground">{order.time}</p>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4"/></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem>Voir détails</DropdownMenuItem>
+                                        <DropdownMenuItem>Imprimer</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                           </div>
+                            {order.items.map((item, index) => (
+                                <p key={index} className="text-sm">{item.price}</p>
+                            ))}
+                       </div>
+                    </div>
+                    <Separator className="my-4"/>
+                    <div className="flex justify-between items-center">
+                        <div>
+                             <Button variant="ghost" size="sm">Détails</Button>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <p className="text-lg font-bold">{order.total}</p>
+                             {order.status === 'awaiting_pay' ? (
+                                <Button className="bg-blue-600 hover:bg-blue-700">
+                                    <Clock className="mr-2 h-4 w-4" />
+                                    Awaiting Pay
+                                </Button>
+                            ) : (
+                                <Button>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Paid
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
             </Card>
-          );
-        })}
+            ))}
+        </main>
       </div>
+
+      <aside className="w-80 border-l flex flex-col">
+          <header className="p-4 border-b h-[65px] flex items-center justify-between">
+            <div className="font-semibold">Le Petit Bistro</div>
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon"><Bell className="h-5 w-5"/></Button>
+                 <Button variant="ghost" size="icon"><Settings className="h-5 w-5"/></Button>
+            </div>
+          </header>
+          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+              <Card>
+                <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <BarChart2 className="h-5 w-5 text-muted-foreground"/>
+                        Chiffre d'affaires
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-2xl font-bold">1 247,50 €</p>
+                    <p className="text-xs text-muted-foreground">Niveau du jour</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <Percent className="h-5 w-5 text-muted-foreground"/>
+                        Commissions Kalliky
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-2xl font-bold">124,75 €</p>
+                    <p className="text-xs text-muted-foreground">10.0% du CA</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-muted-foreground"/>
+                        Paiements en attente
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-2xl font-bold">3</p>
+                    <p className="text-xs text-muted-foreground">A traiter</p>
+                </CardContent>
+              </Card>
+               <Card>
+                <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <Timer className="h-5 w-5 text-muted-foreground"/>
+                        Temps moyen
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-2xl font-bold">18 min</p>
+                    <p className="text-xs text-muted-foreground">Commande -> Prêt</p>
+                </CardContent>
+              </Card>
+
+                <div>
+                    <h3 className="text-sm font-semibold mb-2">Actions rapides</h3>
+                    <div className="space-y-2">
+                    {quickActions.map(action => (
+                         <Button key={action.label} variant="outline" className="w-full justify-start">
+                            <action.icon className="h-4 w-4 mr-2"/>
+                            {action.label}
+                        </Button>
+                    ))}
+                    </div>
+                </div>
+                 <div>
+                    <h3 className="text-sm font-semibold mb-2">Actions d'urgence</h3>
+                    <div className="space-y-2">
+                        <Button variant="destructive" className="w-full justify-start bg-orange-500 hover:bg-orange-600 text-white">
+                            <Power className="h-4 w-4 mr-2"/>
+                            Fermer temporairement
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                            <HelpCircle className="h-4 w-4 mr-2"/>
+                            Support technique
+                        </Button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="text-sm font-semibold mb-2">État du système</h3>
+                    <Card>
+                        <CardContent className="p-4 space-y-2 text-sm">
+                            <div className="flex justify-between items-center">
+                                <p className="flex items-center gap-2"><Wifi className="h-4 w-4"/> WebSocket</p>
+                                <Badge variant="secondary" className="bg-green-100 text-green-800">Connecté</Badge>
+                            </div>
+                            <Separator/>
+                             <div className="flex justify-between items-center">
+                                <p>Santé du système</p>
+                                <Badge variant="secondary" className="bg-green-100 text-green-800">Opérationnel</Badge>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+          </div>
+      </aside>
     </div>
   );
 }
