@@ -32,20 +32,21 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Pencil, Trash2, Wand2, Tag, Info } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Wand2, Tag, Info, ChevronRight } from 'lucide-react';
 
 type CompositionOption = {
   name: string;
   defaultQuantity: number;
   maxQuantity: number;
-  price?: number; // Optional price for extras
+  price?: number; 
   isDefault?: boolean;
+  composition?: CompositionStep[];
 };
 
 type CompositionStep = {
   title: string;
   options: CompositionOption[];
-  selectionType: 'single' | 'multiple'; // Defines if user can select one or many options
+  selectionType: 'single' | 'multiple'; 
   isRequired: boolean;
 };
 
@@ -86,7 +87,24 @@ const initialMenuItems: MenuItem[] = [
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { name: 'Steak de Boeuf (150g)', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { 
+                        name: 'Steak de Boeuf (150g)', 
+                        defaultQuantity: 1, 
+                        maxQuantity: 1, 
+                        isDefault: true,
+                        composition: [
+                            {
+                                title: 'Choix de la cuisson',
+                                selectionType: 'single',
+                                isRequired: true,
+                                options: [
+                                    { name: 'À point', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                                    { name: 'Saignant', defaultQuantity: 0, maxQuantity: 1 },
+                                    { name: 'Bien cuit', defaultQuantity: 0, maxQuantity: 1 },
+                                ]
+                            }
+                        ]
+                    },
                     { name: 'Poulet Pané Croustillant', defaultQuantity: 0, maxQuantity: 1 },
                     { name: 'Galette Végétarienne', defaultQuantity: 0, maxQuantity: 1 },
                 ]
@@ -168,6 +186,49 @@ const categories = ['Tout', ...new Set(initialMenuItems.map(item => item.categor
 
 // Simule le plan actuel de l'utilisateur. 'starter', 'pro', ou 'business'
 const currentUserPlan = 'pro'; 
+
+const CompositionStepDisplay: React.FC<{ steps: CompositionStep[] }> = ({ steps }) => {
+    return (
+        <Accordion type="multiple" defaultValue={steps.map(c => c.title)} className="w-full">
+            {steps.map((step) => (
+                <AccordionItem key={step.title} value={step.title}>
+                    <AccordionTrigger>{step.title}</AccordionTrigger>
+                    <AccordionContent>
+                        <ul className="space-y-3">
+                            {step.options.map((option, index) => (
+                                <li key={index} className="flex flex-col text-sm">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center">
+                                            <span>{option.name}</span>
+                                            {option.price && option.price > 0 && <span className="text-muted-foreground ml-2">(+{option.price.toFixed(2)}€)</span>}
+                                            {option.composition && <ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />}
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {option.isDefault ? (
+                                                <Badge variant="secondary">Inclus</Badge>
+                                            ) : (
+                                                <Badge variant="outline">Option</Badge>
+                                            )}
+                                            <span className="text-xs text-muted-foreground">
+                                                {option.defaultQuantity > 0 ? `x${option.defaultQuantity}`: ''} (max. {option.maxQuantity})
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {option.composition && (
+                                        <div className="pl-6 mt-2">
+                                            <CompositionStepDisplay steps={option.composition} />
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+            ))}
+        </Accordion>
+    );
+};
+
 
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
@@ -322,35 +383,7 @@ export default function MenuPage() {
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Composition du plat</h3>
                 {selectedItem.composition && selectedItem.composition.length > 0 ? (
-                    <Accordion type="multiple" defaultValue={selectedItem.composition.map(c => c.title)} className="w-full">
-                    {selectedItem.composition.map((step) => (
-                      <AccordionItem key={step.title} value={step.title}>
-                        <AccordionTrigger>{step.title}</AccordionTrigger>
-                        <AccordionContent>
-                          <ul className="space-y-3">
-                            {step.options.map((option, index) => (
-                              <li key={index} className="flex justify-between items-center text-sm">
-                                <div>
-                                    <span>{option.name}</span>
-                                    {option.price && option.price > 0 && <span className="text-muted-foreground ml-2">(+{option.price.toFixed(2)}€)</span>}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {option.isDefault ? (
-                                        <Badge variant="secondary">Inclus</Badge>
-                                    ) : (
-                                        <Badge variant="outline">Option</Badge>
-                                    )}
-                                    <span className="text-xs text-muted-foreground">
-                                        {option.defaultQuantity > 0 ? `x${option.defaultQuantity}`: ''} (max. {option.maxQuantity})
-                                    </span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
+                    <CompositionStepDisplay steps={selectedItem.composition} />
                 ) : (
                     <Card className="flex items-center justify-center p-4 bg-muted/50">
                         <Info className="h-5 w-5 mr-3 text-muted-foreground" />
@@ -369,5 +402,3 @@ export default function MenuPage() {
     </div>
   );
 }
-
-    
