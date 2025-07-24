@@ -26,7 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Pencil, Trash2, Wand2, Tag, Info, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight } from 'lucide-react';
 
 type CompositionOption = {
   name: string;
@@ -118,7 +118,9 @@ const initialMenuItems: MenuItem[] = [
                 selectionType: 'multiple',
                 isRequired: false,
                 options: [
-                    { name: 'Salade, Tomate, Oignons', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { name: 'Salade', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { name: 'Tomate', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { name: 'Oignons', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
                     { name: 'Bacon grillé', defaultQuantity: 0, maxQuantity: 2, price: 2.00 },
                     { name: 'Oeuf au plat', defaultQuantity: 0, maxQuantity: 1, price: 1.00 },
                 ]
@@ -194,27 +196,26 @@ const CompositionDisplay: React.FC<{
     <div className="space-y-4">
       <h3 className="font-semibold text-lg">{view.title}</h3>
       {view.steps.map((step) => (
-        <Card key={step.title}>
-          <CardHeader>
-            <CardTitle className="text-base">{step.title}</CardTitle>
+        <Card key={step.title} className="bg-muted/30">
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="text-base flex justify-between items-center">
+              <span>{step.title}</span>
+              {step.isRequired && <Badge variant="destructive" className="text-xs">Requis</Badge>}
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <ul className="space-y-3">
               {step.options.map((option, index) => (
-                <li key={index} className="flex flex-col text-sm">
+                <li key={index} className="flex flex-col text-sm border-t border-border pt-3">
                   <div className="flex justify-between items-center">
-                    <span>{option.name}</span>
+                    <span className="font-medium">{option.name}</span>
                     <div className="flex items-center gap-3">
                       {option.price && option.price > 0 && <span className="text-muted-foreground">(+{option.price.toFixed(2)}€)</span>}
                       {option.isDefault ? <Badge variant="secondary">Inclus</Badge> : <Badge variant="outline">Option</Badge>}
-                      {option.composition ? (
-                        <Button variant="ghost" size="sm" onClick={() => onNavigate(option.composition!, option.name)}>
-                          Modifier
+                       {option.composition && (
+                        <Button variant="ghost" size="sm" className="h-auto px-2 py-1" onClick={() => onNavigate(option.composition!, option.name)}>
+                          Modifier <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground w-16 text-right">
-                          {option.defaultQuantity > 0 ? `x${option.defaultQuantity}`: ''} (max. {option.maxQuantity})
-                        </span>
                       )}
                     </div>
                   </div>
@@ -242,7 +243,7 @@ export default function MenuPage() {
       return compositionHistory[compositionHistory.length - 1];
     }
     if (selectedItem?.composition) {
-      return { title: "Composition du plat", steps: selectedItem.composition };
+      return { title: "Composition de l'article", steps: selectedItem.composition };
     }
     return null;
   }, [selectedItem, compositionHistory]);
@@ -370,59 +371,62 @@ export default function MenuPage() {
           <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
             <DialogHeader>
                {compositionHistory.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={handleBackComposition} className="absolute left-4 top-4">
+                <Button variant="ghost" size="sm" onClick={handleBackComposition} className="absolute left-4 top-4 h-auto p-1.5 rounded-md">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Retour
                 </Button>
               )}
-              <DialogTitle className="text-2xl font-headline text-center">{selectedItem.name}</DialogTitle>
+              <DialogTitle className="text-2xl font-headline text-center pt-2">{compositionHistory.length > 0 ? currentView?.title : selectedItem.name}</DialogTitle>
               {compositionHistory.length === 0 && (
                 <DialogDescription className="text-center">{selectedItem.description}</DialogDescription>
               )}
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto pr-4 -mr-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4 md:col-span-1">
-                 {compositionHistory.length === 0 && (
-                     <>
-                        <Image
-                            src={selectedItem.image}
-                            alt={selectedItem.name}
-                            width={600}
-                            height={400}
-                            data-ai-hint={selectedItem.imageHint}
-                            className="w-full rounded-lg object-cover shadow-lg"
-                        />
-                       {(currentUserPlan === 'pro' || currentUserPlan === 'business') && (
-                           <Card>
-                              <CardHeader>
-                                  <CardTitle className="text-base flex items-center justify-between">
-                                      <span>Tags de Vente</span>
-                                      <Button variant="ghost" size="sm">
-                                          <Wand2 className="mr-2 h-4 w-4" />
-                                          Suggérer par IA
-                                      </Button>
-                                  </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                 <div className="flex flex-wrap gap-2">
-                                      {selectedItem.tags && selectedItem.tags.length > 0 ? (
-                                          selectedItem.tags.map((tag, index) => (
-                                              <Badge key={index} variant="outline" className="text-base py-1 px-3">
-                                                  <Tag className="mr-2 h-3 w-3" />
-                                                  {tag}
-                                              </Badge>
-                                          ))
-                                      ) : (
-                                          <p className="text-sm text-muted-foreground">Aucun tag. Utilisez l'IA pour en générer.</p>
-                                      )}
-                                  </div>
-                              </CardContent>
-                          </Card>
-                       )}
-                     </>
-                 )}
-              </div>
-              <div className="space-y-4 md:col-span-1">
+            
+            <div className="flex-1 overflow-y-auto pr-4 -mr-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              
+              {/* Colonne Gauche (Image & Tags) - visible uniquement sur la vue principale */}
+              {compositionHistory.length === 0 && (
+                <div className="space-y-4 md:col-span-1">
+                    <Image
+                        src={selectedItem.image}
+                        alt={selectedItem.name}
+                        width={600}
+                        height={400}
+                        data-ai-hint={selectedItem.imageHint}
+                        className="w-full rounded-lg object-cover shadow-lg"
+                    />
+                    {(currentUserPlan === 'pro' || currentUserPlan === 'business') && (
+                        <Card>
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg flex items-center justify-between font-headline">
+                                    <span>Tags de Vente</span>
+                                    <Button variant="ghost" size="sm" className="h-auto p-1 text-sm font-normal text-muted-foreground hover:text-primary">
+                                        <Wand2 className="mr-2 h-4 w-4" />
+                                        Suggérer par IA
+                                    </Button>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedItem.tags && selectedItem.tags.length > 0 ? (
+                                        selectedItem.tags.map((tag, index) => (
+                                            <Badge key={index} variant="outline" className="text-sm py-1 px-3 rounded-full font-normal border-gray-300">
+                                                <Tag className="mr-2 h-3 w-3" />
+                                                {tag}
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">Aucun tag. Utilisez l'IA pour en générer.</p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+              )}
+
+              {/* Colonne Droite (Composition) ou vue complète pour sous-étapes */}
+              <div className={compositionHistory.length > 0 ? "md:col-span-2" : "md:col-span-1"}>
                 {currentView ? (
                     <CompositionDisplay view={currentView} onNavigate={handleNavigateComposition} />
                 ) : (
@@ -430,12 +434,6 @@ export default function MenuPage() {
                         <Info className="h-5 w-5 mr-3 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">Ce plat n'a pas de composition modifiable.</p>
                     </Card>
-                )}
-                 {compositionHistory.length === 0 && (
-                    <div className="flex gap-2 pt-4">
-                        <Button variant="outline" className="w-full"><Pencil className="mr-2 h-4 w-4" />Modifier</Button>
-                        <Button variant="destructive" className="w-full"><Trash2 className="mr-2 h-4 w-4" />Supprimer</Button>
-                    </div>
                 )}
               </div>
             </div>
