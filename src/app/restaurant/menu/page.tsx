@@ -27,7 +27,9 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 type CompositionOption = {
   name: string;
@@ -55,7 +57,14 @@ type MenuItem = {
   imageHint: string;
   tags?: string[];
   composition?: CompositionStep[];
+  storeIds: number[];
 };
+
+const availableStores = [
+    { id: 1, name: "Le Gourmet Parisien - Centre" },
+    { id: 2, name: "Le Gourmet Parisien - Montmartre"},
+    { id: 3, name: "Pizzeria Bella - Bastille" },
+];
 
 const initialMenuItems: MenuItem[] = [
     { 
@@ -67,6 +76,7 @@ const initialMenuItems: MenuItem[] = [
         image: 'https://placehold.co/600x400.png',
         imageHint: 'custom burger',
         tags: ['Populaire', 'Soir', 'Famille'],
+        storeIds: [1, 2],
         composition: [
             {
                 title: 'Étape 1 : Le Pain (1 au choix)',
@@ -137,6 +147,7 @@ const initialMenuItems: MenuItem[] = [
         image: 'https://placehold.co/600x400.png',
         imageHint: 'caesar salad',
         tags: ['Léger', 'Midi', 'Froid'],
+        storeIds: [1, 3],
     },
     { 
         id: 3,
@@ -146,6 +157,7 @@ const initialMenuItems: MenuItem[] = [
         description: 'Le classique italien en formule complète, avec une boisson au choix.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'pizza deal',
+        storeIds: [3],
         composition: [
              {
                 title: 'Plat Principal',
@@ -175,7 +187,8 @@ const initialMenuItems: MenuItem[] = [
         description: 'Biscuit cuillère imbibé de café, crème mascarpone onctueuse et cacao en poudre.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'tiramisu',
-        tags: ['Sucré', 'Fait maison']
+        tags: ['Sucré', 'Fait maison'],
+        storeIds: [1, 2, 3],
     },
 ];
 
@@ -236,6 +249,8 @@ export default function MenuPage() {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('Tout');
+  const [selectedStore, setSelectedStore] = useState<string>('all');
   
   // State for composition navigation
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
@@ -249,6 +264,18 @@ export default function MenuPage() {
     }
     return null;
   }, [selectedItem, compositionHistory]);
+
+  const filteredMenuItems = useMemo(() => {
+    let items = menuItems;
+    if (selectedStore !== 'all') {
+      items = items.filter(item => item.storeIds.includes(parseInt(selectedStore)));
+    }
+    if (activeTab !== 'Tout') {
+      items = items.filter(item => item.category === activeTab);
+    }
+    return items;
+  }, [menuItems, activeTab, selectedStore]);
+
 
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
@@ -282,7 +309,7 @@ export default function MenuPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+          <div className="flex-1">
             <CardTitle>Votre Menu</CardTitle>
             <CardDescription>Cliquez sur un plat pour voir les détails et le modifier.</CardDescription>
           </div>
@@ -334,18 +361,32 @@ export default function MenuPage() {
            </Dialog>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="border-b">
-                <Tabs defaultValue="Tout" className="-mb-px">
+            <div className="flex justify-between items-center border-b">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="-mb-px">
                     <TabsList>
                         {categories.map(category => (
                              <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
                         ))}
                     </TabsList>
                 </Tabs>
+                <div className="w-64">
+                    <Select value={selectedStore} onValueChange={setSelectedStore}>
+                        <SelectTrigger>
+                            <Store className="mr-2 h-4 w-4"/>
+                            <SelectValue placeholder="Sélectionner une boutique" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Toutes les boutiques</SelectItem>
+                            {availableStores.map(store => (
+                                <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
           
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {menuItems.map((item) => (
+                {filteredMenuItems.map((item) => (
                     <Card 
                         key={item.id} 
                         className="overflow-hidden flex flex-col group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
