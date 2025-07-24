@@ -14,7 +14,7 @@ import {
 import {
     Activity,
     ArrowUp,
-    Calendar,
+    Calendar as CalendarIcon,
     ChevronDown,
     CreditCard,
     DollarSign,
@@ -39,6 +39,10 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cart
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+
 
 const chartData = [
   { name: "Jan", revenue: 2800 },
@@ -49,6 +53,9 @@ const chartData = [
   { name: "Jui", revenue: 5200 },
 ]
 
+type OrderItem = { name: string; quantity: number; price: string };
+type Order = { id: string; date: string; amount: string; items: OrderItem[] };
+
 type Customer = {
     phone: string;
     name?: string;
@@ -57,7 +64,7 @@ type Customer = {
     totalSpent: string;
     firstSeen: string;
     lastSeen: string;
-    orderHistory: { id: string; date: string; amount: string; items: number }[];
+    orderHistory: Order[];
     callHistory: { date: string; duration: string; type: 'Commande' | 'Info' }[];
 };
 
@@ -71,9 +78,9 @@ const customersData: Record<string, Customer> = {
         firstSeen: "12/01/2024",
         lastSeen: "28/05/2024",
         orderHistory: [
-            { id: "#1024", date: "28/05/2024", amount: "67.00€", items: 3 },
-            { id: "#987", date: "15/05/2024", amount: "82.50€", items: 4 },
-            { id: "#955", date: "02/05/2024", amount: "65.00€", items: 2 },
+            { id: "#1024", date: "28/05/2024", amount: "67.00€", items: [{name: 'Pizza Regina', quantity: 2, price: '14.00€'}, {name: 'Salade César', quantity: 1, price: '12.50€'}] },
+            { id: "#987", date: "15/05/2024", amount: "82.50€", items: [] },
+            { id: "#955", date: "02/05/2024", amount: "65.00€", items: [] },
         ],
         callHistory: [
             { date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande' },
@@ -89,7 +96,7 @@ const customersData: Record<string, Customer> = {
         firstSeen: "27/05/2024",
         lastSeen: "27/05/2024",
         orderHistory: [
-            { id: "#1023", date: "27/05/2024", amount: "57.90€", items: 2 },
+            { id: "#1023", date: "27/05/2024", amount: "57.90€", items: [{name: 'Burger "Le Personnalisé"', quantity: 2, price: '18.50€'}] },
         ],
         callHistory: [
             { date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande' },
@@ -140,12 +147,21 @@ const defaultCustomer = (phone: string): Customer => ({
 export default function RestaurantDashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isClientFileOpen, setClientFileOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(undefined)
+
 
   const handleViewClientFile = (phone: string) => {
     const customerData = customersData[phone] || defaultCustomer(phone);
     setSelectedCustomer(customerData);
     setClientFileOpen(true);
   };
+
+  const handleViewOrderTicket = (order: Order) => {
+    setSelectedOrder(order);
+    setOrderTicketOpen(true);
+  }
     
   return (
     <>
@@ -277,12 +293,12 @@ export default function RestaurantDashboard() {
                                 {customer.phone}
                                 {customer.name && <span className="text-xs text-muted-foreground"> ({customer.name})</span>}
                                 </p>
-                                <div className="text-xs text-muted-foreground">
-                                {order.items} article(s)
-                                {customer.status && 
-                                    <Badge variant="outline" className={`ml-2 ${customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
-                                    {customer.status}
-                                    </Badge>}
+                                <div className="text-xs text-muted-foreground flex items-center">
+                                  <span>{order.items} article(s)</span>
+                                  {customer.status && 
+                                      <Badge variant="outline" className={`ml-2 ${customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
+                                      {customer.status}
+                                      </Badge>}
                                 </div>
                             </div>
                         </div>
@@ -352,7 +368,28 @@ export default function RestaurantDashboard() {
 
                     <div className="grid lg:grid-cols-2 gap-6">
                         <div>
-                            <h3 className="text-lg font-semibold mb-3">Historique des Commandes</h3>
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-lg font-semibold">Historique des Commandes</h3>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                        variant={"outline"}
+                                        className="w-[240px] justify-start text-left font-normal"
+                                        >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {date ? format(date, "PPP") : <span>Choisir une date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                        mode="single"
+                                        selected={date}
+                                        onSelect={setDate}
+                                        initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                             <Card>
                                 <CardContent className="p-0">
                                     <Table>
@@ -360,19 +397,25 @@ export default function RestaurantDashboard() {
                                             <TableRow>
                                                 <TableHead>Commande</TableHead>
                                                 <TableHead>Date</TableHead>
-                                                <TableHead className="text-right">Montant</TableHead>
+                                                <TableHead>Montant</TableHead>
+                                                <TableHead className="text-right">Action</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {selectedCustomer.orderHistory.length > 0 ? selectedCustomer.orderHistory.map(order => (
                                                 <TableRow key={order.id}>
-                                                    <TableCell className="font-medium">{order.id} ({order.items} art.)</TableCell>
+                                                    <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
                                                     <TableCell>{order.date}</TableCell>
-                                                    <TableCell className="text-right">{order.amount}</TableCell>
+                                                    <TableCell>{order.amount}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
+                                                            <Eye className="h-4 w-4"/>
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
                                             )) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={3} className="text-center h-24">Aucune commande</TableCell>
+                                                    <TableCell colSpan={4} className="text-center h-24">Aucune commande</TableCell>
                                                 </TableRow>
                                             )}
                                         </TableBody>
@@ -412,6 +455,45 @@ export default function RestaurantDashboard() {
             </DialogContent>
         </Dialog>
     )}
+    {selectedOrder && (
+        <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
+            <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                    <DialogTitle className="flex flex-col items-center text-center gap-2">
+                        <Receipt className="h-8 w-8" />
+                        Ticket de Caisse
+                    </DialogTitle>
+                    <DialogDescription className="text-center">
+                        Commande {selectedOrder.id} - {selectedOrder.date}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 my-4">
+                    <Separator />
+                    <div className="space-y-2">
+                        {selectedOrder.items.map((item, index) => (
+                            <div key={index} className="flex justify-between items-center text-sm">
+                                <div>
+                                    <p className="font-medium">{item.name}</p>
+                                    <p className="text-xs text-muted-foreground">Qté: {item.quantity}</p>
+                                </div>
+                                <p className="font-mono">{item.price}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex justify-between font-bold text-lg">
+                        <p>Total</p>
+                        <p>{selectedOrder.amount}</p>
+                    </div>
+                    <Separator />
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" className="w-full">Imprimer</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )}
     </>
   );
 }
+
