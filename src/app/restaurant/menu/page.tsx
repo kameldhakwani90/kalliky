@@ -181,11 +181,12 @@ export default function MenuPage() {
 
   return (
     <div className="space-y-8">
-       <header>
+      <header>
         <h1 className="text-3xl font-bold tracking-tight">Gestion du Menu</h1>
         <p className="text-muted-foreground">Gérez votre menu, ajoutez de nouveaux plats et synchronisez avec l'IA.</p>
       </header>
-       <Card>
+
+      <Card>
         <CardHeader>
           <CardTitle>Outils de Synchronisation IA</CardTitle>
           <CardDescription>
@@ -368,3 +369,5 @@ export default function MenuPage() {
     </div>
   );
 }
+
+    
