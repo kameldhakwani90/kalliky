@@ -60,7 +60,6 @@ export default function RestaurantLayout({
   const menuItems = [
     { href: "/restaurant/dashboard", label: "Aperçu", icon: Home },
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
-    { href: "/restaurant/billing", label: "Abonnement", icon: CreditCard },
     { href: "#", label: "Automatisation", icon: Bot },
     { href: "#", label: "Clients", icon: Users },
   ];
@@ -123,11 +122,19 @@ export default function RestaurantLayout({
                 <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
                     <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Profil</DropdownMenuItem>
-                    <DropdownMenuItem>Facturation</DropdownMenuItem>
-                    <DropdownMenuItem>Paramètres</DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <Link href="#">Profil</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <Link href="/restaurant/billing">Facturation</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <Link href="#">Paramètres</Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Se déconnecter</DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <Link href="#">Se déconnecter</Link>
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </SidebarFooter>

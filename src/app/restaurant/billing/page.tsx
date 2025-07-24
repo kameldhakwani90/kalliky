@@ -1,8 +1,14 @@
+'use client';
+
+import { useState } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download } from "lucide-react";
 
 const invoices = [
     { id: "INV-2024-005", date: "01/05/2024", amount: "99,00€", status: "Payée" },
@@ -11,6 +17,8 @@ const invoices = [
 ];
 
 export default function BillingPage() {
+    const [date, setDate] = useState<Date | undefined>(undefined);
+
     return (
         <div className="space-y-6">
              <header>
@@ -50,9 +58,30 @@ export default function BillingPage() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Historique des Factures</CardTitle>
-                    <CardDescription>Retrouvez toutes vos factures pour votre abonnement Kalliky.ai.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Historique des Factures</CardTitle>
+                        <CardDescription>Retrouvez toutes vos factures pour votre abonnement Kalliky.ai.</CardDescription>
+                    </div>
+                     <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant={"outline"}
+                            className="w-[240px] justify-start text-left font-normal"
+                            >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, "PPP") : <span>Choisir une date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </CardHeader>
                 <CardContent>
                     <Table>
