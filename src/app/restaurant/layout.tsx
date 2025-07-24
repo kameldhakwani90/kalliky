@@ -8,7 +8,9 @@ import {
   LayoutDashboard,
   Settings,
   CookingPot,
-  ChevronDown
+  Users,
+  BadgeHelp,
+  Bell
 } from "lucide-react"
 
 import {
@@ -21,32 +23,23 @@ import {
   SidebarProvider,
   SidebarInset,
   SidebarFooter,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Logo } from "@/components/logo"
-import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
 
 function KallikyLogo() {
     return (
-        <div className="flex items-center gap-2 px-2 py-1">
-             <div className="p-2 bg-blue-600 rounded-lg">
+        <div className="flex items-center gap-2">
+             <div className="p-2 bg-primary rounded-lg">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
                     <path d="M2 7L12 12M22 7L12 12M12 22V12M17 4.5L7 9.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
             </div>
             <div className="flex flex-col">
-                <span className="font-bold text-lg">Kalliky</span>
-                <span className="text-xs text-sidebar-foreground/70">Restaurant System</span>
+                <span className="font-bold text-lg">Le Petit Bistro</span>
             </div>
         </div>
     )
@@ -61,14 +54,19 @@ export default function RestaurantLayout({
 
   const menuItems = [
     { href: "/restaurant/dashboard", label: "Tableau de Bord", icon: LayoutDashboard },
-    { href: "/restaurant/menu", label: "Gestion du Menu", icon: CookingPot },
-    { href: "/restaurant/billing", label: "Paiements", icon: CreditCard },
-    { href: "#", label: "Paramètres", icon: Settings },
+    { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
+    { href: "/restaurant/billing", label: "Facturation", icon: CreditCard },
+    { href: "/admin/dashboard", label: "Clients", icon: Users },
   ];
+  
+  const helpItems = [
+      { href: "#", label: "Aide", icon: BadgeHelp },
+      { href: "#", label: "Paramètres", icon: Settings },
+  ]
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon" variant="sidebar" side="left">
         <SidebarHeader>
            <KallikyLogo />
         </SidebarHeader>
@@ -80,7 +78,25 @@ export default function RestaurantLayout({
                   asChild
                   isActive={pathname === item.href}
                   tooltip={item.label}
-                  className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground"
+                  className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold"
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+          
+           <SidebarMenu className="mt-auto">
+             {helpItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
+                   className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold"
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -92,13 +108,31 @@ export default function RestaurantLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            <div className="p-2 text-xs text-sidebar-foreground/60 space-y-1">
-                <p>Version 2.10 © 2025 Kalliky</p>
-                <p>2x Tarte Tatin</p>
-            </div>
+             <div className="flex items-center gap-3 p-2">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="https://placehold.co/100x100" data-ai-hint="restaurant owner" />
+                  <AvatarFallback>LP</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate font-semibold text-sm">Louis Perrin</p>
+                  <p className="truncate text-xs text-sidebar-foreground/70">
+                    louis.perrin@bistro.fr
+                  </p>
+                </div>
+              </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
+            <SidebarTrigger className="md:hidden" />
+            <div className="flex-1">
+                {/* Optional Header Content */}
+            </div>
+             <Button variant="ghost" size="icon">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Notifications</span>
+            </Button>
+        </header>
         {children}
       </SidebarInset>
     </SidebarProvider>

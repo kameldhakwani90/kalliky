@@ -7,275 +7,194 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { 
-    Clock, 
-    CheckCircle, 
-    CookingPot, 
-    Utensils, 
-    RefreshCw, 
-    ChevronDown, 
-    MoreVertical, 
-    Circle,
-    Bell,
-    Settings,
-    Link as LinkIcon,
-    FileText,
-    Power,
-    HelpCircle,
-    Wifi,
-    BarChart2,
-    Percent,
-    Timer,
-    Users
+import {
+    Activity,
+    Calendar,
+    ChevronDown,
+    CreditCard,
+    DollarSign,
+    Download,
+    Eye,
+    Users,
 } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+  } from "@/components/ui/table"
+import {
+    Bar,
+    BarChart,
+    ResponsiveContainer,
+    XAxis,
+    YAxis,
+    Tooltip,
+    Legend
+} from "recharts"
 
-const orders = [
-  {
-    id: "#1024",
-    time: "28:47",
-    items: [
-      { name: "Item 1", price: "47.50€" },
-      { name: "Item 2", price: "15.50€" },
-    ],
-    total: "67.00€",
-    status: "awaiting_pay",
-  },
-  {
-    id: "#1023",
-    time: "28:42",
-    items: [
-      { name: "Item 1", price: "32.90€" },
-      { name: "Item 2", price: "25.00€" },
-    ],
-    total: "57.90€",
-    status: "paid",
-  },
-];
+const chartData = [
+  { name: "Lun", revenue: 186, orders: 80 },
+  { name: "Mar", revenue: 305, orders: 90 },
+  { name: "Mer", revenue: 237, orders: 70 },
+  { name: "Jeu", revenue: 273, orders: 110 },
+  { name: "Ven", revenue: 450, orders: 150 },
+  { name: "Sam", revenue: 680, orders: 200 },
+  { name: "Dim", revenue: 550, orders: 180 },
+]
 
-const quickActions = [
-    { label: "Gestion du Menu", icon: CookingPot },
-    { label: "Lien de Paiement", icon: LinkIcon },
-    { label: "Historique Paiements", icon: FileText },
-    { label: "Paramètres Restaurant", icon: Settings },
+const recentOrders = [
+    { id: "#1024", customer: "Alice Martin", amount: "67.00€", status: "Payée" },
+    { id: "#1023", customer: "Bob Dupont", amount: "57.90€", status: "Payée" },
+    { id: "#1022", customer: "Carla Durand", amount: "22.50€", status: "En attente" },
+    { id: "#1021", customer: "David Petit", amount: "89.00€", status: "Payée" },
+    { id: "#1020", customer: "Eve Leroy", amount: "45.00€", status: "Annulée" },
 ]
 
 
 export default function RestaurantDashboard() {
   return (
-    <div className="flex h-screen bg-background">
-      <div className="flex-1 flex flex-col">
-        <header className="p-4 border-b">
-            <div className="flex justify-between items-center">
-                <h1 className="text-xl font-semibold">Tableau de Bord</h1>
-                <div className="flex items-center gap-2">
-                    <p className="text-sm">Menu ouvert</p>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">●</Badge>
-                </div>
+    <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+            <h2 className="text-3xl font-bold tracking-tight">Tableau de Bord</h2>
+            <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" className="h-8">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Aujourd'hui
+                    <ChevronDown className="ml-2 h-4 w-4 text-muted-foreground" />
+                </Button>
             </div>
-        </header>
+        </div>
 
-        <main className="flex-1 p-4 space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Commandes</h2>
-                <div className="flex items-center gap-4">
-                     <Button variant="ghost" size="sm" className="text-muted-foreground">
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Actualiser
-                    </Button>
-                    <Button variant="outline" size="sm">
-                        Plus récentes
-                        <ChevronDown className="h-4 w-4 ml-2" />
-                    </Button>
-                </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">En attente</p>
-                        <p className="text-2xl font-bold">1</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">Payées</p>
-                        <p className="text-2xl font-bold">1</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                     <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">En prép.</p>
-                        <p className="text-2xl font-bold">1</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                     <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">Prêtes</p>
-                        <p className="text-2xl font-bold">1</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {orders.map((order) => (
-            <Card key={order.id}>
-                <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                       <div className="space-y-2">
-                            {order.items.map((item, index) => (
-                                <p key={index} className="text-sm">{item.name}</p>
-                            ))}
-                       </div>
-                       <div className="text-right">
-                           <div className="flex items-center gap-4">
-                                <p className="text-sm text-muted-foreground">{order.time}</p>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4"/></Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem>Voir détails</DropdownMenuItem>
-                                        <DropdownMenuItem>Imprimer</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                           </div>
-                            {order.items.map((item, index) => (
-                                <p key={index} className="text-sm">{item.price}</p>
-                            ))}
-                       </div>
-                    </div>
-                    <Separator className="my-4"/>
-                    <div className="flex justify-between items-center">
-                        <div>
-                             <Button variant="ghost" size="sm">Détails</Button>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <p className="text-lg font-bold">{order.total}</p>
-                             {order.status === 'awaiting_pay' ? (
-                                <Button className="bg-blue-600 hover:bg-blue-700">
-                                    <Clock className="mr-2 h-4 w-4" />
-                                    Awaiting Pay
-                                </Button>
-                            ) : (
-                                <Button>
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Paid
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </CardContent>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Revenu Total</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2 701€</div>
+                <p className="text-xs text-muted-foreground">+20.1% depuis le mois dernier</p>
+              </CardContent>
             </Card>
-            ))}
-        </main>
-      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Commandes</CardTitle>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+780</div>
+                <p className="text-xs text-muted-foreground">+19% depuis le mois dernier</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Clients Uniques</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+235</div>
+                <p className="text-xs text-muted-foreground">+180.1% depuis le mois dernier</p>
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Panier Moyen</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">24.50€</div>
+                <p className="text-xs text-muted-foreground">+2% depuis le mois dernier</p>
+              </CardContent>
+            </Card>
+        </div>
 
-      <aside className="w-80 border-l flex flex-col">
-          <header className="p-4 border-b h-[65px] flex items-center justify-between">
-            <div className="font-semibold">Le Petit Bistro</div>
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon"><Bell className="h-5 w-5"/></Button>
-                 <Button variant="ghost" size="icon"><Settings className="h-5 w-5"/></Button>
-            </div>
-          </header>
-          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-              <Card>
-                <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <BarChart2 className="h-5 w-5 text-muted-foreground"/>
-                        Chiffre d'affaires
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-2xl font-bold">1 247,50 €</p>
-                    <p className="text-xs text-muted-foreground">Niveau du jour</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <Percent className="h-5 w-5 text-muted-foreground"/>
-                        Commissions Kalliky
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-2xl font-bold">124,75 €</p>
-                    <p className="text-xs text-muted-foreground">10.0% du CA</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-muted-foreground"/>
-                        Paiements en attente
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-2xl font-bold">3</p>
-                    <p className="text-xs text-muted-foreground">A traiter</p>
-                </CardContent>
-              </Card>
-               <Card>
-                <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <Timer className="h-5 w-5 text-muted-foreground"/>
-                        Temps moyen
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-2xl font-bold">18 min</p>
-                    <p className="text-xs text-muted-foreground">Commande -> Prêt</p>
-                </CardContent>
-              </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Vue d'ensemble</CardTitle>
+              </CardHeader>
+              <CardContent className="pl-2">
+                 <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={chartData}>
+                        <XAxis
+                            dataKey="name"
+                            stroke="#888888"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                        />
+                        <YAxis
+                            stroke="#888888"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(value) => `${value}€`}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                background: "hsl(var(--background))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "var(--radius)"
+                             }}
+                        />
+                        <Legend iconType="circle" />
+                        <Bar dataKey="revenue" name="Revenu" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                 </ResponsiveContainer>
+              </CardContent>
+            </Card>
 
-                <div>
-                    <h3 className="text-sm font-semibold mb-2">Actions rapides</h3>
-                    <div className="space-y-2">
-                    {quickActions.map(action => (
-                         <Button key={action.label} variant="outline" className="w-full justify-start">
-                            <action.icon className="h-4 w-4 mr-2"/>
-                            {action.label}
-                        </Button>
-                    ))}
-                    </div>
-                </div>
-                 <div>
-                    <h3 className="text-sm font-semibold mb-2">Actions d'urgence</h3>
-                    <div className="space-y-2">
-                        <Button variant="destructive" className="w-full justify-start bg-orange-500 hover:bg-orange-600 text-white">
-                            <Power className="h-4 w-4 mr-2"/>
-                            Fermer temporairement
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                            <HelpCircle className="h-4 w-4 mr-2"/>
-                            Support technique
-                        </Button>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 className="text-sm font-semibold mb-2">État du système</h3>
-                    <Card>
-                        <CardContent className="p-4 space-y-2 text-sm">
-                            <div className="flex justify-between items-center">
-                                <p className="flex items-center gap-2"><Wifi className="h-4 w-4"/> WebSocket</p>
-                                <Badge variant="secondary" className="bg-green-100 text-green-800">Connecté</Badge>
-                            </div>
-                            <Separator/>
-                             <div className="flex justify-between items-center">
-                                <p>Santé du système</p>
-                                <Badge variant="secondary" className="bg-green-100 text-green-800">Opérationnel</Badge>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-          </div>
-      </aside>
+             <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Commandes Récentes</CardTitle>
+                <CardDescription>
+                  Il y a eu 780 commandes ce mois-ci.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Montant</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {recentOrders.map(order => (
+                            <TableRow key={order.id}>
+                                <TableCell className="font-medium">{order.customer}</TableCell>
+                                <TableCell>{order.amount}</TableCell>
+                                <TableCell>
+                                    <Badge
+                                      variant={order.status === 'Payée' ? 'default' : order.status === 'En attente' ? 'secondary' : 'destructive'}
+                                      className={
+                                        order.status === 'Payée'
+                                          ? 'bg-green-100 text-green-800'
+                                          : order.status === 'En attente'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-red-100 text-red-800'
+                                      }
+                                    >
+                                      {order.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button variant="ghost" size="icon">
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+        </div>
     </div>
   );
 }
