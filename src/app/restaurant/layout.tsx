@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -11,7 +12,10 @@ import {
   CookingPot,
   Users,
   BadgeHelp,
-  Bell
+  Bell,
+  PlusCircle,
+  Home,
+  Bot
 } from "lucide-react"
 
 import {
@@ -28,20 +32,21 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Logo } from "@/components/logo"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 function KallikyLogo() {
     return (
-        <div className="flex items-center gap-2">
-             <div className="p-2 bg-primary rounded-lg">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
-                    <path d="M2 7L12 12M22 7L12 12M12 22V12M17 4.5L7 9.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-            </div>
-            <div className="flex flex-col">
-                <span className="font-bold text-lg">Le Petit Bistro</span>
-            </div>
-        </div>
+      <div className="p-2">
+        <Logo />
+      </div>
     )
 }
 
@@ -53,10 +58,11 @@ export default function RestaurantLayout({
   const pathname = usePathname();
 
   const menuItems = [
-    { href: "/restaurant/dashboard", label: "Tableau de Bord", icon: LayoutDashboard },
+    { href: "/restaurant/dashboard", label: "Aperçu", icon: Home },
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
-    { href: "/restaurant/billing", label: "Facturation", icon: CreditCard },
-    { href: "/admin/dashboard", label: "Clients", icon: Users },
+    { href: "/restaurant/billing", label: "Abonnement", icon: CreditCard },
+    { href: "#", label: "Automatisation", icon: Bot },
+    { href: "#", label: "Clients", icon: Users },
   ];
   
   const helpItems = [
@@ -71,9 +77,17 @@ export default function RestaurantLayout({
            <KallikyLogo />
         </SidebarHeader>
         <SidebarContent>
+          <div className="p-2">
+            <Button className="w-full justify-start" asChild>
+                <Link href="#">
+                    <PlusCircle />
+                    <span>Créer une campagne</span>
+                </Link>
+            </Button>
+          </div>
           <SidebarMenu>
             {menuItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
+              <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === item.href}
@@ -89,41 +103,37 @@ export default function RestaurantLayout({
             ))}
           </SidebarMenu>
           
-           <SidebarMenu className="mt-auto">
-             {helpItems.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  tooltip={item.label}
-                   className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold"
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-             <div className="flex items-center gap-3 p-2">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="https://placehold.co/100x100" data-ai-hint="restaurant owner" />
-                  <AvatarFallback>LP</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 overflow-hidden">
-                  <p className="truncate font-semibold text-sm">Louis Perrin</p>
-                  <p className="truncate text-xs text-sidebar-foreground/70">
-                    louis.perrin@bistro.fr
-                  </p>
-                </div>
-              </div>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-3 p-2 cursor-pointer hover:bg-sidebar-accent rounded-md">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src="https://placehold.co/100x100" data-ai-hint="restaurant owner" />
+                          <AvatarFallback>LP</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="truncate font-semibold text-sm">Louis Perrin</p>
+                          <p className="truncate text-xs text-sidebar-foreground/70">
+                            ID: 4827682
+                          </p>
+                        </div>
+                      </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
+                    <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Profil</DropdownMenuItem>
+                    <DropdownMenuItem>Facturation</DropdownMenuItem>
+                    <DropdownMenuItem>Paramètres</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Se déconnecter</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-6">
+        <header className="flex h-16 items-center gap-4 border-b bg-card px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
                 {/* Optional Header Content */}
@@ -132,10 +142,14 @@ export default function RestaurantLayout({
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
             </Button>
+            <Avatar className="h-9 w-9">
+                <AvatarImage src="https://placehold.co/100x100" data-ai-hint="restaurant owner" />
+                <AvatarFallback>LP</AvatarFallback>
+            </Avatar>
         </header>
-        <div className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 bg-muted/30 flex-1">
             {children}
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )
