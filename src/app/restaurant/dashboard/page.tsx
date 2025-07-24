@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,9 +15,8 @@ import {
     ChevronDown,
     CreditCard,
     DollarSign,
-    Download,
-    Eye,
     Users,
+    Eye
 } from 'lucide-react';
 import {
     Table,
@@ -25,15 +26,7 @@ import {
     TableHeader,
     TableRow,
   } from "@/components/ui/table"
-import {
-    Bar,
-    BarChart,
-    ResponsiveContainer,
-    XAxis,
-    YAxis,
-    Tooltip,
-    Legend
-} from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
 
 const chartData = [
   { name: "Lun", revenue: 186, orders: 80 },
