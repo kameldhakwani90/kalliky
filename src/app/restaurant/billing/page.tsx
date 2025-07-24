@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, CheckCircle, Zap, Shield, Coffee } from "lucide-react";
+import { Calendar as CalendarIcon, Download, CheckCircle, XCircle, FileUp, Bot, BarChart, FileText, Phone, CreditCard, Users, History, BrainCircuit, Lightbulb, BadgeEuro } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,42 +15,68 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const invoices = [
-    { id: "INV-2024-005", date: "01/05/2024", amount: "99,00€", status: "Payée" },
-    { id: "INV-2024-004", date: "01/04/2024", amount: "99,00€", status: "Payée" },
-    { id: "INV-2024-003", date: "01/03/2024", amount: "49,00€", status: "Payée" },
+    { id: "INV-2024-005", date: "01/05/2024", amount: "329,00€", status: "Payée" },
+    { id: "INV-2024-004", date: "01/04/2024", amount: "329,00€", status: "Payée" },
+    { id: "INV-2024-003", date: "01/03/2024", amount: "329,00€", status: "Payée" },
 ];
 
 const plans = [
   {
     name: "Starter",
-    price: "49€",
-    icon: <Coffee className="h-6 w-6 mb-2" />,
+    price: "129€",
+    priceDetails: "/ mois + 10% commission",
+    target: "Petit restaurant local",
     features: [
-      "Tableau de bord",
-      "Gestion des commandes",
-      "Support email",
+      { text: "Appels vocaux automatisés", icon: <Phone/>, included: true },
+      { text: "Ticket vocal (création auto)", icon: <FileText/>, included: true },
+      { text: "Paiement par lien Stripe", icon: <CreditCard/>, included: true },
+      { text: "Historique commandes de base", icon: <History/>, included: true },
+      { text: "Dashboard commandes & paiements", icon: <BarChart/>, included: true },
+      { text: "Facturation Stripe auto", icon: <BadgeEuro/>, included: true },
+      { text: "Menu via Excel (upload)", icon: <FileUp/>, included: true },
+      { text: "IA Personnalisée", icon: <BrainCircuit/>, included: false },
+      { text: "Suggestions de produits", icon: <Lightbulb/>, included: false },
+      { text: "Support par Email", icon: <Users/>, included: true },
     ],
+    recommended: false,
   },
   {
     name: "Pro",
-    price: "99€",
-    icon: <Zap className="h-6 w-6 mb-2" />,
+    subtitle: "IA + historique",
+    price: "329€",
+    priceDetails: "/ mois + 1€ / ticket",
+    target: "Restaurateurs réguliers ou chaîne",
     features: [
-      "Fonctionnalités Starter",
-      "Synchronisation IA du menu",
-      "Support prioritaire",
+      { text: "Ticket vocal + historique client", icon: <FileText/>, included: true },
+      { text: "Paiement automatisé + relance", icon: <CreditCard/>, included: true },
+      { text: "Fiche client complète", icon: <History/>, included: true },
+      { text: "Mémoire IA client (préférences, upsell)", icon: <BrainCircuit/>, included: true },
+      { text: "Upsell intelligent (basé sur l'historique)", icon: <Lightbulb/>, included: true },
+      { text: "Dashboard + stats IA usage", icon: <BarChart/>, included: true },
+      { text: "Facturation auto + fiche fiscale", icon: <BadgeEuro/>, included: true },
+      { text: "Menu Excel + pré-chargement IA", icon: <FileUp/>, included: true },
+      { text: "Support Email prioritaire 24h", icon: <Users/>, included: true },
     ],
     recommended: true,
   },
   {
     name: "Business",
-    price: "149€",
-    icon: <Shield className="h-6 w-6 mb-2" />,
+    subtitle: "Sur mesure",
+    price: "Sur devis",
+    priceDetails: "personnalisé",
+    target: "Groupes, franchises, haut volume",
     features: [
-      "Fonctionnalités Pro",
-      "Accès API",
-      "Analyses avancées",
+      { text: "Ticket vocal sur mesure", icon: <FileText/>, included: true },
+      { text: "Paiement via WhatsApp etc.", icon: <CreditCard/>, included: true },
+      { text: "Historique avec export API/CRM", icon: <History/>, included: true },
+      { text: "IA dédiée / scénario complexe", icon: <BrainCircuit/>, included: true },
+      { text: "Suggestion dynamique (météo...)", icon: <Lightbulb/>, included: true },
+      { text: "Dashboard multi-site", icon: <BarChart/>, included: true },
+      { text: "Facturation personnalisée", icon: <BadgeEuro/>, included: true },
+      { text: "Menu via API catalogue", icon: <FileUp/>, included: true },
+      { text: "Account manager dédié", icon: <Users/>, included: true },
     ],
+    recommended: false,
   },
 ];
 
@@ -75,8 +101,8 @@ export default function BillingPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex justify-between items-baseline">
-                           <p className="text-lg font-semibold">Plan Pro</p>
-                           <p><span className="text-3xl font-bold">99€</span>/mois</p>
+                           <p className="text-lg font-semibold">Plan Pro (IA + historique)</p>
+                           <p><span className="text-3xl font-bold">329€</span>/mois</p>
                         </div>
                         <p className="text-sm text-muted-foreground">Votre abonnement sera renouvellé le 1er juin 2024.</p>
                         
@@ -84,14 +110,14 @@ export default function BillingPage() {
                             <DialogTrigger asChild>
                                 <Button variant="outline" className="w-full">Changer de plan</Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-4xl">
+                            <DialogContent className="sm:max-w-6xl">
                                 <DialogHeader>
                                     <DialogTitle className="text-center text-2xl font-headline">Changer votre abonnement</DialogTitle>
                                     <DialogDescription className="text-center">
                                         Sélectionnez le plan qui correspond le mieux à vos besoins.
                                     </DialogDescription>
                                 </DialogHeader>
-                                <div className="grid md:grid-cols-3 gap-6 text-center py-6">
+                                <div className="grid md:grid-cols-3 gap-6 py-6">
                                     {plans.map((plan) => (
                                     <Card 
                                         key={plan.name} 
@@ -101,25 +127,26 @@ export default function BillingPage() {
                                         )}
                                         onClick={() => setSelectedPlan(plan.name)}
                                     >
-                                        <CardHeader>
-                                        {plan.icon}
-                                        <CardTitle className="font-headline">{plan.name}</CardTitle>
-                                        <p className="text-2xl font-bold">{plan.price}<span className="text-sm font-normal text-muted-foreground">/mois</span></p>
-                                        {currentPlanName === plan.name && <Badge variant="secondary" className="w-fit mx-auto">Plan Actuel</Badge>}
+                                        <CardHeader className="text-center">
+                                            <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
+                                            {plan.subtitle && <p className="text-sm font-semibold text-primary">{plan.subtitle}</p>}
+                                            <p className="text-muted-foreground text-sm">{plan.target}</p>
+                                            <p className="text-3xl font-bold pt-4">{plan.price}<span className="text-base font-normal text-muted-foreground">{plan.priceDetails}</span></p>
+                                            {currentPlanName === plan.name && <Badge variant="secondary" className="w-fit mx-auto mt-2">Plan Actuel</Badge>}
                                         </CardHeader>
-                                        <CardContent className="flex-1">
-                                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                        <CardContent className="flex-1 text-left">
+                                            <ul className="space-y-3 text-sm">
                                                 {plan.features.map((feature, i) => (
-                                                <li key={i} className="flex items-start text-left gap-2">
-                                                    <CheckCircle className="h-4 w-4 mt-0.5 text-green-500 flex-shrink-0" />
-                                                    <span>{feature}</span>
-                                                </li>
+                                                  <li key={i} className={`flex items-start gap-3 ${!feature.included ? "text-muted-foreground" : ""}`}>
+                                                    {feature.included ? <CheckCircle className="h-5 w-5 text-green-500 mt-px flex-shrink-0" /> : <XCircle className="h-5 w-5 text-muted-foreground mt-px flex-shrink-0" />}
+                                                    <span>{feature.text}</span>
+                                                  </li>
                                                 ))}
                                             </ul>
                                         </CardContent>
                                         <CardFooter>
                                             <Button className="w-full" variant={selectedPlan === plan.name ? "default" : "outline"} disabled={currentPlanName === plan.name}>
-                                                {selectedPlan === plan.name ? 'Sélectionné' : 'Choisir'}
+                                                {currentPlanName === plan.name ? 'Plan Actuel' : (selectedPlan === plan.name ? 'Sélectionné' : 'Choisir')}
                                             </Button>
                                         </CardFooter>
                                     </Card>
