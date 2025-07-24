@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -27,7 +28,6 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
 
 function KallikyLogo() {
     return (
@@ -91,7 +91,7 @@ export default function RestaurantLayout({
           
            <SidebarMenu className="mt-auto">
              {helpItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
+              <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === item.href}
@@ -133,7 +133,9 @@ export default function RestaurantLayout({
                 <span className="sr-only">Notifications</span>
             </Button>
         </header>
-        {children}
+        <div className="p-4 sm:p-6 lg:p-8">
+            {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
