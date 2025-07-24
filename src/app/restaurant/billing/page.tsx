@@ -13,11 +13,41 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 const invoices = [
     { id: "INV-2024-005", date: "01/05/2024", amount: "329,00€", status: "Payée" },
     { id: "INV-2024-004", date: "01/04/2024", amount: "329,00€", status: "Payée" },
     { id: "INV-2024-003", date: "01/03/2024", amount: "329,00€", status: "Payée" },
+];
+
+const starterFeatures = [
+    { text: "Appels vocaux automatisés", icon: <Phone/> },
+    { text: "Ticket vocal (création auto)", icon: <FileText/> },
+    { text: "Paiement par lien Stripe", icon: <CreditCard/> },
+    { text: "Historique commandes de base", icon: <History/> },
+    { text: "Dashboard commandes & paiements", icon: <BarChart/> },
+    { text: "Facturation Stripe auto", icon: <BadgeEuro/> },
+    { text: "Menu via Excel (upload)", icon: <FileUp/> },
+    { text: "Support par Email", icon: <Users/> },
+];
+
+const proFeatures = [
+    { text: "Fiche client complète", icon: <History/> },
+    { text: "Mémoire IA client (préférences, upsell)", icon: <BrainCircuit/> },
+    { text: "Upsell intelligent (basé sur l'historique)", icon: <Lightbulb/> },
+    { text: "Dashboard + stats IA usage", icon: <BarChart/> },
+    { text: "Support Email prioritaire 24h", icon: <Users/> },
+];
+
+const businessFeatures = [
+    { text: "Ticket vocal sur mesure", icon: <FileText/> },
+    { text: "Paiement via WhatsApp etc.", icon: <CreditCard/> },
+    { text: "Historique avec export API/CRM", icon: <History/> },
+    { text: "IA dédiée / scénario complexe", icon: <BrainCircuit/> },
+    { text: "Suggestion dynamique (météo...)", icon: <Lightbulb/> },
+    { text: "Dashboard multi-site", icon: <BarChart/> },
+    { text: "Account manager dédié", icon: <Users/> },
 ];
 
 const plans = [
@@ -26,18 +56,7 @@ const plans = [
     price: "129€",
     priceDetails: "/ mois + 10% commission",
     target: "Petit restaurant local",
-    features: [
-      { text: "Appels vocaux automatisés", icon: <Phone/>, included: true },
-      { text: "Ticket vocal (création auto)", icon: <FileText/>, included: true },
-      { text: "Paiement par lien Stripe", icon: <CreditCard/>, included: true },
-      { text: "Historique commandes de base", icon: <History/>, included: true },
-      { text: "Dashboard commandes & paiements", icon: <BarChart/>, included: true },
-      { text: "Facturation Stripe auto", icon: <BadgeEuro/>, included: true },
-      { text: "Menu via Excel (upload)", icon: <FileUp/>, included: true },
-      { text: "IA Personnalisée", icon: <BrainCircuit/>, included: false },
-      { text: "Suggestions de produits", icon: <Lightbulb/>, included: false },
-      { text: "Support par Email", icon: <Users/>, included: true },
-    ],
+    features: starterFeatures,
     recommended: false,
   },
   {
@@ -46,17 +65,8 @@ const plans = [
     price: "329€",
     priceDetails: "/ mois + 1€ / ticket",
     target: "Restaurateurs réguliers ou chaîne",
-    features: [
-      { text: "Ticket vocal + historique client", icon: <FileText/>, included: true },
-      { text: "Paiement automatisé + relance", icon: <CreditCard/>, included: true },
-      { text: "Fiche client complète", icon: <History/>, included: true },
-      { text: "Mémoire IA client (préférences, upsell)", icon: <BrainCircuit/>, included: true },
-      { text: "Upsell intelligent (basé sur l'historique)", icon: <Lightbulb/>, included: true },
-      { text: "Dashboard + stats IA usage", icon: <BarChart/>, included: true },
-      { text: "Facturation auto + fiche fiscale", icon: <BadgeEuro/>, included: true },
-      { text: "Menu Excel + pré-chargement IA", icon: <FileUp/>, included: true },
-      { text: "Support Email prioritaire 24h", icon: <Users/>, included: true },
-    ],
+    features: proFeatures,
+    basePlan: "Starter",
     recommended: true,
   },
   {
@@ -65,20 +75,12 @@ const plans = [
     price: "Sur devis",
     priceDetails: "personnalisé",
     target: "Groupes, franchises, haut volume",
-    features: [
-      { text: "Ticket vocal sur mesure", icon: <FileText/>, included: true },
-      { text: "Paiement via WhatsApp etc.", icon: <CreditCard/>, included: true },
-      { text: "Historique avec export API/CRM", icon: <History/>, included: true },
-      { text: "IA dédiée / scénario complexe", icon: <BrainCircuit/>, included: true },
-      { text: "Suggestion dynamique (météo...)", icon: <Lightbulb/>, included: true },
-      { text: "Dashboard multi-site", icon: <BarChart/>, included: true },
-      { text: "Facturation personnalisée", icon: <BadgeEuro/>, included: true },
-      { text: "Menu via API catalogue", icon: <FileUp/>, included: true },
-      { text: "Account manager dédié", icon: <Users/>, included: true },
-    ],
+    features: businessFeatures,
+    basePlan: "Pro",
     recommended: false,
   },
 ];
+
 
 const currentPlanName = "Pro";
 
@@ -135,10 +137,16 @@ export default function BillingPage() {
                                             {currentPlanName === plan.name && <Badge variant="secondary" className="w-fit mx-auto mt-2">Plan Actuel</Badge>}
                                         </CardHeader>
                                         <CardContent className="flex-1 text-left">
+                                            {plan.basePlan && (
+                                                <>
+                                                    <p className="text-sm font-semibold mb-3">Toutes les fonctionnalités du plan {plan.basePlan}, plus :</p>
+                                                    <Separator className="mb-4" />
+                                                </>
+                                            )}
                                             <ul className="space-y-3 text-sm">
                                                 {plan.features.map((feature, i) => (
-                                                  <li key={i} className={`flex items-start gap-3 ${!feature.included ? "text-muted-foreground" : ""}`}>
-                                                    {feature.included ? <CheckCircle className="h-5 w-5 text-green-500 mt-px flex-shrink-0" /> : <XCircle className="h-5 w-5 text-muted-foreground mt-px flex-shrink-0" />}
+                                                  <li key={i} className="flex items-start gap-3">
+                                                    <CheckCircle className="h-5 w-5 text-green-500 mt-px flex-shrink-0" />
                                                     <span>{feature.text}</span>
                                                   </li>
                                                 ))}
