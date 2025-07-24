@@ -1,14 +1,18 @@
+
 'use client';
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download } from "lucide-react";
+import { Calendar as CalendarIcon, Download, CheckCircle, Zap, Shield, Coffee } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 const invoices = [
     { id: "INV-2024-005", date: "01/05/2024", amount: "99,00€", status: "Payée" },
@@ -16,8 +20,46 @@ const invoices = [
     { id: "INV-2024-003", date: "01/03/2024", amount: "49,00€", status: "Payée" },
 ];
 
+const plans = [
+  {
+    name: "Starter",
+    price: "49€",
+    icon: <Coffee className="h-6 w-6 mb-2" />,
+    features: [
+      "Tableau de bord",
+      "Gestion des commandes",
+      "Support email",
+    ],
+  },
+  {
+    name: "Pro",
+    price: "99€",
+    icon: <Zap className="h-6 w-6 mb-2" />,
+    features: [
+      "Fonctionnalités Starter",
+      "Synchronisation IA du menu",
+      "Support prioritaire",
+    ],
+    recommended: true,
+  },
+  {
+    name: "Business",
+    price: "149€",
+    icon: <Shield className="h-6 w-6 mb-2" />,
+    features: [
+      "Fonctionnalités Pro",
+      "Accès API",
+      "Analyses avancées",
+    ],
+  },
+];
+
+const currentPlanName = "Pro";
+
+
 export default function BillingPage() {
     const [date, setDate] = useState<Date | undefined>(undefined);
+    const [selectedPlan, setSelectedPlan] = useState<string>(currentPlanName);
 
     return (
         <div className="space-y-6">
@@ -37,7 +79,63 @@ export default function BillingPage() {
                            <p><span className="text-3xl font-bold">99€</span>/mois</p>
                         </div>
                         <p className="text-sm text-muted-foreground">Votre abonnement sera renouvellé le 1er juin 2024.</p>
-                        <Button variant="outline" className="w-full">Changer de plan</Button>
+                        
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full">Changer de plan</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-4xl">
+                                <DialogHeader>
+                                    <DialogTitle className="text-center text-2xl font-headline">Changer votre abonnement</DialogTitle>
+                                    <DialogDescription className="text-center">
+                                        Sélectionnez le plan qui correspond le mieux à vos besoins.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid md:grid-cols-3 gap-6 text-center py-6">
+                                    {plans.map((plan) => (
+                                    <Card 
+                                        key={plan.name} 
+                                        className={cn(
+                                            "cursor-pointer flex flex-col", 
+                                            {"border-primary border-2 shadow-lg": selectedPlan === plan.name}
+                                        )}
+                                        onClick={() => setSelectedPlan(plan.name)}
+                                    >
+                                        <CardHeader>
+                                        {plan.icon}
+                                        <CardTitle className="font-headline">{plan.name}</CardTitle>
+                                        <p className="text-2xl font-bold">{plan.price}<span className="text-sm font-normal text-muted-foreground">/mois</span></p>
+                                        {currentPlanName === plan.name && <Badge variant="secondary" className="w-fit mx-auto">Plan Actuel</Badge>}
+                                        </CardHeader>
+                                        <CardContent className="flex-1">
+                                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                                {plan.features.map((feature, i) => (
+                                                <li key={i} className="flex items-start text-left gap-2">
+                                                    <CheckCircle className="h-4 w-4 mt-0.5 text-green-500 flex-shrink-0" />
+                                                    <span>{feature}</span>
+                                                </li>
+                                                ))}
+                                            </ul>
+                                        </CardContent>
+                                        <CardFooter>
+                                            <Button className="w-full" variant={selectedPlan === plan.name ? "default" : "outline"} disabled={currentPlanName === plan.name}>
+                                                {selectedPlan === plan.name ? 'Sélectionné' : 'Choisir'}
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                    ))}
+                                </div>
+                                <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full border-t pt-4">
+                                    <div className="text-xs text-muted-foreground text-center sm:text-left">
+                                        En continuant, vous acceptez nos <Link href="#" className="underline">Conditions Générales de Vente</Link> et <Link href="#" className="underline">d'Utilisation</Link>.
+                                    </div>
+                                    <Button disabled={selectedPlan === currentPlanName}>
+                                        Confirmer le changement
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+
                     </CardContent>
                 </Card>
                 <Card>
