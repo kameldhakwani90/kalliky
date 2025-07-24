@@ -15,7 +15,8 @@ import {
   Bell,
   PlusCircle,
   Home,
-  Bot
+  Bot,
+  Store
 } from "lucide-react"
 
 import {
@@ -60,6 +61,7 @@ export default function RestaurantLayout({
   const menuItems = [
     { href: "/restaurant/dashboard", label: "Aperçu", icon: Home },
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
+    { href: "/restaurant/stores", label: "Boutiques", icon: Store },
     { href: "#", label: "Automatisation", icon: Bot },
     { href: "#", label: "Clients", icon: Users },
   ];
