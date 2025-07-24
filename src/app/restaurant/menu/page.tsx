@@ -23,44 +23,94 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Pencil, Trash2, Wand2, Tag } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Wand2, Tag, Info } from 'lucide-react';
 
-type MenuItemComponent = {
+type CompositionOption = {
   name: string;
-  quantity: number;
+  defaultQuantity: number;
   maxQuantity: number;
+  price?: number; // Optional price for extras
+  isDefault?: boolean;
+};
+
+type CompositionStep = {
+  title: string;
+  options: CompositionOption[];
+  selectionType: 'single' | 'multiple'; // Defines if user can select one or many options
+  isRequired: boolean;
 };
 
 type MenuItem = {
   id: number;
   category: string;
-  name: string;
+  name:string;
   price: string;
   description: string;
   image: string;
   imageHint: string;
   tags?: string[];
-  components?: MenuItemComponent[];
+  composition?: CompositionStep[];
 };
 
 const initialMenuItems: MenuItem[] = [
     { 
         id: 1,
         category: 'Plats', 
-        name: 'Burger "Le Classique"', 
-        price: '15.50€', 
-        description: 'Un classique indémodable avec un steak haché frais, cheddar fondant, salade croquante, oignons rouges, cornichons, et notre sauce burger secrète, servi avec des frites maison.',
+        name: 'Burger "Le Personnalisé"', 
+        price: 'à partir de 16.50€', 
+        description: 'Composez le burger de vos rêves ! Choisissez votre pain, votre protéine, vos fromages et tous les suppléments que vous aimez.',
         image: 'https://placehold.co/600x400.png',
-        imageHint: 'classic burger',
+        imageHint: 'custom burger',
         tags: ['Populaire', 'Soir', 'Famille'],
-        components: [
-            { name: 'Steak', quantity: 1, maxQuantity: 3 },
-            { name: 'Cheddar', quantity: 1, maxQuantity: 2 },
-            { name: 'Sauce Burger', quantity: 1, maxQuantity: 2 },
-            { name: 'Oignons', quantity: 1, maxQuantity: 1 },
+        composition: [
+            {
+                title: 'Étape 1 : Le Pain (1 au choix)',
+                selectionType: 'single',
+                isRequired: true,
+                options: [
+                    { name: 'Pain Brioché', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { name: 'Pain Sésame', defaultQuantity: 0, maxQuantity: 1 },
+                ]
+            },
+            {
+                title: 'Étape 2 : La Protéine (1 au choix)',
+                selectionType: 'single',
+                isRequired: true,
+                options: [
+                    { name: 'Steak de Boeuf (150g)', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { name: 'Poulet Pané Croustillant', defaultQuantity: 0, maxQuantity: 1 },
+                    { name: 'Galette Végétarienne', defaultQuantity: 0, maxQuantity: 1 },
+                ]
+            },
+             {
+                title: 'Étape 3 : Les Fromages (2 max)',
+                selectionType: 'multiple',
+                isRequired: false,
+                options: [
+                    { name: 'Cheddar', defaultQuantity: 1, maxQuantity: 2, isDefault: true },
+                    { name: 'Chèvre', defaultQuantity: 0, maxQuantity: 2, price: 1.50 },
+                    { name: 'Reblochon', defaultQuantity: 0, maxQuantity: 2, price: 1.50 },
+                ]
+            },
+            {
+                title: 'Étape 4 : Les Suppléments',
+                selectionType: 'multiple',
+                isRequired: false,
+                options: [
+                    { name: 'Salade, Tomate, Oignons', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { name: 'Bacon grillé', defaultQuantity: 0, maxQuantity: 2, price: 2.00 },
+                    { name: 'Oeuf au plat', defaultQuantity: 0, maxQuantity: 1, price: 1.00 },
+                ]
+            }
         ]
     },
     { 
@@ -75,12 +125,32 @@ const initialMenuItems: MenuItem[] = [
     },
     { 
         id: 3,
-        category: 'Plats', 
-        name: 'Pizza Regina', 
-        price: '14.00€', 
-        description: 'Sauce tomate, mozzarella fondante, jambon de Paris, champignons frais et olives noires.',
+        category: 'Menus', 
+        name: 'Formule Regina', 
+        price: '18.00€', 
+        description: 'Le classique italien en formule complète, avec une boisson au choix.',
         image: 'https://placehold.co/600x400.png',
-        imageHint: 'pizza'
+        imageHint: 'pizza deal',
+        composition: [
+             {
+                title: 'Plat Principal',
+                selectionType: 'single',
+                isRequired: true,
+                options: [
+                    { name: 'Pizza Regina', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                ]
+            },
+            {
+                title: 'Boisson (1 au choix)',
+                selectionType: 'single',
+                isRequired: true,
+                options: [
+                    { name: 'Coca-Cola (33cl)', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { name: 'Eau Plate (50cl)', defaultQuantity: 0, maxQuantity: 1 },
+                    { name: 'Jus d\'orange (25cl)', defaultQuantity: 0, maxQuantity: 1 },
+                ]
+            }
+        ]
     },
     { 
         id: 4,
@@ -250,24 +320,41 @@ export default function MenuPage() {
               </div>
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Composition du plat</h3>
-                {selectedItem.components && selectedItem.components.length > 0 ? (
-                  <Card>
-                    <CardContent className="pt-6">
-                      <ul className="space-y-3">
-                        {selectedItem.components.map((component, index) => (
-                          <li key={index} className="flex justify-between items-center">
-                            <span className="text-foreground">{component.name}</span>
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline">x{component.quantity}</Badge>
-                                <span className="text-xs text-muted-foreground">(max. {component.maxQuantity})</span>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
+                {selectedItem.composition && selectedItem.composition.length > 0 ? (
+                    <Accordion type="multiple" defaultValue={selectedItem.composition.map(c => c.title)} className="w-full">
+                    {selectedItem.composition.map((step) => (
+                      <AccordionItem key={step.title} value={step.title}>
+                        <AccordionTrigger>{step.title}</AccordionTrigger>
+                        <AccordionContent>
+                          <ul className="space-y-3">
+                            {step.options.map((option, index) => (
+                              <li key={index} className="flex justify-between items-center text-sm">
+                                <div>
+                                    <span>{option.name}</span>
+                                    {option.price && option.price > 0 && <span className="text-muted-foreground ml-2">(+{option.price.toFixed(2)}€)</span>}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {option.isDefault ? (
+                                        <Badge variant="secondary">Inclus</Badge>
+                                    ) : (
+                                        <Badge variant="outline">Option</Badge>
+                                    )}
+                                    <span className="text-xs text-muted-foreground">
+                                        {option.defaultQuantity > 0 ? `x${option.defaultQuantity}`: ''} (max. {option.maxQuantity})
+                                    </span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Ce plat n'a pas de composants modifiables.</p>
+                    <Card className="flex items-center justify-center p-4 bg-muted/50">
+                        <Info className="h-5 w-5 mr-3 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Ce plat n'a pas de composition modifiable.</p>
+                    </Card>
                 )}
                 <div className="flex gap-2 pt-4">
                     <Button variant="outline" className="w-full"><Pencil className="mr-2 h-4 w-4" />Modifier</Button>
