@@ -336,6 +336,7 @@ export default function MenuPage() {
       availability: { type: 'always' },
     };
     handleItemClick(newItem);
+    setIsSyncPopupOpen(false); // Close the sync popup
   };
   
   const toggleItemStatus = (itemId: number, checked: boolean) => {
@@ -414,23 +415,32 @@ export default function MenuPage() {
             <CardDescription>Consultez, modifiez et gérez la disponibilité de vos articles.</CardDescription>
           </div>
            <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
-              <Button onClick={handleCreateNewItem}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Ajouter un article
-              </Button>
+             <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Ajouter / Synchroniser
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Outils de synchronisation</DialogTitle>
+                    <DialogTitle>Outils de création et synchronisation</DialogTitle>
                     <DialogDescription>
-                        Utilisez nos outils pour mettre à jour votre menu rapidement.
+                        Utilisez nos outils pour créer ou mettre à jour votre menu rapidement.
                     </DialogDescription>
                 </DialogHeader>
                  <Tabs defaultValue="import" className="pt-4">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="add-cat">Ajouter une Catégorie</TabsTrigger>
-                        <TabsTrigger value="import">Importer un Menu</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="article">Article</TabsTrigger>
+                        <TabsTrigger value="category">Catégorie</TabsTrigger>
+                        <TabsTrigger value="import">Importer</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="add-cat" className="pt-4 space-y-4">
+                    <TabsContent value="article" className="pt-4 space-y-4">
+                       <p className="text-sm text-muted-foreground">
+                        Créez un nouvel article manuellement et configurez toutes ses options en détail.
+                       </p>
+                       <Button className="w-full" onClick={handleCreateNewItem}><PlusCircle className="mr-2 h-4 w-4"/>Créer un nouvel article</Button>
+                    </TabsContent>
+                    <TabsContent value="category" className="pt-4 space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="cat-name">Nom de la nouvelle catégorie</Label>
                             <Input id="cat-name" placeholder="Ex: Boissons fraîches"/>
@@ -439,7 +449,7 @@ export default function MenuPage() {
                     </TabsContent>
                     <TabsContent value="import" className="pt-4">
                       <p className="text-sm text-muted-foreground mb-4">
-                        Importez depuis un fichier Excel ou une image. Notre IA détectera et ajoutera les plats pour vous.
+                        Importez depuis un fichier Excel ou une image (flyer, menu existant). Notre IA détectera et ajoutera les plats pour vous.
                       </p>
                       <MenuSyncForm />
                     </TabsContent>
