@@ -17,7 +17,8 @@ import {
   Home,
   Bot,
   Store,
-  Zap
+  Zap,
+  XCircle,
 } from "lucide-react"
 
 import {
@@ -64,7 +65,6 @@ export default function RestaurantLayout({
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
     { href: "/restaurant/stores", label: "Boutiques", icon: Store },
     { href: "/restaurant/users", label: "Utilisateurs", icon: Users },
-    { href: "/restaurant/automation", label: "Automatisation", icon: Zap },
     { href: "#", label: "Clients", icon: Users },
   ];
   
@@ -127,17 +127,23 @@ export default function RestaurantLayout({
                     <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
-                        <Link href="#">Profil</Link>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Profil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/restaurant/billing">
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            <span>Facturation</span>
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                        <Link href="/restaurant/billing">Facturation</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <Link href="#">Paramètres</Link>
+                        <Zap className="mr-2 h-4 w-4" />
+                        <span>Intégrations</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                        <Link href="#">Se déconnecter</Link>
+                     <DropdownMenuItem className="text-destructive">
+                        <XCircle className="mr-2 h-4 w-4" />
+                        <span>Se déconnecter</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

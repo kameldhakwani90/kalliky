@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -22,12 +22,13 @@ type Store = {
     address: string;
     phone: string;
     status: 'active' | 'inactive';
+    stripeStatus: 'connected' | 'disconnected';
 };
 
 const initialStores: Store[] = [
-    { id: 1, name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active' },
-    { id: 2, name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active' },
-    { id: 3, name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive' },
+    { id: 1, name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active', stripeStatus: 'connected' },
+    { id: 2, name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active', stripeStatus: 'disconnected' },
+    { id: 3, name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected' },
 ];
 
 const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -35,23 +36,31 @@ const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi",
 
 export default function StoresPage() {
     const [stores, setStores] = useState<Store[]>(initialStores);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+    const [isStripeDialogOpen, setIsStripeDialogOpen] = useState(false);
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
-    const handleOpenDialog = (store: Store | null = null) => {
+    const handleOpenFormDialog = (store: Store | null = null) => {
         setSelectedStore(store);
-        setIsDialogOpen(true);
+        setIsFormDialogOpen(true);
     };
+
+    const handleOpenStripeDialog = (store: Store) => {
+        setSelectedStore(store);
+        setIsStripeDialogOpen(true);
+    }
 
     const handleSaveStore = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const storeData = {
+            ...selectedStore,
             id: selectedStore ? selectedStore.id : Date.now(),
             name: formData.get('name') as string,
             address: formData.get('address') as string,
             phone: formData.get('phone') as string,
-            status: selectedStore?.status || 'active', // keep status on edit
+            status: selectedStore?.status || 'active',
+            stripeStatus: selectedStore?.stripeStatus || 'disconnected',
         } as Store;
 
         if (selectedStore) {
@@ -59,7 +68,7 @@ export default function StoresPage() {
         } else {
             setStores([...stores, storeData]);
         }
-        setIsDialogOpen(false);
+        setIsFormDialogOpen(false);
     };
 
     const toggleStoreStatus = (id: number) => {
@@ -69,6 +78,13 @@ export default function StoresPage() {
     const deleteStore = (id: number) => {
         setStores(stores.filter(s => s.id !== id));
     };
+    
+    const handleStripeConnect = () => {
+        if (!selectedStore) return;
+        setStores(stores.map(s => s.id === selectedStore.id ? { ...s, stripeStatus: 'connected' } : s));
+        // We update the selectedStore as well to reflect the change in the dialog
+        setSelectedStore(prev => prev ? {...prev, stripeStatus: 'connected'} : null);
+    }
 
 
     return (
@@ -78,7 +94,7 @@ export default function StoresPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Gestion des Boutiques</h1>
                     <p className="text-muted-foreground">Gérez vos points de vente et les menus associés.</p>
                 </div>
-                <Button onClick={() => handleOpenDialog()}>
+                <Button onClick={() => handleOpenFormDialog()}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Ajouter une boutique
                 </Button>
@@ -94,7 +110,7 @@ export default function StoresPage() {
                             <TableRow>
                                 <TableHead>Nom</TableHead>
                                 <TableHead>Adresse</TableHead>
-                                <TableHead>Téléphone</TableHead>
+                                <TableHead>Statut Stripe</TableHead>
                                 <TableHead>Statut</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -104,9 +120,18 @@ export default function StoresPage() {
                                 <TableRow key={store.id}>
                                     <TableCell className="font-medium">{store.name}</TableCell>
                                     <TableCell>{store.address}</TableCell>
-                                    <TableCell>{store.phone}</TableCell>
                                     <TableCell>
-                                        <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className={store.status === 'active' ? 'bg-green-500/20 text-green-700' : ''}>
+                                        <Badge variant={store.stripeStatus === 'connected' ? 'default' : 'secondary'} className={store.stripeStatus === 'connected' ? 'bg-blue-100 text-blue-700' : ''}>
+                                             {store.stripeStatus === 'connected' ? (
+                                                <CheckCircle className="mr-1 h-3 w-3" />
+                                            ) : (
+                                                <XCircle className="mr-1 h-3 w-3" />
+                                            )}
+                                            {store.stripeStatus === 'connected' ? 'Connecté' : 'Non connecté'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className={store.status === 'active' ? 'bg-green-100 text-green-700' : ''}>
                                             {store.status === 'active' ? 'Actif' : 'Inactif'}
                                         </Badge>
                                     </TableCell>
@@ -125,15 +150,13 @@ export default function StoresPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleOpenDialog(store)}>
+                                                    <DropdownMenuItem onClick={() => handleOpenFormDialog(store)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
-                                                        Modifier
+                                                        Modifier les informations
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem asChild>
-                                                        <Link href="/restaurant/automation">
-                                                            <Zap className="mr-2 h-4 w-4" />
-                                                            Gérer les connexions
-                                                        </Link>
+                                                    <DropdownMenuItem onClick={() => handleOpenStripeDialog(store)}>
+                                                        <Zap className="mr-2 h-4 w-4" />
+                                                        Connexion Stripe
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem className="text-destructive" onClick={() => deleteStore(store.id)}>
@@ -151,7 +174,7 @@ export default function StoresPage() {
                 </CardContent>
             </Card>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{selectedStore ? 'Modifier la boutique' : 'Ajouter une nouvelle boutique'}</DialogTitle>
@@ -217,12 +240,59 @@ export default function StoresPage() {
 
                         </div>
                         <DialogFooter className="mt-6">
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
+                            <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>Annuler</Button>
                             <Button type="submit">Enregistrer la boutique</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+
+             <Dialog open={isStripeDialogOpen} onOpenChange={setIsStripeDialogOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Connexion Stripe</DialogTitle>
+                        <DialogDescription>
+                            Connectez un compte Stripe à votre boutique <span className="font-semibold">{selectedStore?.name}</span> pour commencer à accepter les paiements.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Card className="mt-4">
+                         <CardHeader className="flex flex-row items-start justify-between gap-4">
+                            <div>
+                                <CardTitle className="flex items-center gap-3">
+                                    <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525 3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03.213-.09l4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53 1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                    <span>Stripe</span>
+                                </CardTitle>
+                                <CardDescription>
+                                    Gérez la connexion à Stripe pour cette boutique.
+                                </CardDescription>
+                            </div>
+                            {selectedStore?.stripeStatus === 'connected' ? (
+                                <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
+                                    <CheckCircle className="mr-1 h-3 w-3" /> Connecté
+                                </Badge>
+                            ) : (
+                                <Badge variant="secondary">Non connecté</Badge>
+                            )}
+                        </CardHeader>
+                        <CardContent>
+                            {selectedStore?.stripeStatus === 'connected' ? (
+                                <div className="p-4 bg-muted rounded-md text-sm text-muted-foreground">
+                                    Cette boutique est correctement connectée à Stripe.
+                                </div>
+                            ) : (
+                                <Button onClick={handleStripeConnect}>
+                                    <LinkIcon className="mr-2 h-4 w-4" />
+                                    Connecter avec Stripe
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                    <DialogFooter className="mt-6">
+                        <Button type="button" variant="outline" onClick={() => setIsStripeDialogOpen(false)}>Fermer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
+
