@@ -310,10 +310,12 @@ export default function MenuPage() {
     setIsPopupOpen(true);
   };
   
-  const toggleItemStatus = (itemId: number) => {
+  const toggleItemStatus = (itemId: number, checked: boolean) => {
     setMenuItems(prevItems => prevItems.map(item => {
         if (item.id === itemId) {
-            return { ...item, status: item.status === 'active' ? 'out-of-stock' : 'active' };
+            // if checked is true, it means switch is ON, so item is out-of-stock
+            const newStatus = checked ? 'out-of-stock' : 'active';
+            return { ...item, status: newStatus };
         }
         return item;
     }));
@@ -334,6 +336,20 @@ export default function MenuPage() {
         setCompositionHistory([]);
     }, 300);
   }
+
+  const getStatusText = (status: MenuItem['status']) => {
+    switch (status) {
+      case 'active':
+        return 'Actif';
+      case 'out-of-stock':
+        return 'En rupture';
+      case 'inactive':
+        return 'Inactif';
+      default:
+        return '';
+    }
+  }
+
 
   return (
     <div className="space-y-8">
@@ -478,12 +494,12 @@ export default function MenuPage() {
                         <TableCell>
                             <div className="flex items-center gap-2">
                                 <Switch
-                                    checked={item.status === 'active'}
-                                    onCheckedChange={() => toggleItemStatus(item.id)}
+                                    checked={item.status === 'out-of-stock'}
+                                    onCheckedChange={(checked) => toggleItemStatus(item.id, checked)}
                                     disabled={item.status === 'inactive'}
                                     aria-label="Toggle item status"
                                 />
-                                <span className="text-xs capitalize">{item.status === 'out-of-stock' ? 'En rupture' : item.status === 'active' ? 'Actif' : 'Inactif' }</span>
+                                <span className="text-xs capitalize">{getStatusText(item.status)}</span>
                             </div>
                         </TableCell>
                         <TableCell className="text-right">
