@@ -253,7 +253,7 @@ const EditableCompositionDisplay: React.FC<{
                     <div className="flex items-center gap-2">
                       <Input type="number" defaultValue={option.price} className="w-24 h-8" placeholder="Prix sup." />
                        {option.composition && (
-                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => onNavigate(option.composition!, option.name)}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => onNavigate(option.composition!, `Composition de : ${option.name}`)}>
                           Modifier <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       )}
@@ -276,7 +276,6 @@ const EditableCompositionDisplay: React.FC<{
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [categories, setCategories] = useState<string[]>(categoriesData);
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [editedItem, setEditedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
@@ -311,7 +310,6 @@ export default function MenuPage() {
 
 
   const handleItemClick = (item: MenuItem) => {
-    setSelectedItem(item);
     setEditedItem(JSON.parse(JSON.stringify(item))); // Deep copy for editing
     setCompositionHistory([]); 
     setIsPopupOpen(true);
@@ -338,7 +336,6 @@ export default function MenuPage() {
   const closePopup = () => {
     setIsPopupOpen(false);
     setTimeout(() => {
-        setSelectedItem(null);
         setEditedItem(null);
         setCompositionHistory([]);
     }, 300);
