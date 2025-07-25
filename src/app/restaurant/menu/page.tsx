@@ -583,8 +583,10 @@ export default function MenuPage() {
                     <DialogTitle className="text-2xl font-headline">{currentView?.title}</DialogTitle>
                  ) : (
                     <>
-                    <Input className="text-2xl font-headline text-center h-auto p-1 border-none focus-visible:ring-1" defaultValue={editedItem.name} />
-                    <Textarea className="text-center text-muted-foreground border-none focus-visible:ring-1 resize-none" defaultValue={editedItem.description} />
+                    <DialogTitle className="text-2xl font-headline">{editedItem.name}</DialogTitle>
+                    <DialogDescription>
+                        <Textarea className="text-center text-muted-foreground border-none focus-visible:ring-1 resize-none" defaultValue={editedItem.description} />
+                    </DialogDescription>
                     </>
                  )}
                </div>
@@ -594,20 +596,31 @@ export default function MenuPage() {
               
               {compositionHistory.length === 0 && (
                 <div className="space-y-4 md:col-span-1">
-                    <div className="relative group">
-                        <Image
-                            src={editedItem.image}
-                            alt={editedItem.name}
-                            width={600}
-                            height={400}
-                            data-ai-hint={editedItem.imageHint}
-                            className="w-full rounded-lg object-cover shadow-lg"
-                        />
-                        <Button size="sm" className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ImagePlus className="mr-2 h-4 w-4" />
-                            Changer
-                        </Button>
-                    </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base font-headline">Informations générales</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="relative group">
+                                <Image
+                                    src={editedItem.image}
+                                    alt={editedItem.name}
+                                    width={600}
+                                    height={400}
+                                    data-ai-hint={editedItem.imageHint}
+                                    className="w-full rounded-lg object-cover shadow-lg"
+                                />
+                                <Button size="sm" className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ImagePlus className="mr-2 h-4 w-4" />
+                                    Changer
+                                </Button>
+                            </div>
+                             <div>
+                                <Label htmlFor="item-name">Nom de l'article</Label>
+                                <Input id="item-name" defaultValue={editedItem.name} />
+                             </div>
+                        </CardContent>
+                    </Card>
 
                      <Card>
                         <CardHeader>
