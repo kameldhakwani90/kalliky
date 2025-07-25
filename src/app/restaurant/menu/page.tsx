@@ -291,10 +291,6 @@ export default function MenuPage() {
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
-  // New Item Form
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemCategory, setNewItemCategory] = useState('');
-
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   const [tagInput, setTagInput] = useState('');
   
@@ -325,14 +321,13 @@ export default function MenuPage() {
     setIsPopupOpen(true);
   };
 
-  const handleCreateAndEditItem = () => {
-    if (!newItemName || !newItemCategory) return;
+  const handleCreateNewItem = () => {
     const newItem: MenuItem = {
       id: Date.now(),
-      name: newItemName,
-      category: newItemCategory,
+      name: "Nouvel Article",
+      category: categories.length > 0 ? categories[0] : "Plats",
       price: '0.00€',
-      description: '',
+      description: 'Description du nouvel article',
       image: 'https://placehold.co/600x400.png',
       imageHint: 'new item',
       tags: [],
@@ -340,15 +335,7 @@ export default function MenuPage() {
       status: 'inactive',
       availability: { type: 'always' },
     };
-    
-    setNewItemName('');
-    setNewItemCategory('');
-    setIsSyncPopupOpen(false);
-    
-    // Defer opening the edit popup to allow the sync popup to close smoothly
-    setTimeout(() => {
-        handleItemClick(newItem);
-    }, 100);
+    handleItemClick(newItem);
   };
   
   const toggleItemStatus = (itemId: number, checked: boolean) => {
@@ -427,46 +414,22 @@ export default function MenuPage() {
             <CardDescription>Consultez, modifiez et gérez la disponibilité de vos articles.</CardDescription>
           </div>
            <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
-            <DialogTrigger asChild>
-              <Button>
+              <Button onClick={handleCreateNewItem}>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Ajouter / Synchroniser
+                Ajouter un article
               </Button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Outils de création et synchronisation</DialogTitle>
+                    <DialogTitle>Outils de synchronisation</DialogTitle>
                     <DialogDescription>
-                        Utilisez nos outils pour créer ou mettre à jour votre menu rapidement.
+                        Utilisez nos outils pour mettre à jour votre menu rapidement.
                     </DialogDescription>
                 </DialogHeader>
-                 <Tabs defaultValue="add-item" className="pt-4">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="add-item">Article</TabsTrigger>
-                        <TabsTrigger value="add-cat">Catégorie</TabsTrigger>
-                        <TabsTrigger value="import">Importer</TabsTrigger>
+                 <Tabs defaultValue="import" className="pt-4">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="add-cat">Ajouter une Catégorie</TabsTrigger>
+                        <TabsTrigger value="import">Importer un Menu</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="add-item" className="pt-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="item-name">Nom de l'article</Label>
-                            <Input 
-                                id="item-name" 
-                                placeholder="Ex: Pizza Margherita"
-                                value={newItemName}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewItemName(e.target.value)}
-                            />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="item-cat">Catégorie</Label>
-                            <Select onValueChange={setNewItemCategory} value={newItemCategory}>
-                                <SelectTrigger><SelectValue placeholder="Choisir une catégorie"/></SelectTrigger>
-                                <SelectContent>
-                                    {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Button className="w-full" onClick={handleCreateAndEditItem}><PlusCircle className="mr-2 h-4 w-4"/>Ajouter l'article et modifier</Button>
-                    </TabsContent>
                     <TabsContent value="add-cat" className="pt-4 space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="cat-name">Nom de la nouvelle catégorie</Label>
