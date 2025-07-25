@@ -31,16 +31,18 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 type CompositionOption = {
   name: string;
@@ -226,43 +228,46 @@ type CompositionView = {
     steps: CompositionStep[];
 };
 
-const CompositionDisplay: React.FC<{
+const EditableCompositionDisplay: React.FC<{
   view: CompositionView;
   onNavigate: (steps: CompositionStep[], title: string) => void;
 }> = ({ view, onNavigate }) => {
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-lg">{view.title}</h3>
-      {view.steps.map((step) => (
-        <Card key={step.title} className="bg-muted/30">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-base flex justify-between items-center">
-              <span>{step.title}</span>
-              {step.isRequired && <Badge variant="destructive" className="text-xs">Requis</Badge>}
-            </CardTitle>
+      {view.steps.map((step, stepIndex) => (
+        <Card key={stepIndex} className="bg-muted/30">
+          <CardHeader className="py-3 px-4 flex-row items-center justify-between">
+            <Input defaultValue={step.title} className="text-base font-semibold border-none shadow-none focus-visible:ring-1 p-1 h-auto" />
+             <div className="flex items-center gap-2">
+                <Badge variant={step.isRequired ? "destructive" : "secondary"} className="text-xs">{step.isRequired ? "Requis" : "Optionnel"}</Badge>
+                <Switch checked={step.isRequired} />
+             </div>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <ul className="space-y-3">
-              {step.options.map((option, index) => (
-                <li key={index} className="flex flex-col text-sm border-t border-border pt-3">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{option.name}</span>
-                    <div className="flex items-center gap-3">
-                      {option.price && option.price > 0 && <span className="text-muted-foreground">(+{option.price.toFixed(2)}€)</span>}
-                      {option.isDefault ? <Badge variant="secondary">Inclus</Badge> : <Badge variant="outline">Option</Badge>}
+          <CardContent className="p-4 pt-0 space-y-2">
+            <ul className="space-y-2">
+              {step.options.map((option, optionIndex) => (
+                <li key={optionIndex} className="flex flex-col text-sm border-t border-border pt-3">
+                  <div className="flex justify-between items-center gap-2">
+                    <Input defaultValue={option.name} className="font-medium h-8" />
+                    <div className="flex items-center gap-2">
+                      <Input type="number" defaultValue={option.price} className="w-24 h-8" placeholder="Prix sup." />
                        {option.composition && (
-                        <Button variant="ghost" size="sm" className="h-auto px-2 py-1" onClick={() => onNavigate(option.composition!, option.name)}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => onNavigate(option.composition!, option.name)}>
                           Modifier <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                     </div>
                   </div>
                 </li>
               ))}
             </ul>
+             <Button variant="outline" size="sm" className="w-full mt-2"><Plus className="mr-2 h-4 w-4"/> Ajouter une option</Button>
           </CardContent>
         </Card>
       ))}
+      <Button variant="secondary" className="w-full"><Plus className="mr-2 h-4 w-4"/> Ajouter une étape de composition</Button>
     </div>
   );
 };
@@ -272,6 +277,7 @@ export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [categories, setCategories] = useState<string[]>(categoriesData);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [editedItem, setEditedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
 
@@ -287,11 +293,11 @@ export default function MenuPage() {
     if (compositionHistory.length > 0) {
       return compositionHistory[compositionHistory.length - 1];
     }
-    if (selectedItem?.composition) {
-      return { title: "Composition de l'article", steps: selectedItem.composition };
+    if (editedItem?.composition) {
+      return { title: "Composition de l'article", steps: editedItem.composition };
     }
     return null;
-  }, [selectedItem, compositionHistory]);
+  }, [editedItem, compositionHistory]);
 
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter(item => {
@@ -306,6 +312,7 @@ export default function MenuPage() {
 
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
+    setEditedItem(JSON.parse(JSON.stringify(item))); // Deep copy for editing
     setCompositionHistory([]); 
     setIsPopupOpen(true);
   };
@@ -313,7 +320,6 @@ export default function MenuPage() {
   const toggleItemStatus = (itemId: number, checked: boolean) => {
     setMenuItems(prevItems => prevItems.map(item => {
         if (item.id === itemId) {
-            // if checked is true, it means switch is ON, so item is out-of-stock
             const newStatus = checked ? 'out-of-stock' : 'active';
             return { ...item, status: newStatus };
         }
@@ -333,6 +339,7 @@ export default function MenuPage() {
     setIsPopupOpen(false);
     setTimeout(() => {
         setSelectedItem(null);
+        setEditedItem(null);
         setCompositionHistory([]);
     }, 300);
   }
@@ -513,34 +520,71 @@ export default function MenuPage() {
         </CardContent>
       </Card>
 
-      {selectedItem && (
+      {editedItem && (
         <Dialog open={isPopupOpen} onOpenChange={closePopup}>
-          <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
             <DialogHeader>
                {compositionHistory.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={handleBackComposition} className="absolute left-4 top-4 h-auto p-1.5 rounded-md">
+                <Button variant="ghost" size="sm" onClick={handleBackComposition} className="absolute left-4 top-4 h-auto p-1.5 rounded-md z-10">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Retour
                 </Button>
               )}
-              <DialogTitle className="text-2xl font-headline text-center pt-2">{compositionHistory.length > 0 ? currentView?.title : selectedItem.name}</DialogTitle>
-              {compositionHistory.length === 0 && (
-                <DialogDescription className="text-center">{selectedItem.description}</DialogDescription>
-              )}
+               <div className="text-center pt-2">
+                 {compositionHistory.length > 0 ? (
+                    <DialogTitle className="text-2xl font-headline">{currentView?.title}</DialogTitle>
+                 ) : (
+                    <>
+                    <Input className="text-2xl font-headline text-center h-auto p-1 border-none focus-visible:ring-1" defaultValue={editedItem.name} />
+                    <Textarea className="text-center text-muted-foreground border-none focus-visible:ring-1 resize-none" defaultValue={editedItem.description} />
+                    </>
+                 )}
+               </div>
             </DialogHeader>
             
-            <div className="flex-1 overflow-y-auto pr-4 -mr-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="flex-1 overflow-y-auto -mx-6 px-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               
               {compositionHistory.length === 0 && (
                 <div className="space-y-4 md:col-span-1">
-                    <Image
-                        src={selectedItem.image}
-                        alt={selectedItem.name}
-                        width={600}
-                        height={400}
-                        data-ai-hint={selectedItem.imageHint}
-                        className="w-full rounded-lg object-cover shadow-lg"
-                    />
+                    <div className="relative group">
+                        <Image
+                            src={editedItem.image}
+                            alt={editedItem.name}
+                            width={600}
+                            height={400}
+                            data-ai-hint={editedItem.imageHint}
+                            className="w-full rounded-lg object-cover shadow-lg"
+                        />
+                        <Button size="sm" className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ImagePlus className="mr-2 h-4 w-4" />
+                            Changer
+                        </Button>
+                    </div>
+
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base font-headline flex items-center justify-between">
+                                <span>Disponibilité</span>
+                                <Switch 
+                                    checked={editedItem.availability.type === 'scheduled'}
+                                    onCheckedChange={(checked) => setEditedItem(prev => prev ? {...prev, availability: {...prev.availability, type: checked ? 'scheduled' : 'always'}} : null)}
+                                />
+                            </CardTitle>
+                        </CardHeader>
+                        {editedItem.availability.type === 'scheduled' && (
+                             <CardContent className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="from-time">De</Label>
+                                    <Input id="from-time" type="time" defaultValue={editedItem.availability.from}/>
+                                </div>
+                                <div>
+                                    <Label htmlFor="to-time">À</Label>
+                                    <Input id="to-time" type="time" defaultValue={editedItem.availability.to}/>
+                                </div>
+                             </CardContent>
+                        )}
+                    </Card>
+
                     {(currentUserPlan === 'pro' || currentUserPlan === 'business') && (
                         <Card>
                             <CardHeader className="pb-4">
@@ -554,8 +598,8 @@ export default function MenuPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-wrap gap-2">
-                                    {selectedItem.tags && selectedItem.tags.length > 0 ? (
-                                        selectedItem.tags.map((tag, index) => (
+                                    {editedItem.tags && editedItem.tags.length > 0 ? (
+                                        editedItem.tags.map((tag, index) => (
                                             <Badge key={index} variant="outline" className="text-sm py-1 px-3 rounded-full font-normal border-gray-300">
                                                 <Tag className="mr-2 h-3 w-3" />
                                                 {tag}
@@ -573,20 +617,25 @@ export default function MenuPage() {
 
               <div className={compositionHistory.length > 0 ? "md:col-span-2" : "md:col-span-1"}>
                 {currentView ? (
-                    <CompositionDisplay view={currentView} onNavigate={handleNavigateComposition} />
+                    <EditableCompositionDisplay view={currentView} onNavigate={handleNavigateComposition} />
                 ) : (
                     <Card className="flex items-center justify-center p-4 bg-muted/50 h-full">
-                        <Info className="h-5 w-5 mr-3 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Ce plat n'a pas de composition modifiable.</p>
+                        <div className="text-center">
+                           <Info className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                           <p className="text-sm text-muted-foreground mb-4">Ce plat n'a pas de composition.</p>
+                           <Button variant="secondary"><Plus className="mr-2 h-4 w-4"/> Créer une composition</Button>
+                        </div>
                     </Card>
                 )}
               </div>
             </div>
+            <DialogFooter className="pt-4 border-t">
+                <Button variant="outline" onClick={closePopup}>Annuler</Button>
+                <Button>Enregistrer les modifications</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
     </div>
   );
 }
-
-    
