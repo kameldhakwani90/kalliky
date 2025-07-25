@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, ChangeEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -291,6 +291,10 @@ export default function MenuPage() {
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
+  // New Item Form
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('');
+
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   const [tagInput, setTagInput] = useState('');
   
@@ -319,6 +323,32 @@ export default function MenuPage() {
     setEditedItem(JSON.parse(JSON.stringify(item))); // Deep copy for editing
     setCompositionHistory([]); 
     setIsPopupOpen(true);
+  };
+
+  const handleCreateAndEditItem = () => {
+    if (!newItemName || !newItemCategory) return;
+    const newItem: MenuItem = {
+      id: Date.now(),
+      name: newItemName,
+      category: newItemCategory,
+      price: '0.00€',
+      description: '',
+      image: 'https://placehold.co/600x400.png',
+      imageHint: 'new item',
+      tags: [],
+      storeIds: availableStores.map(s => s.id),
+      status: 'inactive',
+      availability: { type: 'always' },
+    };
+    
+    setNewItemName('');
+    setNewItemCategory('');
+    setIsSyncPopupOpen(false);
+    
+    // Defer opening the edit popup to allow the sync popup to close smoothly
+    setTimeout(() => {
+        handleItemClick(newItem);
+    }, 100);
   };
   
   const toggleItemStatus = (itemId: number, checked: boolean) => {
@@ -419,18 +449,23 @@ export default function MenuPage() {
                     <TabsContent value="add-item" className="pt-4 space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="item-name">Nom de l'article</Label>
-                            <Input id="item-name" placeholder="Ex: Pizza Margherita"/>
+                            <Input 
+                                id="item-name" 
+                                placeholder="Ex: Pizza Margherita"
+                                value={newItemName}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewItemName(e.target.value)}
+                            />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="item-cat">Catégorie</Label>
-                            <Select>
+                            <Select onValueChange={setNewItemCategory} value={newItemCategory}>
                                 <SelectTrigger><SelectValue placeholder="Choisir une catégorie"/></SelectTrigger>
                                 <SelectContent>
                                     {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4"/>Ajouter l'article</Button>
+                        <Button className="w-full" onClick={handleCreateAndEditItem}><PlusCircle className="mr-2 h-4 w-4"/>Ajouter l'article et modifier</Button>
                     </TabsContent>
                     <TabsContent value="add-cat" className="pt-4 space-y-4">
                         <div className="space-y-2">
