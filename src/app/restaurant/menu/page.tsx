@@ -11,6 +11,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -27,9 +35,11 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type CompositionOption = {
   name: string;
@@ -192,7 +202,7 @@ const initialMenuItems: MenuItem[] = [
     },
 ];
 
-const categories = ['Tout', ...new Set(initialMenuItems.map(item => item.category))];
+const categoriesData = ['Plats', 'Entrées', 'Menus', 'Desserts', 'Boissons'];
 
 // Simule le plan actuel de l'utilisateur. 'starter', 'pro', ou 'business'
 const currentUserPlan = 'pro'; 
@@ -246,6 +256,7 @@ const CompositionDisplay: React.FC<{
 
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [categories, setCategories] = useState<string[]>(categoriesData);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
@@ -300,6 +311,8 @@ export default function MenuPage() {
     }, 300);
   }
 
+  const allCategories = ['Tout', ...categories];
+
   return (
     <div className="space-y-8">
       <header>
@@ -316,45 +329,51 @@ export default function MenuPage() {
            <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
             <DialogTrigger asChild>
               <Button>
-                <UploadCloud className="mr-2 h-4 w-4" />
-                Ajouter ou Synchroniser
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Ajouter / Synchroniser
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Outils de Synchronisation IA</DialogTitle>
+                    <DialogTitle>Outils de création et synchronisation</DialogTitle>
                     <DialogDescription>
-                        Ajoutez ou mettez à jour votre menu rapidement grâce à l'intelligence artificielle.
+                        Utilisez nos outils pour créer ou mettre à jour votre menu rapidement.
                     </DialogDescription>
                 </DialogHeader>
-                 <Tabs defaultValue="excel" className="pt-4">
+                 <Tabs defaultValue="add-item" className="pt-4">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="add">Ajouter un plat</TabsTrigger>
-                        <TabsTrigger value="excel">Importer un fichier</TabsTrigger>
-                        <TabsTrigger value="scan">Scanner une image</TabsTrigger>
+                        <TabsTrigger value="add-item">Article</TabsTrigger>
+                        <TabsTrigger value="add-cat">Catégorie</TabsTrigger>
+                        <TabsTrigger value="import">Importer</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="add" className="pt-4">
-                        <div className="flex flex-col items-center justify-center text-center p-6 border-2 border-dashed rounded-lg">
-                            <p className="text-sm text-muted-foreground mb-4">
-                               Ajoutez manuellement un nouveau plat à votre menu.
-                            </p>
-                            <Button>
-                              <PlusCircle className="mr-2" />
-                              Créer un nouveau plat
-                            </Button>
+                    <TabsContent value="add-item" className="pt-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="item-name">Nom de l'article</Label>
+                            <Input id="item-name" placeholder="Ex: Pizza Margherita"/>
                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="item-cat">Catégorie</Label>
+                            <Select>
+                                <SelectTrigger><SelectValue placeholder="Choisir une catégorie"/></SelectTrigger>
+                                <SelectContent>
+                                    {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4"/>Ajouter l'article</Button>
                     </TabsContent>
-                    <TabsContent value="excel" className="pt-4">
+                    <TabsContent value="add-cat" className="pt-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="cat-name">Nom de la nouvelle catégorie</Label>
+                            <Input id="cat-name" placeholder="Ex: Boissons fraîches"/>
+                        </div>
+                        <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4"/>Ajouter la catégorie</Button>
+                    </TabsContent>
+                    <TabsContent value="import" className="pt-4">
                       <p className="text-sm text-muted-foreground mb-4">
-                        Notre IA va analyser votre fichier Excel (.xls, .xlsx) pour extraire les catégories, plats, descriptions et prix.
+                        Importez depuis un fichier Excel ou une image. Notre IA détectera et ajoutera les plats pour vous.
                       </p>
                       <MenuSyncForm />
-                    </TabsContent>
-                    <TabsContent value="scan" className="pt-4">
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Scannez votre menu papier ou un flyer. L'IA détectera et ajoutera les plats pour vous.
-                      </p>
-                       <MenuSyncForm />
                     </TabsContent>
                 </Tabs>
             </DialogContent>
@@ -364,7 +383,7 @@ export default function MenuPage() {
             <div className="flex justify-between items-center border-b">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="-mb-px">
                     <TabsList>
-                        {categories.map(category => (
+                        {allCategories.map(category => (
                              <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
                         ))}
                     </TabsList>
@@ -385,34 +404,58 @@ export default function MenuPage() {
                 </div>
             </div>
           
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {filteredMenuItems.map((item) => (
-                    <Card 
-                        key={item.id} 
-                        className="overflow-hidden flex flex-col group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                        onClick={() => handleItemClick(item)}
-                    >
-                        <div className="relative">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[80px]">Image</TableHead>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Catégorie</TableHead>
+                        <TableHead>Prix</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredMenuItems.map((item) => (
+                    <TableRow key={item.id} className="cursor-pointer" onClick={() => handleItemClick(item)}>
+                        <TableCell>
                             <Image
                                 src={item.image}
                                 alt={item.name}
-                                width={400}
-                                height={250}
+                                width={60}
+                                height={40}
                                 data-ai-hint={item.imageHint}
-                                className="w-full h-40 object-cover"
+                                className="w-16 h-10 object-cover rounded-md"
                             />
-                             <Badge variant="secondary" className="absolute top-2 left-2">{item.category}</Badge>
-                        </div>
-                        <CardHeader className="flex-grow">
-                            <CardTitle className="text-base">{item.name}</CardTitle>
-                            <p className="text-lg font-bold pt-1">{item.price}</p>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>
+                            <Badge variant="outline">{item.category}</Badge>
+                        </TableCell>
+                        <TableCell>{item.price}</TableCell>
+                        <TableCell className="text-right">
+                           <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                                        <span className="sr-only">Ouvrir le menu</span>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleItemClick(item)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Modifier
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Supprimer
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </CardContent>
       </Card>
 
@@ -493,3 +536,5 @@ export default function MenuPage() {
     </div>
   );
 }
+
+    
