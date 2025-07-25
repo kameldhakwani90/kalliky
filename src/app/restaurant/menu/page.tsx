@@ -35,11 +35,12 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 type CompositionOption = {
   name: string;
@@ -68,6 +69,12 @@ type MenuItem = {
   tags?: string[];
   composition?: CompositionStep[];
   storeIds: number[];
+  status: 'active' | 'out-of-stock' | 'inactive';
+  availability: {
+      type: 'always' | 'scheduled';
+      from?: string;
+      to?: string;
+  };
 };
 
 const availableStores = [
@@ -87,6 +94,8 @@ const initialMenuItems: MenuItem[] = [
         imageHint: 'custom burger',
         tags: ['Populaire', 'Soir', 'Famille'],
         storeIds: [1, 2],
+        status: 'active',
+        availability: { type: 'always' },
         composition: [
             {
                 title: 'Étape 1 : Le Pain (1 au choix)',
@@ -158,6 +167,8 @@ const initialMenuItems: MenuItem[] = [
         imageHint: 'caesar salad',
         tags: ['Léger', 'Midi', 'Froid'],
         storeIds: [1, 3],
+        status: 'active',
+        availability: { type: 'scheduled', from: '12:00', to: '14:30' },
     },
     { 
         id: 3,
@@ -168,6 +179,8 @@ const initialMenuItems: MenuItem[] = [
         image: 'https://placehold.co/600x400.png',
         imageHint: 'pizza deal',
         storeIds: [3],
+        status: 'out-of-stock',
+        availability: { type: 'always' },
         composition: [
              {
                 title: 'Plat Principal',
@@ -199,12 +212,13 @@ const initialMenuItems: MenuItem[] = [
         imageHint: 'tiramisu',
         tags: ['Sucré', 'Fait maison'],
         storeIds: [1, 2, 3],
+        status: 'inactive',
+        availability: { type: 'always' },
     },
 ];
 
 const categoriesData = ['Plats', 'Entrées', 'Menus', 'Desserts', 'Boissons'];
 
-// Simule le plan actuel de l'utilisateur. 'starter', 'pro', ou 'business'
 const currentUserPlan = 'pro'; 
 
 type CompositionView = {
@@ -260,10 +274,13 @@ export default function MenuPage() {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('Tout');
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStore, setSelectedStore] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
-  // State for composition navigation
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   
   const currentView = useMemo(() => {
@@ -277,21 +294,29 @@ export default function MenuPage() {
   }, [selectedItem, compositionHistory]);
 
   const filteredMenuItems = useMemo(() => {
-    let items = menuItems;
-    if (selectedStore !== 'all') {
-      items = items.filter(item => item.storeIds.includes(parseInt(selectedStore)));
-    }
-    if (activeTab !== 'Tout') {
-      items = items.filter(item => item.category === activeTab);
-    }
-    return items;
-  }, [menuItems, activeTab, selectedStore]);
+    return menuItems.filter(item => {
+      const storeMatch = selectedStore === 'all' || item.storeIds.includes(parseInt(selectedStore));
+      const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
+      const statusMatch = selectedStatus === 'all' || item.status === selectedStatus;
+      const searchMatch = searchTerm === '' || item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return storeMatch && categoryMatch && statusMatch && searchMatch;
+    });
+  }, [menuItems, selectedStore, selectedCategory, selectedStatus, searchTerm]);
 
 
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
-    setCompositionHistory([]); // Reset history when opening a new item
+    setCompositionHistory([]); 
     setIsPopupOpen(true);
+  };
+  
+  const toggleItemStatus = (itemId: number) => {
+    setMenuItems(prevItems => prevItems.map(item => {
+        if (item.id === itemId) {
+            return { ...item, status: item.status === 'active' ? 'out-of-stock' : 'active' };
+        }
+        return item;
+    }));
   };
 
   const handleNavigateComposition = (steps: CompositionStep[], title: string) => {
@@ -304,14 +329,11 @@ export default function MenuPage() {
   
   const closePopup = () => {
     setIsPopupOpen(false);
-    // A small delay to allow the animation to finish before clearing the data
     setTimeout(() => {
         setSelectedItem(null);
         setCompositionHistory([]);
     }, 300);
   }
-
-  const allCategories = ['Tout', ...categories];
 
   return (
     <div className="space-y-8">
@@ -321,10 +343,10 @@ export default function MenuPage() {
       </header>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div className="flex-1">
             <CardTitle>Votre Menu</CardTitle>
-            <CardDescription>Cliquez sur un plat pour voir les détails et le modifier.</CardDescription>
+            <CardDescription>Consultez, modifiez et gérez la disponibilité de vos articles.</CardDescription>
           </div>
            <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
             <DialogTrigger asChild>
@@ -380,30 +402,39 @@ export default function MenuPage() {
            </Dialog>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="flex justify-between items-center border-b">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="-mb-px">
-                    <TabsList>
-                        {allCategories.map(category => (
-                             <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-                        ))}
-                    </TabsList>
-                </Tabs>
-                <div className="w-64">
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Rechercher par nom..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+                <div className="flex gap-4 md:w-auto w-full">
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="md:w-48 w-full"><SelectValue placeholder="Catégorie" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Toutes les catégories</SelectItem>
+                            {categoriesData.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                     <Select value={selectedStore} onValueChange={setSelectedStore}>
-                        <SelectTrigger>
-                            <Store className="mr-2 h-4 w-4"/>
-                            <SelectValue placeholder="Sélectionner une boutique" />
-                        </SelectTrigger>
+                        <SelectTrigger className="md:w-48 w-full"><Store className="h-4 w-4 mr-2" /><SelectValue placeholder="Boutique" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Toutes les boutiques</SelectItem>
-                            {availableStores.map(store => (
-                                <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>
-                            ))}
+                            {availableStores.map(store => <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                        <SelectTrigger className="md:w-48 w-full"><SelectValue placeholder="Statut" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tous les statuts</SelectItem>
+                            <SelectItem value="active">Actif</SelectItem>
+                            <SelectItem value="out-of-stock">En rupture</SelectItem>
+                            <SelectItem value="inactive">Inactif</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
             </div>
           
+            <div className="border rounded-md">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -411,12 +442,14 @@ export default function MenuPage() {
                         <TableHead>Nom</TableHead>
                         <TableHead>Catégorie</TableHead>
                         <TableHead>Prix</TableHead>
+                        <TableHead>Disponibilité</TableHead>
+                        <TableHead>Statut</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredMenuItems.map((item) => (
-                    <TableRow key={item.id} className="cursor-pointer" onClick={() => handleItemClick(item)}>
+                    <TableRow key={item.id}>
                         <TableCell>
                             <Image
                                 src={item.image}
@@ -432,10 +465,31 @@ export default function MenuPage() {
                             <Badge variant="outline">{item.category}</Badge>
                         </TableCell>
                         <TableCell>{item.price}</TableCell>
+                         <TableCell>
+                            {item.availability.type === 'scheduled' ? (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    <span className="text-xs">{item.availability.from} - {item.availability.to}</span>
+                                </div>
+                            ) : (
+                                <span className="text-xs text-muted-foreground italic">Toujours</span>
+                            )}
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-2">
+                                <Switch
+                                    checked={item.status === 'active'}
+                                    onCheckedChange={() => toggleItemStatus(item.id)}
+                                    disabled={item.status === 'inactive'}
+                                    aria-label="Toggle item status"
+                                />
+                                <span className="text-xs capitalize">{item.status === 'out-of-stock' ? 'En rupture' : item.status === 'active' ? 'Actif' : 'Inactif' }</span>
+                            </div>
+                        </TableCell>
                         <TableCell className="text-right">
                            <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
                                         <span className="sr-only">Ouvrir le menu</span>
                                         <MoreHorizontal className="h-4 w-4" />
                                     </Button>
@@ -456,6 +510,7 @@ export default function MenuPage() {
                     ))}
                 </TableBody>
             </Table>
+            </div>
         </CardContent>
       </Card>
 
@@ -477,7 +532,6 @@ export default function MenuPage() {
             
             <div className="flex-1 overflow-y-auto pr-4 -mr-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               
-              {/* Colonne Gauche (Image & Tags) - visible uniquement sur la vue principale */}
               {compositionHistory.length === 0 && (
                 <div className="space-y-4 md:col-span-1">
                     <Image
@@ -518,7 +572,6 @@ export default function MenuPage() {
                 </div>
               )}
 
-              {/* Colonne Droite (Composition) ou vue complète pour sous-étapes */}
               <div className={compositionHistory.length > 0 ? "md:col-span-2" : "md:col-span-1"}>
                 {currentView ? (
                     <CompositionDisplay view={currentView} onNavigate={handleNavigateComposition} />
