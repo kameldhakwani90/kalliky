@@ -3,7 +3,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useMemo, ChangeEvent } from 'react';
+import { useState, useMemo, ChangeEvent, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -44,17 +44,37 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+
+type DayAvailability = {
+  enabled: boolean;
+  from: string;
+  to: string;
+};
+
+type Availability = {
+  type: 'always' | 'scheduled';
+  schedule: {
+    monday: DayAvailability;
+    tuesday: DayAvailability;
+    wednesday: DayAvailability;
+    thursday: DayAvailability;
+    friday: DayAvailability;
+    saturday: DayAvailability;
+    sunday: DayAvailability;
+  };
+};
 
 type CompositionOption = {
+  id: string;
   name: string;
-  defaultQuantity: number;
-  maxQuantity: number;
   price?: number; 
-  isDefault?: boolean;
   composition?: CompositionStep[];
 };
 
 type CompositionStep = {
+  id: string;
   title: string;
   options: CompositionOption[];
   selectionType: 'single' | 'multiple'; 
@@ -73,11 +93,7 @@ type MenuItem = {
   composition?: CompositionStep[];
   storeIds: number[];
   status: 'active' | 'out-of-stock' | 'inactive';
-  availability: {
-      type: 'always' | 'scheduled';
-      from?: string;
-      to?: string;
-  };
+  availability: Availability;
 };
 
 const availableStores = [
@@ -85,6 +101,20 @@ const availableStores = [
     { id: 2, name: "Le Gourmet Parisien - Montmartre"},
     { id: 3, name: "Pizzeria Bella - Bastille" },
 ];
+
+const defaultAvailability: Availability = {
+  type: 'always',
+  schedule: {
+    monday: { enabled: true, from: '09:00', to: '22:00' },
+    tuesday: { enabled: true, from: '09:00', to: '22:00' },
+    wednesday: { enabled: true, from: '09:00', to: '22:00' },
+    thursday: { enabled: true, from: '09:00', to: '22:00' },
+    friday: { enabled: true, from: '09:00', to: '22:00' },
+    saturday: { enabled: true, from: '09:00', to: '22:00' },
+    sunday: { enabled: true, from: '09:00', to: '22:00' },
+  }
+};
+
 
 const initialMenuItems: MenuItem[] = [
     { 
@@ -98,64 +128,67 @@ const initialMenuItems: MenuItem[] = [
         tags: ['Populaire', 'Soir', 'Famille'],
         storeIds: [1, 2],
         status: 'active',
-        availability: { type: 'always' },
+        availability: defaultAvailability,
         composition: [
             {
+                id: 'step1',
                 title: 'Étape 1 : Le Pain (1 au choix)',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { name: 'Pain Brioché', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
-                    { name: 'Pain Sésame', defaultQuantity: 0, maxQuantity: 1 },
+                    { id: 'opt1.1', name: 'Pain Brioché' },
+                    { id: 'opt1.2', name: 'Pain Sésame' },
                 ]
             },
             {
+                id: 'step2',
                 title: 'Étape 2 : La Protéine (1 au choix)',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
                     { 
+                        id: 'opt2.1',
                         name: 'Steak de Boeuf (150g)', 
-                        defaultQuantity: 1, 
-                        maxQuantity: 1, 
-                        isDefault: true,
                         composition: [
                             {
+                                id: 'substep1',
                                 title: 'Choix de la cuisson',
                                 selectionType: 'single',
                                 isRequired: true,
                                 options: [
-                                    { name: 'À point', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
-                                    { name: 'Saignant', defaultQuantity: 0, maxQuantity: 1 },
-                                    { name: 'Bien cuit', defaultQuantity: 0, maxQuantity: 1 },
+                                    { id: 'subopt1.1', name: 'À point' },
+                                    { id: 'subopt1.2', name: 'Saignant' },
+                                    { id: 'subopt1.3', name: 'Bien cuit' },
                                 ]
                             }
                         ]
                     },
-                    { name: 'Poulet Pané Croustillant', defaultQuantity: 0, maxQuantity: 1 },
-                    { name: 'Galette Végétarienne', defaultQuantity: 0, maxQuantity: 1 },
+                    { id: 'opt2.2', name: 'Poulet Pané Croustillant' },
+                    { id: 'opt2.3', name: 'Galette Végétarienne' },
                 ]
             },
              {
+                id: 'step3',
                 title: 'Étape 3 : Les Fromages (2 max)',
                 selectionType: 'multiple',
                 isRequired: false,
                 options: [
-                    { name: 'Cheddar', defaultQuantity: 1, maxQuantity: 2, isDefault: true },
-                    { name: 'Chèvre', defaultQuantity: 0, maxQuantity: 2, price: 1.50 },
-                    { name: 'Reblochon', defaultQuantity: 0, maxQuantity: 2, price: 1.50 },
+                    { id: 'opt3.1', name: 'Cheddar' },
+                    { id: 'opt3.2', name: 'Chèvre', price: 1.50 },
+                    { id: 'opt3.3', name: 'Reblochon', price: 1.50 },
                 ]
             },
             {
+                id: 'step4',
                 title: 'Étape 4 : Les Suppléments',
                 selectionType: 'multiple',
                 isRequired: false,
                 options: [
-                    { name: 'Salade', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
-                    { name: 'Tomate', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
-                    { name: 'Oignons', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
-                    { name: 'Bacon grillé', defaultQuantity: 0, maxQuantity: 2, price: 2.00 },
-                    { name: 'Oeuf au plat', defaultQuantity: 0, maxQuantity: 1, price: 1.00 },
+                    { id: 'opt4.1', name: 'Salade' },
+                    { id: 'opt4.2', name: 'Tomate' },
+                    { id: 'opt4.3', name: 'Oignons' },
+                    { id: 'opt4.4', name: 'Bacon grillé', price: 2.00 },
+                    { id: 'opt4.5', name: 'Oeuf au plat', price: 1.00 },
                 ]
             }
         ]
@@ -171,7 +204,7 @@ const initialMenuItems: MenuItem[] = [
         tags: ['Léger', 'Midi', 'Froid'],
         storeIds: [1, 3],
         status: 'active',
-        availability: { type: 'scheduled', from: '12:00', to: '14:30' },
+        availability: {...defaultAvailability, type: 'scheduled' },
     },
     { 
         id: 3,
@@ -183,24 +216,26 @@ const initialMenuItems: MenuItem[] = [
         imageHint: 'pizza deal',
         storeIds: [3],
         status: 'out-of-stock',
-        availability: { type: 'always' },
+        availability: defaultAvailability,
         composition: [
              {
+                id: 'step_menu1',
                 title: 'Plat Principal',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { name: 'Pizza Regina', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
+                    { id: 'opt_menu1.1', name: 'Pizza Regina' },
                 ]
             },
             {
+                id: 'step_menu2',
                 title: 'Boisson (1 au choix)',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { name: 'Coca-Cola (33cl)', defaultQuantity: 1, maxQuantity: 1, isDefault: true },
-                    { name: 'Eau Plate (50cl)', defaultQuantity: 0, maxQuantity: 1 },
-                    { name: 'Jus d\'orange (25cl)', defaultQuantity: 0, maxQuantity: 1 },
+                    { id: 'opt_menu2.1', name: 'Coca-Cola (33cl)' },
+                    { id: 'opt_menu2.2', name: 'Eau Plate (50cl)' },
+                    { id: 'opt_menu2.3', name: 'Jus d\'orange (25cl)' },
                 ]
             }
         ]
@@ -216,11 +251,20 @@ const initialMenuItems: MenuItem[] = [
         tags: ['Sucré', 'Fait maison'],
         storeIds: [1, 2, 3],
         status: 'inactive',
-        availability: { type: 'always' },
+        availability: defaultAvailability,
     },
 ];
 
 const categoriesData = ['Plats', 'Entrées', 'Menus', 'Desserts', 'Boissons'];
+const daysOfWeek = [
+    { id: 'monday', label: 'Lundi' },
+    { id: 'tuesday', label: 'Mardi' },
+    { id: 'wednesday', label: 'Mercredi' },
+    { id: 'thursday', label: 'Jeudi' },
+    { id: 'friday', label: 'Vendredi' },
+    { id: 'saturday', label: 'Samedi' },
+    { id: 'sunday', label: 'Dimanche' },
+];
 
 const currentUserPlan = 'pro'; 
 
@@ -233,23 +277,59 @@ const EditableCompositionDisplay: React.FC<{
   view: CompositionView;
   onNavigate: (steps: CompositionStep[], title: string) => void;
   onOptionCompositionCreate: (stepIndex: number, optionIndex: number) => void;
-}> = ({ view, onNavigate, onOptionCompositionCreate }) => {
+  onUpdate: (steps: CompositionStep[]) => void;
+}> = ({ view, onNavigate, onOptionCompositionCreate, onUpdate }) => {
+
+  const handleAddStep = () => {
+    const newStep: CompositionStep = {
+      id: `step_${Date.now()}`,
+      title: 'Nouvelle étape',
+      selectionType: 'single',
+      isRequired: false,
+      options: [],
+    };
+    onUpdate([...view.steps, newStep]);
+  };
+
+  const handleRemoveStep = (stepIndex: number) => {
+    const newSteps = view.steps.filter((_, i) => i !== stepIndex);
+    onUpdate(newSteps);
+  };
+  
+  const handleAddOption = (stepIndex: number) => {
+    const newSteps = [...view.steps];
+    const newOption: CompositionOption = {
+        id: `opt_${Date.now()}`,
+        name: 'Nouvelle option',
+        price: 0
+    };
+    newSteps[stepIndex].options.push(newOption);
+    onUpdate(newSteps);
+  };
+
+  const handleRemoveOption = (stepIndex: number, optionIndex: number) => {
+    const newSteps = [...view.steps];
+    newSteps[stepIndex].options = newSteps[stepIndex].options.filter((_, i) => i !== optionIndex);
+    onUpdate(newSteps);
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-lg">{view.title}</h3>
       {view.steps.map((step, stepIndex) => (
-        <Card key={stepIndex} className="bg-muted/30">
+        <Card key={step.id} className="bg-muted/30">
           <CardHeader className="py-3 px-4 flex-row items-center justify-between">
             <Input defaultValue={step.title} className="text-base font-semibold border-none shadow-none focus-visible:ring-1 p-1 h-auto" />
              <div className="flex items-center gap-2">
                 <Badge variant={step.isRequired ? "destructive" : "secondary"} className="text-xs">{step.isRequired ? "Requis" : "Optionnel"}</Badge>
                 <Switch checked={step.isRequired} />
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveStep(stepIndex)}><Trash2 className="h-4 w-4"/></Button>
              </div>
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-2">
             <ul className="space-y-2">
               {step.options.map((option, optionIndex) => (
-                <li key={optionIndex} className="flex flex-col text-sm border-t border-border pt-3">
+                <li key={option.id} className="flex flex-col text-sm border-t border-border pt-3">
                   <div className="flex justify-between items-center gap-2">
                     <Input defaultValue={option.name} className="font-medium h-8" />
                     <div className="flex items-center gap-2">
@@ -263,17 +343,17 @@ const EditableCompositionDisplay: React.FC<{
                         }}>
                           Modifier <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveOption(stepIndex, optionIndex)}><Trash2 className="h-4 w-4"/></Button>
                     </div>
                   </div>
                 </li>
               ))}
             </ul>
-             <Button variant="outline" size="sm" className="w-full mt-2"><Plus className="mr-2 h-4 w-4"/> Ajouter une option</Button>
+             <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => handleAddOption(stepIndex)}><Plus className="mr-2 h-4 w-4"/> Ajouter une option</Button>
           </CardContent>
         </Card>
       ))}
-      <Button variant="secondary" className="w-full"><Plus className="mr-2 h-4 w-4"/> Ajouter une étape de composition</Button>
+      <Button variant="secondary" className="w-full" onClick={handleAddStep}><Plus className="mr-2 h-4 w-4"/> Ajouter une étape de composition</Button>
     </div>
   );
 };
@@ -285,6 +365,7 @@ export default function MenuPage() {
   const [editedItem, setEditedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -309,7 +390,7 @@ export default function MenuPage() {
     return menuItems.filter(item => {
       const storeMatch = selectedStore === 'all' || item.storeIds.includes(parseInt(selectedStore));
       const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
-      const statusMatch = selectedStatus === 'all' || item.status === selectedStatus;
+      const statusMatch = selectedStatus === 'all' || item.status === statusMatch;
       const searchMatch = searchTerm === '' || item.name.toLowerCase().includes(searchTerm.toLowerCase());
       return storeMatch && categoryMatch && statusMatch && searchMatch;
     });
@@ -334,9 +415,11 @@ export default function MenuPage() {
       tags: [],
       storeIds: availableStores.map(s => s.id),
       status: 'inactive',
-      availability: { type: 'always' },
+      availability: defaultAvailability,
     };
-    handleItemClick(newItem);
+    setEditedItem(newItem);
+    setCompositionHistory([]); 
+    setIsPopupOpen(true);
     setIsSyncPopupOpen(false); // Close the sync popup
   };
   
@@ -357,23 +440,45 @@ export default function MenuPage() {
   const handleBackComposition = () => {
     setCompositionHistory(prev => prev.slice(0, -1));
   };
+  
+  const updateComposition = (steps: CompositionStep[]) => {
+      if (!editedItem) return;
+      
+      const newEditedItem = { ...editedItem, composition: steps };
+      
+      setEditedItem(newEditedItem);
+
+      if (compositionHistory.length > 0) {
+        const newHistory = [...compositionHistory];
+        newHistory[newHistory.length - 1] = { ...newHistory[newHistory.length - 1], steps: steps };
+        setCompositionHistory(newHistory);
+      }
+  };
 
   const handleCreateBaseComposition = () => {
     if (!editedItem) return;
-    setEditedItem(prev => ({
-        ...prev!,
-        composition: [],
-    }));
+    updateComposition([]);
   };
 
   const handleCreateSubComposition = (stepIndex: number, optionIndex: number) => {
      if (!editedItem || !currentView) return;
 
-    const newComposition = [...currentView.steps];
-    const optionToUpdate = newComposition[stepIndex].options[optionIndex];
+    const newSteps = [...currentView.steps];
+    const optionToUpdate = newSteps[stepIndex].options[optionIndex];
     if (optionToUpdate) {
         optionToUpdate.composition = [];
         handleNavigateComposition(optionToUpdate.composition, `Composition de : ${optionToUpdate.name}`);
+    }
+  };
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && editedItem) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setEditedItem({...editedItem, image: reader.result as string});
+        };
+        reader.readAsDataURL(file);
     }
   };
 
@@ -401,6 +506,14 @@ export default function MenuPage() {
         setCompositionHistory([]);
     }, 300);
   }
+
+  const handleDayAvailabilityChange = (day: keyof Availability['schedule'], field: keyof DayAvailability, value: any) => {
+    if (!editedItem) return;
+    const newAvailability = { ...editedItem.availability };
+    (newAvailability.schedule[day] as any)[field] = value;
+    setEditedItem({ ...editedItem, availability: newAvailability });
+  };
+
 
   return (
     <div className="space-y-8">
@@ -526,7 +639,6 @@ export default function MenuPage() {
                             {item.availability.type === 'scheduled' ? (
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <Clock className="h-4 w-4" />
-                                    <span className="text-xs">{item.availability.from} - {item.availability.to}</span>
                                 </div>
                             ) : (
                                 <span className="text-xs text-muted-foreground italic">Toujours</span>
@@ -584,9 +696,6 @@ export default function MenuPage() {
                  ) : (
                     <>
                     <DialogTitle className="text-2xl font-headline">{editedItem.name}</DialogTitle>
-                    <DialogDescription>
-                        <Textarea className="text-center text-muted-foreground border-none focus-visible:ring-1 resize-none" defaultValue={editedItem.description} />
-                    </DialogDescription>
                     </>
                  )}
                </div>
@@ -601,7 +710,7 @@ export default function MenuPage() {
                             <CardTitle className="text-base font-headline">Informations générales</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="relative group">
+                            <div className="relative group cursor-pointer" onClick={() => imageInputRef.current?.click()}>
                                 <Image
                                     src={editedItem.image}
                                     alt={editedItem.name}
@@ -610,14 +719,21 @@ export default function MenuPage() {
                                     data-ai-hint={editedItem.imageHint}
                                     className="w-full rounded-lg object-cover shadow-lg"
                                 />
-                                <Button size="sm" className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ImagePlus className="mr-2 h-4 w-4" />
-                                    Changer
-                                </Button>
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                                    <Button size="sm" className="pointer-events-none">
+                                        <ImagePlus className="mr-2 h-4 w-4" />
+                                        Changer l'image
+                                    </Button>
+                                </div>
+                                <Input type="file" ref={imageInputRef} className="sr-only" accept="image/*" onChange={handleImageChange} />
                             </div>
                              <div>
                                 <Label htmlFor="item-name">Nom de l'article</Label>
-                                <Input id="item-name" defaultValue={editedItem.name} />
+                                <Input id="item-name" value={editedItem.name} onChange={(e) => setEditedItem({...editedItem, name: e.target.value})} />
+                             </div>
+                             <div>
+                                <Label htmlFor="item-desc">Description</Label>
+                                <Textarea id="item-desc" value={editedItem.description} onChange={(e) => setEditedItem({...editedItem, description: e.target.value})} />
                              </div>
                         </CardContent>
                     </Card>
@@ -631,17 +747,36 @@ export default function MenuPage() {
                                     onCheckedChange={(checked) => setEditedItem(prev => prev ? {...prev, availability: {...prev.availability, type: checked ? 'scheduled' : 'always'}} : null)}
                                 />
                             </CardTitle>
+                             <CardDescription>
+                                Définissez quand cet article peut être commandé.
+                            </CardDescription>
                         </CardHeader>
                         {editedItem.availability.type === 'scheduled' && (
-                             <CardContent className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="from-time">De</Label>
-                                    <Input id="from-time" type="time" defaultValue={editedItem.availability.from}/>
-                                </div>
-                                <div>
-                                    <Label htmlFor="to-time">À</Label>
-                                    <Input id="to-time" type="time" defaultValue={editedItem.availability.to}/>
-                                </div>
+                            <CardContent className="space-y-4">
+                                {daysOfWeek.map(day => (
+                                    <div key={day.id} className="grid grid-cols-3 items-center gap-4">
+                                        <div className="flex items-center gap-2 col-span-1">
+                                           <Checkbox
+                                                id={day.id}
+                                                checked={editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].enabled}
+                                                onCheckedChange={(checked) => handleDayAvailabilityChange(day.id as keyof Availability['schedule'], 'enabled', !!checked)}
+                                            />
+                                            <Label htmlFor={day.id}>{day.label}</Label>
+                                        </div>
+                                        <div className={cn("col-span-2 grid grid-cols-2 gap-2", !editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].enabled && "opacity-50 pointer-events-none")}>
+                                            <Input 
+                                                type="time" 
+                                                value={editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].from}
+                                                onChange={(e) => handleDayAvailabilityChange(day.id as keyof Availability['schedule'], 'from', e.target.value)}
+                                            />
+                                            <Input 
+                                                type="time" 
+                                                value={editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].to}
+                                                onChange={(e) => handleDayAvailabilityChange(day.id as keyof Availability['schedule'], 'to', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                              </CardContent>
                         )}
                     </Card>
@@ -688,6 +823,7 @@ export default function MenuPage() {
                       view={currentView} 
                       onNavigate={handleNavigateComposition}
                       onOptionCompositionCreate={handleCreateSubComposition} 
+                      onUpdate={updateComposition}
                     />
                 ) : (
                     <Card className="flex items-center justify-center p-4 bg-muted/50 h-full">
@@ -710,3 +846,4 @@ export default function MenuPage() {
     </div>
   );
 }
+
