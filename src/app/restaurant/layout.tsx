@@ -16,7 +16,8 @@ import {
   PlusCircle,
   Home,
   Bot,
-  Store
+  Store,
+  Zap
 } from "lucide-react"
 
 import {
@@ -63,7 +64,7 @@ export default function RestaurantLayout({
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
     { href: "/restaurant/stores", label: "Boutiques", icon: Store },
     { href: "/restaurant/users", label: "Utilisateurs", icon: Users },
-    { href: "#", label: "Automatisation", icon: Bot },
+    { href: "/restaurant/automation", label: "Automatisation", icon: Zap },
     { href: "#", label: "Clients", icon: Users },
   ];
   
