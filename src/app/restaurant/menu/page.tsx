@@ -337,20 +337,6 @@ export default function MenuPage() {
     }, 300);
   }
 
-  const getStatusText = (status: MenuItem['status']) => {
-    switch (status) {
-      case 'active':
-        return 'Actif';
-      case 'out-of-stock':
-        return 'En rupture';
-      case 'inactive':
-        return 'Inactif';
-      default:
-        return '';
-    }
-  }
-
-
   return (
     <div className="space-y-8">
       <header>
@@ -459,7 +445,7 @@ export default function MenuPage() {
                         <TableHead>Catégorie</TableHead>
                         <TableHead>Prix</TableHead>
                         <TableHead>Disponibilité</TableHead>
-                        <TableHead>Statut</TableHead>
+                        <TableHead>En rupture</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -492,15 +478,12 @@ export default function MenuPage() {
                             )}
                         </TableCell>
                         <TableCell>
-                            <div className="flex items-center gap-2">
-                                <Switch
-                                    checked={item.status === 'out-of-stock'}
-                                    onCheckedChange={(checked) => toggleItemStatus(item.id, checked)}
-                                    disabled={item.status === 'inactive'}
-                                    aria-label="Toggle item status"
-                                />
-                                <span className="text-xs capitalize">{getStatusText(item.status)}</span>
-                            </div>
+                            <Switch
+                                checked={item.status === 'out-of-stock'}
+                                onCheckedChange={(checked) => toggleItemStatus(item.id, checked)}
+                                disabled={item.status === 'inactive'}
+                                aria-label="Toggle item status"
+                            />
                         </TableCell>
                         <TableCell className="text-right">
                            <DropdownMenu>
