@@ -36,7 +36,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -231,7 +231,8 @@ type CompositionView = {
 const EditableCompositionDisplay: React.FC<{
   view: CompositionView;
   onNavigate: (steps: CompositionStep[], title: string) => void;
-}> = ({ view, onNavigate }) => {
+  onOptionCompositionCreate: (stepIndex: number, optionIndex: number) => void;
+}> = ({ view, onNavigate, onOptionCompositionCreate }) => {
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-lg">{view.title}</h3>
@@ -252,11 +253,15 @@ const EditableCompositionDisplay: React.FC<{
                     <Input defaultValue={option.name} className="font-medium h-8" />
                     <div className="flex items-center gap-2">
                       <Input type="number" defaultValue={option.price} className="w-24 h-8" placeholder="Prix sup." />
-                       {option.composition && (
-                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => onNavigate(option.composition!, `Composition de : ${option.name}`)}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => {
+                          if (option.composition) {
+                            onNavigate(option.composition, `Composition de : ${option.name}`)
+                          } else {
+                            onOptionCompositionCreate(stepIndex, optionIndex);
+                          }
+                        }}>
                           Modifier <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
-                      )}
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                     </div>
                   </div>
@@ -287,6 +292,7 @@ export default function MenuPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
+  const [tagInput, setTagInput] = useState('');
   
   const currentView = useMemo(() => {
     if (compositionHistory.length > 0) {
@@ -332,6 +338,42 @@ export default function MenuPage() {
   const handleBackComposition = () => {
     setCompositionHistory(prev => prev.slice(0, -1));
   };
+
+  const handleCreateBaseComposition = () => {
+    if (!editedItem) return;
+    setEditedItem(prev => ({
+        ...prev!,
+        composition: [],
+    }));
+  };
+
+  const handleCreateSubComposition = (stepIndex: number, optionIndex: number) => {
+     if (!editedItem || !currentView) return;
+
+    const newComposition = [...currentView.steps];
+    const optionToUpdate = newComposition[stepIndex].options[optionIndex];
+    if (optionToUpdate) {
+        optionToUpdate.composition = [];
+        handleNavigateComposition(optionToUpdate.composition, `Composition de : ${optionToUpdate.name}`);
+    }
+  };
+
+  const handleAddTag = () => {
+    if (tagInput.trim() === '' || !editedItem) return;
+    setEditedItem(prev => ({
+      ...prev!,
+      tags: [...(prev!.tags || []), tagInput.trim()]
+    }));
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+     if (!editedItem) return;
+     setEditedItem(prev => ({
+       ...prev!,
+       tags: prev!.tags?.filter(tag => tag !== tagToRemove) || []
+     }));
+  }
   
   const closePopup = () => {
     setIsPopupOpen(false);
@@ -595,16 +637,22 @@ export default function MenuPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-wrap gap-2">
-                                    {editedItem.tags && editedItem.tags.length > 0 ? (
-                                        editedItem.tags.map((tag, index) => (
-                                            <Badge key={index} variant="outline" className="text-sm py-1 px-3 rounded-full font-normal border-gray-300">
-                                                <Tag className="mr-2 h-3 w-3" />
-                                                {tag}
-                                            </Badge>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">Aucun tag. Utilisez l'IA pour en générer.</p>
-                                    )}
+                                    {editedItem.tags && editedItem.tags.map((tag, index) => (
+                                      <Badge key={index} variant="secondary" className="text-sm py-1 px-3 rounded-full font-normal border-gray-300 group">
+                                          <Tag className="mr-2 h-3 w-3" />
+                                          {tag}
+                                          <button onClick={() => handleRemoveTag(tag)} className="ml-2 opacity-50 group-hover:opacity-100"><X className="h-3 w-3"/></button>
+                                      </Badge>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2 mt-4">
+                                    <Input 
+                                      placeholder="Ajouter un tag..." 
+                                      value={tagInput}
+                                      onChange={(e) => setTagInput(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                                    />
+                                    <Button onClick={handleAddTag}>Ajouter</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -614,13 +662,17 @@ export default function MenuPage() {
 
               <div className={compositionHistory.length > 0 ? "md:col-span-2" : "md:col-span-1"}>
                 {currentView ? (
-                    <EditableCompositionDisplay view={currentView} onNavigate={handleNavigateComposition} />
+                    <EditableCompositionDisplay 
+                      view={currentView} 
+                      onNavigate={handleNavigateComposition}
+                      onOptionCompositionCreate={handleCreateSubComposition} 
+                    />
                 ) : (
                     <Card className="flex items-center justify-center p-4 bg-muted/50 h-full">
                         <div className="text-center">
                            <Info className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
                            <p className="text-sm text-muted-foreground mb-4">Ce plat n'a pas de composition.</p>
-                           <Button variant="secondary"><Plus className="mr-2 h-4 w-4"/> Créer une composition</Button>
+                           <Button variant="secondary" onClick={handleCreateBaseComposition}><Plus className="mr-2 h-4 w-4"/> Créer une composition</Button>
                         </div>
                     </Card>
                 )}
