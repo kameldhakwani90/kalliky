@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -54,6 +54,7 @@ type Store = {
     phone: string;
     status: 'active' | 'inactive';
     stripeStatus: 'connected' | 'disconnected';
+    whatsappNumber?: string;
     currency: 'EUR' | 'USD' | 'TND';
     taxRates: TaxRate[];
     printers?: PrinterDevice[];
@@ -62,6 +63,7 @@ type Store = {
 const initialStores: Store[] = [
     { 
         id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active', stripeStatus: 'connected', currency: 'EUR', 
+        whatsappNumber: '+33612345678',
         taxRates: [
             { id: 'tax-1-1', name: 'Réduit', rate: 5.5, isDefault: false },
             { id: 'tax-1-2', name: 'Intermédiaire', rate: 10, isDefault: true },
@@ -124,6 +126,7 @@ export default function StoresPage() {
             name: formData.get('name') as string,
             address: formData.get('address') as string,
             phone: formData.get('phone') as string,
+            whatsappNumber: selectedStore?.whatsappNumber,
             status: selectedStore?.status || 'active',
             stripeStatus: selectedStore?.stripeStatus || 'disconnected',
             currency: (formData.get('currency') as Store['currency']) || 'EUR',
@@ -138,6 +141,12 @@ export default function StoresPage() {
         }
         setIsFormDialogOpen(false);
     };
+    
+    const handleSaveConnections = () => {
+        if (!selectedStore) return;
+        setStores(stores.map(s => s.id === selectedStore.id ? selectedStore : s));
+        setIsConnectionsDialogOpen(false);
+    }
 
     const toggleStoreStatus = (id: string) => {
         setStores(stores.map(s => s.id === id ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' } : s));
@@ -409,7 +418,7 @@ export default function StoresPage() {
                                                   className="border-none shadow-none focus-visible:ring-1 p-1 h-auto w-auto font-semibold"
                                               />
                                           </CardTitle>
-                                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePrinter(index)}>
+                                          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePrinter(index)}>
                                               <X className="h-4 w-4"/>
                                           </Button>
                                       </CardHeader>
@@ -487,40 +496,77 @@ export default function StoresPage() {
                             Connectez des applications tierces à votre boutique <span className="font-semibold">{selectedStore?.name}</span>.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">Paiements</h3>
-                        <Card>
-                             <CardHeader className="flex flex-row items-start justify-between gap-4">
-                                <div>
-                                    <CardTitle className="flex items-center gap-3">
-                                        <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03.213-.09l4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
-                                        <span>Stripe</span>
-                                    </CardTitle>
-                                </div>
-                                {selectedStore?.stripeStatus === 'connected' ? (
-                                    <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
-                                        <CheckCircle className="mr-1 h-3 w-3" /> Connecté
-                                    </Badge>
-                                ) : (
-                                    <Badge variant="secondary">Non connecté</Badge>
-                                )}
-                            </CardHeader>
-                            <CardContent>
-                                {selectedStore?.stripeStatus === 'connected' ? (
-                                    <div className="p-4 bg-muted rounded-md text-sm text-muted-foreground">
-                                        Cette boutique est correctement connectée à Stripe.
+                    <div className="space-y-6 pt-4">
+                        <div>
+                            <h3 className="text-sm font-medium text-muted-foreground mb-2">Paiements</h3>
+                            <Card>
+                                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                                    <div>
+                                        <CardTitle className="flex items-center gap-3">
+                                            <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03.213-.09l4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                            <span>Stripe</span>
+                                        </CardTitle>
                                     </div>
-                                ) : (
-                                    <Button onClick={handleStripeConnect}>
-                                        <LinkIcon className="mr-2 h-4 w-4" />
-                                        Connecter avec Stripe
-                                    </Button>
-                                )}
-                            </CardContent>
-                        </Card>
+                                    {selectedStore?.stripeStatus === 'connected' ? (
+                                        <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
+                                            <CheckCircle className="mr-1 h-3 w-3" /> Connecté
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="secondary">Non connecté</Badge>
+                                    )}
+                                </CardHeader>
+                                <CardContent>
+                                    {selectedStore?.stripeStatus === 'connected' ? (
+                                        <div className="p-4 bg-muted rounded-md text-sm text-muted-foreground">
+                                            Cette boutique est correctement connectée à Stripe.
+                                        </div>
+                                    ) : (
+                                        <Button onClick={handleStripeConnect}>
+                                            <LinkIcon className="mr-2 h-4 w-4" />
+                                            Connecter avec Stripe
+                                        </Button>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div>
+                             <h3 className="text-sm font-medium text-muted-foreground mb-2">Messagerie</h3>
+                             <Card>
+                                 <CardHeader className="flex flex-row items-start justify-between gap-4">
+                                     <div>
+                                        <CardTitle className="flex items-center gap-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24"><path fill="#25D366" d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.73-1.11-5.2-2.9-7.01zm-7.01 15.26c-1.53 0-3.01-.47-4.29-1.36l-.3-.18l-3.18.83l.85-3.1l-.2-.31a8.084 8.084 0 0 1-1.23-4.38c0-4.54 3.7-8.24 8.24-8.24c2.2 0 4.23.86 5.82 2.45c1.59 1.59 2.45 3.62 2.45 5.82c0 4.54-3.7 8.24-8.24 8.24zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81c-.23-.08-.39-.12-.56.12c-.17.25-.64.81-.79.97c-.15.17-.29.19-.54.06c-.25-.12-1.06-.39-2.02-1.25c-.75-.67-1.25-1.5-1.4-1.75c-.14-.25-.02-.38.11-.51c.11-.11.25-.29.37-.43s.17-.25.25-.41c.08-.17.04-.31-.02-.43c-.06-.12-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42c-.14,0-.3,0-.46,0s-.39.06-.6.3c-.2.25-.79.76-.79,1.85s.81,2.15.93,2.3c.12.17 1.58,2.41 3.83,3.39c.54.24.97.38,1.3.48c.55.17,1.05.14,1.44.09c.44-.06 1.47-.6 1.68-1.18c.21-.58.21-1.07.14-1.18c-.05-.12-.19-.19-.43-.31z"/></svg>
+                                            <span>WhatsApp (via Twilio)</span>
+                                        </CardTitle>
+                                        <CardDescription className="text-xs pt-1">
+                                            Utilisé pour les demandes de preuve.
+                                            <Badge className="ml-2">Plan Pro</Badge>
+                                        </CardDescription>
+                                     </div>
+                                      {selectedStore?.whatsappNumber ? (
+                                        <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
+                                            <CheckCircle className="mr-1 h-3 w-3" /> Configuré
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="secondary">Non configuré</Badge>
+                                    )}
+                                 </CardHeader>
+                                 <CardContent>
+                                    <Label htmlFor="whatsapp-number">Numéro WhatsApp de la boutique</Label>
+                                    <Input 
+                                        id="whatsapp-number" 
+                                        placeholder="+33612345678" 
+                                        value={selectedStore?.whatsappNumber || ''}
+                                        onChange={(e) => setSelectedStore(prev => prev ? {...prev, whatsappNumber: e.target.value} : null)}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-2">Doit être un numéro activé sur la plateforme Twilio.</p>
+                                 </CardContent>
+                             </Card>
+                        </div>
                     </div>
                     <DialogFooter className="mt-6">
-                        <Button type="button" variant="outline" onClick={() => setIsConnectionsDialogOpen(false)}>Fermer</Button>
+                        <Button type="button" variant="outline" onClick={() => setIsConnectionsDialogOpen(false)}>Annuler</Button>
+                        <Button type="button" onClick={handleSaveConnections}>Enregistrer les connexions</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

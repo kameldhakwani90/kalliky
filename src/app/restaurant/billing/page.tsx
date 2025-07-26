@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, CheckCircle, XCircle, FileUp, Bot, BarChart, FileText, Phone, CreditCard, Users, History, BrainCircuit, Lightbulb, BadgeEuro } from "lucide-react";
+import { Calendar as CalendarIcon, Download, CheckCircle, XCircle, FileUp, Bot, BarChart, FileText, Phone, CreditCard, Users, History, BrainCircuit, Lightbulb, BadgeEuro, Flag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ const proFeatures = [
     { text: "Fiche client complète", icon: <History/> },
     { text: "Mémoire IA client (préférences, upsell)", icon: <BrainCircuit/> },
     { text: "Upsell intelligent (basé sur l'historique)", icon: <Lightbulb/> },
+    { text: "Gestion avancée des signalements", icon: <Flag/> },
     { text: "Dashboard + stats IA usage", icon: <BarChart/> },
     { text: "Support Email prioritaire 24h", icon: <Users/> },
 ];

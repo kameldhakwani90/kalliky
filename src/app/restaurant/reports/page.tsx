@@ -193,7 +193,7 @@ const initialReports: Report[] = [
         reason: 'Retard de livraison',
         status: 'Résolu',
         details: 'La commande a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.',
-        customer: { id: 'cust-1', name: 'Alice Martin', phone: '0612345678' },
+        customer: { id: 'cust-1', name: 'Alice Martin', phone: '01 23 45 67 89' },
         storeId: 'store-1',
         orderId: "#987",
         call: { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "Bonjour, je voudrais passer la commande #987...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
@@ -204,7 +204,7 @@ const initialReports: Report[] = [
         reason: 'Erreur dans la commande',
         status: 'Ouvert',
         details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages.',
-        customer: { id: 'cust-3', name: 'Carole Leblanc', phone: '0611223344' },
+        customer: { id: 'cust-3', name: 'Carole Leblanc', phone: '06 11 22 33 44' },
         storeId: 'store-3',
         orderId: "#1028",
         call: { id: 'call-4', date: "29/05/2024 - 19:10", duration: "3m 15s", type: 'Commande', transcript: "Bonjour, je voudrais une pizza 4 fromages et deux coca...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
@@ -222,7 +222,7 @@ const initialReports: Report[] = [
         reason: 'Problème de paiement',
         status: 'En cours',
         details: 'Le paiement par lien n\'a pas fonctionné. Le client a dû payer en espèces à la livraison.',
-        customer: { id: 'cust-2', name: 'Bob Dupont', phone: '0787654321' },
+        customer: { id: 'cust-2', name: 'Bob Dupont', phone: '07 87 65 43 21' },
         storeId: 'store-2',
         orderId: "#1031",
         call: { id: 'call-5', date: "30/05/2024 - 11:45", duration: "2m 50s", type: 'Commande', transcript: "Bonjour, je voudrais commander pour la commande #1031...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
@@ -273,6 +273,12 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
     return { totalTTC, taxDetails };
 };
 
+const isMobilePhone = (phone: string): boolean => {
+    const mobilePrefixes = ['06', '07'];
+    const cleanedPhone = phone.replace(/\s/g, '');
+    return mobilePrefixes.some(prefix => cleanedPhone.startsWith(prefix));
+}
+
 
 export default function ReportsPage() {
     const [reports, setReports] = useState<Report[]>(initialReports);
@@ -281,6 +287,9 @@ export default function ReportsPage() {
     const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
     
     const ticketRef = useRef<HTMLDivElement>(null);
+    
+    const [whatsappNumberInput, setWhatsappNumberInput] = useState('');
+    const currentUserPlan = 'pro'; // 'starter', 'pro', or 'business'
 
     const handleViewReport = (report: Report) => {
         setSelectedReport(report);
@@ -514,16 +523,27 @@ export default function ReportsPage() {
                         <DialogFooter className="border-t pt-4">
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="secondary">
+                                    <Button variant="secondary" disabled={currentUserPlan === 'starter'}>
                                         <Send className="mr-2 h-4 w-4" /> Demander une preuve
+                                        {currentUserPlan === 'starter' && <Badge className="ml-2">Plan Pro</Badge>}
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Confirmer la demande de preuve ?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Un message va être envoyé à <span className="font-semibold">{selectedReport.customer.phone}</span> pour lui demander de fournir une preuve par photo via WhatsApp. Le numéro de référence du signalement ({selectedReport.id}) sera inclus.
-                                        </AlertDialogDescription>
+                                        {isMobilePhone(selectedReport.customer.phone) ? (
+                                            <AlertDialogDescription>
+                                                Un **SMS** va être envoyé automatiquement à <span className="font-semibold">{selectedReport.customer.phone}</span> pour lui demander une preuve. Il sera invité à répondre par photo sur le numéro WhatsApp de la boutique.
+                                            </AlertDialogDescription>
+                                        ) : (
+                                            <AlertDialogDescription>
+                                                Le numéro du client (<span className="font-semibold">{selectedReport.customer.phone}</span>) semble être une ligne fixe. Veuillez renseigner son numéro WhatsApp pour lui envoyer la demande.
+                                                <div className="mt-4">
+                                                    <Label htmlFor="whatsapp-input">Numéro WhatsApp du client</Label>
+                                                    <Input id="whatsapp-input" placeholder="Ex: 0612345678" value={whatsappNumberInput} onChange={(e) => setWhatsappNumberInput(e.target.value)} />
+                                                </div>
+                                            </AlertDialogDescription>
+                                        )}
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Annuler</AlertDialogCancel>
