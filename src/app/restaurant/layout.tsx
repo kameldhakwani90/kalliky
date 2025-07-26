@@ -19,6 +19,7 @@ import {
   Store,
   Zap,
   XCircle,
+  Flag,
 } from "lucide-react"
 
 import {
@@ -65,7 +66,8 @@ export default function RestaurantLayout({
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
     { href: "/restaurant/stores", label: "Boutiques", icon: Store },
     { href: "/restaurant/users", label: "Utilisateurs", icon: Users },
-    { href: "#", label: "Clients", icon: Users },
+    { href: "/restaurant/clients", label: "Clients", icon: Users },
+    { href: "#", label: "Signalements", icon: Flag },
   ];
   
   const helpItems = [
