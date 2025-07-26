@@ -106,6 +106,14 @@ const currentPlanName = "Pro";
 export default function BillingPage() {
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [selectedPlan, setSelectedPlan] = useState<string>(currentPlanName);
+    const [isUpdatePaymentOpen, setIsUpdatePaymentOpen] = useState(false);
+
+    const handleSavePayment = (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log("Simulating saving new card...");
+        // Here you would normally send the data to your payment provider (Stripe)
+        setIsUpdatePaymentOpen(false);
+    }
 
     return (
         <div className="space-y-6">
@@ -179,9 +187,9 @@ export default function BillingPage() {
                                     ))}
                                 </div>
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full border-t pt-4">
-                                    <div className="text-xs text-muted-foreground text-center sm:text-left">
+                                     <div className="text-xs text-muted-foreground text-center sm:text-left">
                                          En continuant, vous acceptez nos <a href="#" className="underline">CGV</a>, <a href="#" className="underline">CGU</a> et notre <a href="#" className="underline">Politique de Confidentialité (RGPD)</a>.
-                                    </div>
+                                     </div>
                                     <Button disabled={selectedPlan === currentPlanName}>
                                         Confirmer le changement
                                     </Button>
@@ -204,41 +212,48 @@ export default function BillingPage() {
                                 <p className="text-sm text-muted-foreground">Expire le 12/26</p>
                             </div>
                         </div>
-                         <Dialog>
+                         <Dialog open={isUpdatePaymentOpen} onOpenChange={setIsUpdatePaymentOpen}>
                           <DialogTrigger asChild>
                             <Button variant="outline" className="w-full">Mettre à jour</Button>
                           </DialogTrigger>
                           <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Mettre à jour votre moyen de paiement</DialogTitle>
-                              <DialogDescription>
-                                Saisissez les informations de votre nouvelle carte. Votre prochain prélèvement utilisera ce moyen de paiement.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="card-name">Nom sur la carte</Label>
-                                    <Input id="card-name" placeholder="Ex: Jean Dupont" />
-                                </div>
+                            <form onSubmit={handleSavePayment}>
+                                <DialogHeader>
+                                <DialogTitle>Mettre à jour votre moyen de paiement</DialogTitle>
+                                <DialogDescription>
+                                    Saisissez les informations de votre nouvelle carte. Votre prochain prélèvement utilisera ce moyen de paiement.
+                                </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="card-number">Numéro de carte</Label>
-                                    <Input id="card-number" placeholder="0000 0000 0000 0000" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                        <Label htmlFor="card-name">Nom sur la carte</Label>
+                                        <Input id="card-name" placeholder="Ex: Jean Dupont" required/>
+                                    </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="card-expiry">Expiration (MM/AA)</Label>
-                                        <Input id="card-expiry" placeholder="MM/AA" />
+                                        <Label htmlFor="card-number">Numéro de carte</Label>
+                                        <Input id="card-number" placeholder="0000 0000 0000 0000" required/>
                                     </div>
-                                     <div className="space-y-2">
-                                        <Label htmlFor="card-cvc">CVC</Label>
-                                        <Input id="card-cvc" placeholder="123" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="card-expiry">Expiration (MM/AA)</Label>
+                                            <Input id="card-expiry" placeholder="MM/AA" required/>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="card-cvc">CVC</Label>
+                                            <Input id="card-cvc" placeholder="123" required/>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <DialogFooter>
-                              <Button variant="outline">Annuler</Button>
-                              <Button>Enregistrer la nouvelle carte</Button>
-                            </DialogFooter>
+                                <DialogFooter className="flex-col gap-y-2">
+                                <div className="text-xs text-muted-foreground text-center sm:text-left">
+                                    Paiements sécurisés par <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a>. En continuant, vous acceptez nos <a href="#" className="underline">CGV</a>, <a href="#" className="underline">CGU</a> et <a href="#" className="underline">Politique de Confidentialité</a>.
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <Button type="button" variant="outline" onClick={() => setIsUpdatePaymentOpen(false)}>Annuler</Button>
+                                    <Button type="submit">Enregistrer la nouvelle carte</Button>
+                                </div>
+                                </DialogFooter>
+                            </form>
                           </DialogContent>
                         </Dialog>
                     </CardContent>
