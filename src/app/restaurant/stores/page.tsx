@@ -493,18 +493,18 @@ export default function StoresPage() {
                     <DialogHeader>
                         <DialogTitle>Gérer les connexions</DialogTitle>
                         <DialogDescription>
-                            Connectez des applications tierces à votre boutique <span className="font-semibold">{selectedStore?.name}</span>.
+                            Connectez des services externes à votre boutique <span className="font-semibold">{selectedStore?.name}</span> pour étendre ses fonctionnalités.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6 pt-4">
                         <div>
-                            <h3 className="text-sm font-medium text-muted-foreground mb-2">Paiements</h3>
+                            <h3 className="text-sm font-medium text-muted-foreground mb-2">Paiements des clients finaux</h3>
                              <Card>
                                 <CardHeader className="flex flex-row items-start justify-between gap-4">
                                     <div>
                                         <CardTitle className="flex items-center gap-3">
-                                            <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03.213-.09l4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
-                                            <span>Stripe</span>
+                                            <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72-.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                            <span>Stripe Connect</span>
                                         </CardTitle>
                                     </div>
                                     {selectedStore?.stripeStatus === 'connected' ? (
@@ -516,23 +516,26 @@ export default function StoresPage() {
                                     )}
                                 </CardHeader>
                                 <CardContent>
+                                    <div className="text-xs text-muted-foreground pt-1">
+                                        Permet à vos clients de payer leurs commandes en ligne. L'argent est directement versé sur votre compte Stripe.
+                                    </div>
                                     {selectedStore?.stripeStatus === 'connected' ? (
-                                        <div className="p-4 bg-muted rounded-md text-sm text-muted-foreground">
+                                        <div className="mt-4 p-4 bg-muted rounded-md text-sm text-muted-foreground">
                                             Cette boutique est correctement connectée à Stripe.
                                         </div>
                                     ) : (
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button>
+                                                <Button className="mt-4">
                                                     <LinkIcon className="mr-2 h-4 w-4" />
-                                                    Connecter avec Stripe
+                                                    Connecter mon compte Stripe
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>Redirection vers Stripe</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        Vous allez être redirigé vers Stripe pour connecter votre compte en toute sécurité. Une fois l'opération terminée, vous reviendrez automatiquement ici.
+                                                        Vous allez être redirigé vers le site de Stripe pour connecter votre compte en toute sécurité. Une fois l'opération terminée, vous reviendrez automatiquement ici.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -555,8 +558,7 @@ export default function StoresPage() {
                                             <span>WhatsApp (via Twilio)</span>
                                         </CardTitle>
                                          <div className="flex items-center text-xs pt-1 text-muted-foreground">
-                                            <span>Utilisé pour les demandes de preuve.</span>
-                                            <div className="ml-2"><Badge>Plan Pro</Badge></div>
+                                            <span>Utilisé pour les demandes de preuve (Plan Pro et +).</span>
                                         </div>
                                      </div>
                                       {selectedStore?.whatsappNumber ? (

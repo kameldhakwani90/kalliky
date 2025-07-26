@@ -34,33 +34,33 @@ const invoices = [
 ];
 
 const starterFeatures = [
-    { text: "Appels vocaux automatisés", icon: <Phone/> },
-    { text: "Ticket vocal (création auto)", icon: <FileText/> },
-    { text: "Paiement par lien Stripe", icon: <CreditCard/> },
-    { text: "Historique commandes de base", icon: <History/> },
-    { text: "Dashboard commandes & paiements", icon: <BarChart/> },
-    { text: "Facturation Stripe auto", icon: <BadgeEuro/> },
-    { text: "Menu via Excel (upload)", icon: <FileUp/> },
-    { text: "Support par Email", icon: <Users/> },
+    { text: "Appels vocaux automatisés" },
+    { text: "Ticket vocal (création auto)" },
+    { text: "Paiement par lien Stripe" },
+    { text: "Historique commandes de base" },
+    { text: "Dashboard commandes & paiements" },
+    { text: "Facturation Stripe auto" },
+    { text: "Menu via Excel (upload)" },
+    { text: "Support par Email" },
 ];
 
 const proFeatures = [
-    { text: "Fiche client complète", icon: <History/> },
-    { text: "Mémoire IA client (préférences, upsell)", icon: <BrainCircuit/> },
-    { text: "Upsell intelligent (basé sur l'historique)", icon: <Lightbulb/> },
-    { text: "Gestion avancée des signalements", icon: <Flag/> },
-    { text: "Dashboard + stats IA usage", icon: <BarChart/> },
-    { text: "Support Email prioritaire 24h", icon: <Users/> },
+    { text: "Fiche client complète" },
+    { text: "Mémoire IA client (préférences, upsell)" },
+    { text: "Upsell intelligent (basé sur l'historique)" },
+    { text: "Gestion avancée des signalements" },
+    { text: "Dashboard + stats IA usage" },
+    { text: "Support Email prioritaire 24h" },
 ];
 
 const businessFeatures = [
-    { text: "Ticket vocal sur mesure", icon: <FileText/> },
-    { text: "Paiement via WhatsApp etc.", icon: <CreditCard/> },
-    { text: "Historique avec export API/CRM", icon: <History/> },
-    { text: "IA dédiée / scénario complexe", icon: <BrainCircuit/> },
-    { text: "Suggestion dynamique (météo...)", icon: <Lightbulb/> },
-    { text: "Dashboard multi-site", icon: <BarChart/> },
-    { text: "Account manager dédié", icon: <Users/> },
+    { text: "Ticket vocal sur mesure" },
+    { text: "Paiement via WhatsApp etc." },
+    { text: "Historique avec export API/CRM" },
+    { text: "IA dédiée / scénario complexe" },
+    { text: "Suggestion dynamique (météo...)" },
+    { text: "Dashboard multi-site" },
+    { text: "Account manager dédié" },
 ];
 
 const plans = [
@@ -71,6 +71,7 @@ const plans = [
     target: "Petit restaurant local",
     features: starterFeatures,
     recommended: false,
+    buttonText: "Choisir"
   },
   {
     name: "Pro",
@@ -81,6 +82,7 @@ const plans = [
     features: proFeatures,
     basePlan: "Starter",
     recommended: true,
+    buttonText: "Plan Actuel"
   },
   {
     name: "Business",
@@ -91,6 +93,7 @@ const plans = [
     features: businessFeatures,
     basePlan: "Pro",
     recommended: false,
+    buttonText: "Nous contacter"
   },
 ];
 
@@ -106,7 +109,7 @@ export default function BillingPage() {
         <div className="space-y-6">
              <header>
                 <h1 className="text-3xl font-bold tracking-tight">Facturation et Abonnement</h1>
-                <p className="text-muted-foreground">Gérez votre plan et consultez votre historique de facturation.</p>
+                <p className="text-muted-foreground">Gérez votre plan et consultez votre historique de facturation pour le service Kalliky.ai.</p>
             </header>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -175,7 +178,7 @@ export default function BillingPage() {
                                 </div>
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full border-t pt-4">
                                     <div className="text-xs text-muted-foreground text-center sm:text-left">
-                                         En continuant, vous acceptez nos <Link href="#" className="underline">CGV</Link>, <Link href="#" className="underline">CGU</Link> et notre <Link href="#" className="underline">Politique de Confidentialité (RGPD)</Link>.
+                                         En continuant, vous acceptez nos <a href="#" className="underline">CGV</a>, <a href="#" className="underline">CGU</a> et notre <a href="#" className="underline">Politique de Confidentialité (RGPD)</a>.
                                     </div>
                                     <Button disabled={selectedPlan === currentPlanName}>
                                         Confirmer le changement
@@ -189,6 +192,7 @@ export default function BillingPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Moyen de Paiement</CardTitle>
+                         <CardDescription>La carte utilisée pour votre abonnement Kalliky.ai.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center gap-4 p-4 bg-muted rounded-md">
