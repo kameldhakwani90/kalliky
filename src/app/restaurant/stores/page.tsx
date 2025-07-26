@@ -3,6 +3,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 
 type TaxRate = {
@@ -113,8 +115,16 @@ const daysOfWeekEn = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "S
 const daysOfWeekFr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 
+const WIZARD_STEPS = [
+    { id: 'general', title: { fr: 'Informations Générales', en: 'General Information' }, description: {fr: 'Donnez un nom et une adresse à votre boutique.', en: 'Give your store a name and address.'} },
+    { id: 'opening', title: { fr: 'Horaires d\'ouverture', en: 'Opening Hours' }, description: {fr: 'Définissez quand vos clients peuvent commander.', en: 'Set when your customers can order.'} },
+    { id: 'taxes', title: { fr: 'Taxes et Devise', en: 'Taxes and Currency' }, description: {fr: 'Configurez la TVA et la devise principale.', en: 'Configure VAT and the main currency.'} },
+    { id: 'peripherals', title: { fr: 'Périphériques & KDS', en: 'Peripherals & KDS' }, description: {fr: 'Connectez vos imprimantes et tablettes de cuisine.', en: 'Connect your printers and kitchen displays.'} },
+];
+
 export default function StoresPage() {
     const { toast } = useToast();
+    const router = useRouter();
     const { t, language } = useLanguage();
     const [stores, setStores] = useState<Store[]>(initialStores);
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -122,11 +132,13 @@ export default function StoresPage() {
     const [editableTaxRates, setEditableTaxRates] = useState<TaxRate[]>([]);
     const [editablePrinters, setEditablePrinters] = useState<PrinterDevice[]>([]);
     const [editableKDS, setEditableKDS] = useState<KDSConnection[]>([]);
+    const [wizardStep, setWizardStep] = useState(0);
 
     const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
 
     const handleOpenFormDialog = (store: Store | null = null) => {
         setSelectedStore(store);
+        setWizardStep(0);
         setEditableTaxRates(store ? [...store.taxRates] : [{ id: `tax_${Date.now()}`, name: t({fr: 'TVA par défaut', en: 'Default VAT'}), rate: 0, isDefault: true }]);
         setEditablePrinters(store ? [...(store.printers || [])] : []);
         setEditableKDS(store ? [...(store.kdsConnections || [])] : []);
@@ -157,6 +169,7 @@ export default function StoresPage() {
             setStores([...stores, storeData]);
         }
         setIsFormDialogOpen(false);
+        router.push('/restaurant/menu'); // Redirect to menu page
     };
     
     const toggleStoreStatus = (id: string) => {
@@ -223,6 +236,8 @@ export default function StoresPage() {
         });
     }
 
+    const nextStep = () => setWizardStep(prev => Math.min(prev + 1, WIZARD_STEPS.length - 1));
+    const prevStep = () => setWizardStep(prev => Math.max(prev - 1, 0));
     
     const translations = {
         title: { fr: "Gestion des Boutiques", en: "Store Management" },
@@ -244,8 +259,8 @@ export default function StoresPage() {
         deleteConfirmation: { fr: "Cette action est irréversible. La boutique, son menu et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The store, its menu, and all associated data will be permanently deleted." },
         cancel: { fr: "Annuler", en: "Cancel" },
         editStore: { fr: "Modifier la boutique", en: "Edit store" },
-        addNewStore: { fr: "Ajouter une nouvelle boutique", en: "Add a new store" },
-        formDescription: { fr: "Renseignez toutes les informations de votre point de vente pour une configuration optimale.", en: "Enter all your point of sale information for optimal configuration." },
+        addNewStore: { fr: "Assistant de création de boutique", en: "Store Creation Wizard" },
+        formDescription: { fr: "Suivez les étapes pour configurer votre nouveau point de vente.", en: "Follow the steps to set up your new point of sale." },
         general: { fr: "Général", en: "General" },
         openingHours: { fr: "Horaires", en: "Hours" },
         taxes: { fr: "Taxes", en: "Taxes" },
@@ -305,6 +320,10 @@ export default function StoresPage() {
         lastSeen: { fr: "Dernière connexion", en: "Last seen" },
         addKDS: { fr: "Ajouter un KDS", en: "Add a KDS" },
         kdsSync: { fr: "Synchronisation KDS", en: "KDS Sync" },
+        previous: { fr: 'Précédent', en: 'Previous' },
+        next: { fr: 'Suivant', en: 'Next' },
+        finishAndCreateMenu: { fr: 'Terminer et créer ma carte', en: 'Finish and Create Menu' },
+        step: { fr: 'Étape', en: 'Step' },
     };
 
 
@@ -398,126 +417,142 @@ export default function StoresPage() {
             </Card>
 
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-                <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>{selectedStore ? t(translations.editStore) : t(translations.addNewStore)}</DialogTitle>
                         <DialogDescription>
                             {t(translations.formDescription)}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto">
-                      <Tabs defaultValue="general" className="p-1">
-                          <TabsList className="grid w-full grid-cols-5">
-                              <TabsTrigger value="general">{t(translations.general)}</TabsTrigger>
-                              <TabsTrigger value="opening">{t(translations.openingHours)}</TabsTrigger>
-                              <TabsTrigger value="taxes">{t(translations.taxes)}</TabsTrigger>
-                              <TabsTrigger value="peripherals">{t(translations.peripherals)}</TabsTrigger>
-                              <TabsTrigger value="connections">{t(translations.connections)}</TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="general" className="space-y-6 pt-4">
-                              <div className="space-y-4">
-                                <h4 className="font-medium">{t(translations.generalInfo)}</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">{t(translations.restaurantName)}</Label>
-                                        <Input id="name" name="name" defaultValue={selectedStore?.name || ''} placeholder={t({fr: "Ex: Le Gourmet Parisien", en: "E.g.: The Parisian Gourmet"})} required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="cuisine-type">{t(translations.cuisineType)}</Label>
-                                        <Input id="cuisine-type" name="cuisine-type" placeholder={t({fr: "Ex: Pizza, Sushi, Burger...", en: "E.g.: Pizza, Sushi, Burger..."})} />
-                                    </div>
+                    
+                    <div className="px-1 py-2">
+                      <Progress value={((wizardStep + 1) / WIZARD_STEPS.length) * 100} className="h-2" />
+                      <div className="flex justify-between mt-2">
+                        {WIZARD_STEPS.map((step, index) => (
+                           <div key={step.id} className="flex-1 text-center">
+                                <p className={cn("text-sm font-medium", wizardStep >= index ? "text-primary" : "text-muted-foreground")}>{t(step.title)}</p>
+                                <p className={cn("text-xs", wizardStep >= index ? "text-primary" : "text-muted-foreground")}>{t({fr: `Étape ${index + 1}`, en: `Step ${index + 1}`})}</p>
+                           </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6 p-1">
+                      
+                      {wizardStep === 0 && (
+                        <div className="space-y-4">
+                            <h4 className="font-medium">{t(translations.generalInfo)}</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">{t(translations.restaurantName)}</Label>
+                                    <Input id="name" name="name" defaultValue={selectedStore?.name || ''} placeholder={t({fr: "Ex: Le Gourmet Parisien", en: "E.g.: The Parisian Gourmet"})} required />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="address">{t(translations.fullAddress)}</Label>
-                                    <Input id="address" name="address" defaultValue={selectedStore?.address || ''} placeholder={t({fr: "123 Rue Principale, 75000 Ville", en: "123 Main Street, 10001 City"})} required />
+                                    <Label htmlFor="cuisine-type">{t(translations.cuisineType)}</Label>
+                                    <Input id="cuisine-type" name="cuisine-type" placeholder={t({fr: "Ex: Pizza, Sushi, Burger...", en: "E.g.: Pizza, Sushi, Burger..."})} />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="phone">{t(translations.landline)}</Label>
-                                        <Input id="phone" name="phone" type="tel" defaultValue={selectedStore?.phone || ''} placeholder="01 23 45 67 89" required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">{t(translations.contactEmail)}</Label>
-                                        <Input id="email" name="email" type="email" placeholder="contact@exemple.com" />
-                                    </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="address">{t(translations.fullAddress)}</Label>
+                                <Input id="address" name="address" defaultValue={selectedStore?.address || ''} placeholder={t({fr: "123 Rue Principale, 75000 Ville", en: "123 Main Street, 10001 City"})} required />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone">{t(translations.landline)}</Label>
+                                    <Input id="phone" name="phone" type="tel" defaultValue={selectedStore?.phone || ''} placeholder="01 23 45 67 89" required />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>{t(translations.logoVisual)}</Label>
-                                    <Input id="logo" name="logo" type="file" className="h-auto"/>
-                                    <p className="text-xs text-muted-foreground">{t(translations.logoRecommendation)}</p>
+                                    <Label htmlFor="email">{t(translations.contactEmail)}</Label>
+                                    <Input id="email" name="email" type="email" placeholder="contact@exemple.com" />
                                 </div>
-                             </div>
-                          </TabsContent>
-                          <TabsContent value="opening" className="space-y-4 pt-4">
-                              <h4 className="font-medium">{t(translations.openingDaysHours)}</h4>
-                              <div className="space-y-3">
-                                  {daysOfWeek.map(day => (
-                                      <div key={day} className="grid grid-cols-3 items-center gap-4">
-                                          <Label htmlFor={`hours-${day}`} className="col-span-1">{day}</Label>
-                                          <div className="col-span-2 grid grid-cols-2 gap-2">
-                                               <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" />
-                                               <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" />
-                                          </div>
-                                      </div>
-                                  ))}
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                      <Clock className="h-4 w-4" />
-                                      <span>{t(translations.openingHoursDesc)}</span>
-                                  </div>
-                              </div>
-                          </TabsContent>
-                           <TabsContent value="taxes" className="space-y-6 pt-4">
-                                <div>
-                                    <Label htmlFor="currency">{t(translations.defaultCurrency)}</Label>
-                                    <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="mt-2 flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                        <option value="EUR">Euro (€)</option>
-                                        <option value="USD">Dollar ($)</option>
-                                        <option value="TND">Dinar (DT)</option>
-                                    </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>{t(translations.logoVisual)}</Label>
+                                <Input id="logo" name="logo" type="file" className="h-auto"/>
+                                <p className="text-xs text-muted-foreground">{t(translations.logoRecommendation)}</p>
+                            </div>
+                        </div>
+                      )}
+
+                      {wizardStep === 1 && (
+                        <div className="space-y-4">
+                            <h4 className="font-medium">{t(translations.openingDaysHours)}</h4>
+                            <div className="space-y-3">
+                                {daysOfWeek.map(day => (
+                                    <div key={day} className="grid grid-cols-3 items-center gap-4">
+                                        <Label htmlFor={`hours-${day}`} className="col-span-1">{day}</Label>
+                                        <div className="col-span-2 grid grid-cols-2 gap-2">
+                                             <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" />
+                                             <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" />
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    <span>{t(translations.openingHoursDesc)}</span>
                                 </div>
-                                <div>
-                                    <Label>{t(translations.vatRates)}</Label>
-                                    <div className="mt-2 space-y-2 p-3 border rounded-md">
-                                        {editableTaxRates.map((taxRate, index) => (
-                                            <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
-                                                <div className="col-span-5">
-                                                    <Input placeholder={t(translations.taxNamePlaceholder)} value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
-                                                </div>
-                                                <div className="col-span-3 relative">
-                                                    <Input placeholder={t(translations.rate)} type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
-                                                     <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
-                                                </div>
-                                                <div className="col-span-3 flex items-center gap-2">
-                                                    <input type="radio" id={`default-tax-${index}`} name="default-tax" checked={taxRate.isDefault} onChange={(e) => handleTaxRateChange(index, 'isDefault', e.target.checked)} />
-                                                    <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">{t(translations.default)}</Label>
-                                                </div>
-                                                {editableTaxRates.length > 1 &&
-                                                    <div className="col-span-1">
-                                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
-                                                            <X className="h-4 w-4"/>
-                                                        </Button>
-                                                    </div>
-                                                }
+                            </div>
+                        </div>
+                      )}
+
+                      {wizardStep === 2 && (
+                         <div className="space-y-6">
+                            <div>
+                                <Label htmlFor="currency">{t(translations.defaultCurrency)}</Label>
+                                <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="mt-2 flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                    <option value="EUR">Euro (€)</option>
+                                    <option value="USD">Dollar ($)</option>
+                                    <option value="TND">Dinar (DT)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <Label>{t(translations.vatRates)}</Label>
+                                <div className="mt-2 space-y-2 p-3 border rounded-md">
+                                    {editableTaxRates.map((taxRate, index) => (
+                                        <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
+                                            <div className="col-span-5">
+                                                <Input placeholder={t(translations.taxNamePlaceholder)} value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
                                             </div>
-                                        ))}
-                                        <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addTaxRate}>
-                                            <PlusCircle className="mr-2 h-4 w-4"/> {t(translations.addVatRate)}
-                                        </Button>
-                                    </div>
+                                            <div className="col-span-3 relative">
+                                                <Input placeholder={t(translations.rate)} type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
+                                                 <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
+                                            </div>
+                                            <div className="col-span-3 flex items-center gap-2">
+                                                <input type="radio" id={`default-tax-${index}`} name="default-tax" checked={taxRate.isDefault} onChange={(e) => handleTaxRateChange(index, 'isDefault', e.target.checked)} />
+                                                <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">{t(translations.default)}</Label>
+                                            </div>
+                                            {editableTaxRates.length > 1 &&
+                                                <div className="col-span-1">
+                                                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
+                                                        <X className="h-4 w-4"/>
+                                                    </Button>
+                                                </div>
+                                            }
+                                        </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addTaxRate}>
+                                        <PlusCircle className="mr-2 h-4 w-4"/> {t(translations.addVatRate)}
+                                    </Button>
                                 </div>
-                          </TabsContent>
-                          <TabsContent value="peripherals" className="space-y-4 pt-4">
-                               <h4 className="font-medium">{t(translations.printerManagement)}</h4>
-                               <div className="space-y-3">
+                            </div>
+                        </div>
+                      )}
+
+                      {wizardStep === 3 && (
+                        <div className="space-y-4">
+                           <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2"><Printer className="h-4 w-4"/> {t(translations.printerManagement)}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
                                   {editablePrinters.map((printer, index) => (
                                     <Card key={printer.id} className="bg-muted/50">
                                       <CardHeader className="py-3 px-4 flex-row items-center justify-between">
                                           <CardTitle className="text-base flex items-center gap-2">
-                                              <Printer className="h-4 w-4" />
                                               <Input 
                                                   value={printer.name} 
                                                   onChange={(e) => handlePrinterChange(index, 'name', e.target.value)} 
-                                                  className="border-none shadow-none focus-visible:ring-1 p-1 h-auto w-auto font-semibold"
+                                                  className="border-none shadow-none focus-visible:ring-1 p-1 h-auto w-auto font-semibold bg-transparent"
                                               />
                                           </CardTitle>
                                           <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePrinter(index)}>
@@ -569,100 +604,64 @@ export default function StoresPage() {
                                                   </div>
                                               </div>
                                           )}
-                                          <Button type="button" variant="ghost" className="w-full text-muted-foreground" disabled>
-                                              <TestTube2 className="mr-2 h-4 w-4" /> {t(translations.testPage)}
-                                          </Button>
                                       </CardContent>
                                     </Card>
                                   ))}
                                   <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addPrinter}>
                                       <Printer className="mr-2 h-4 w-4"/> {t(translations.addPrinter)}
                                   </Button>
-                               </div>
-                          </TabsContent>
-                          <TabsContent value="connections" className="space-y-6 pt-4">
-                            <div>
-                                <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.kdsSync)}</h3>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-base flex items-center gap-2"><TabletSmartphone className="h-4 w-4"/> {t(translations.kdsConnections)}</CardTitle>
-                                        <CardDescription>{t(translations.kdsDescription)}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        {editableKDS.map((kds, index) => (
-                                            <Card key={kds.id} className="bg-muted/50 p-3">
-                                                <div className="grid grid-cols-12 gap-2 items-center">
-                                                    <div className="col-span-5 space-y-1">
-                                                        <Label className="text-xs">{t(translations.deviceName)}</Label>
-                                                        <Input className="h-8" value={kds.name} />
-                                                    </div>
-                                                    <div className="col-span-5 space-y-1">
-                                                        <Label className="text-xs">{t(translations.connectionCode)}</Label>
-                                                        <div className="flex">
-                                                            <Input className="h-8 rounded-r-none font-mono" value={kds.connectionCode} readOnly />
-                                                            <Button type="button" size="icon" className="h-8 w-8 rounded-l-none" onClick={() => copyToClipboard(kds.connectionCode)}>
-                                                                <Copy className="h-4 w-4"/>
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-span-2 text-right">
-                                                         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeKDS(index)}>
-                                                            <X className="h-4 w-4"/>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2"><TabletSmartphone className="h-4 w-4"/> {t(translations.kdsConnections)}</CardTitle>
+                                    <CardDescription>{t(translations.kdsDescription)}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    {editableKDS.map((kds, index) => (
+                                        <Card key={kds.id} className="bg-muted/50 p-3">
+                                            <div className="grid grid-cols-12 gap-2 items-center">
+                                                <div className="col-span-5 space-y-1">
+                                                    <Label className="text-xs">{t(translations.deviceName)}</Label>
+                                                    <Input className="h-8 bg-background" value={kds.name} />
+                                                </div>
+                                                <div className="col-span-5 space-y-1">
+                                                    <Label className="text-xs">{t(translations.connectionCode)}</Label>
+                                                    <div className="flex">
+                                                        <Input className="h-8 rounded-r-none font-mono bg-background" value={kds.connectionCode} readOnly />
+                                                        <Button type="button" size="icon" className="h-8 w-8 rounded-l-none" onClick={() => copyToClipboard(kds.connectionCode)}>
+                                                            <Copy className="h-4 w-4"/>
                                                         </Button>
                                                     </div>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground mt-1">{t(translations.lastSeen)}: {kds.lastSeen}</p>
-                                            </Card>
-                                        ))}
-                                        <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addKDS}>
-                                            <PlusCircle className="mr-2 h-4 w-4" /> {t(translations.addKDS)}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.endCustomerPayments)}</h3>
-                                <Card>
-                                    <CardHeader>
-                                         <CardTitle className="flex items-center gap-3">
-                                            <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
-                                            <span>Stripe Connect</span>
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-xs text-muted-foreground pt-1">
-                                            {t(translations.stripeDescription)}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.messaging)}</h3>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24"><path fill="#25D366" d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.73-1.11-5.2-2.9-7.01zm-7.01 15.26c-1.53 0-3.01-.47-4.29-1.36l-.3-.18l-3.18.83l.85-3.1l-.2-.31a8.084 8.084 0 0 1-1.23-4.38c0-4.54 3.7-8.24 8.24-8.24c2.2 0 4.23.86 5.82 2.45c1.59 1.59 2.45 3.62 2.45 5.82c0 4.54-3.7 8.24-8.24 8.24zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81c-.23-.08-.39-.12-.56.12c-.17.25-.64.81-.79.97c-.15.17-.29.19-.54.06c-.25-.12-1.06-.39-2.02-1.25c-.75-.67-1.25-1.5-1.4-1.75c-.14-.25-.02-.38.11-.51c.11-.11.25-.29.37-.43s.17-.25.25-.41c.08-.17.04-.31-.02-.43c-.06-.12-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42c-.14,0-.3,0-.46,0s-.39.06-.6.3c-.2.25-.79.76-.79,1.85s.81,2.15.93,2.3c.12.17 1.58,2.41 3.83,3.39c.54.24.97.38,1.3.48c.55.17,1.05.14,1.44.09c.44-.06 1.47-.6 1.68-1.18c.21-.58.21-1.07.14-1.18c-.05-.12-.19-.19-.43-.31z"/></svg>
-                                            <span>WhatsApp (via Twilio)</span>
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Label htmlFor="whatsapp-number">{t(translations.whatsappNumber)}</Label>
-                                        <Input
-                                            id="whatsapp-number"
-                                            name="whatsapp-number"
-                                            placeholder="+33612345678"
-                                            defaultValue={selectedStore?.whatsappNumber || ''}
-                                        />
-                                        <p className="text-xs text-muted-foreground mt-2">{t(translations.twilioNumberInfo)}</p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                          </TabsContent>
-                      </Tabs>
-
-                      <DialogFooter className="mt-6 pt-4 border-t">
+                                                <div className="col-span-2 text-right">
+                                                     <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeKDS(index)}>
+                                                        <X className="h-4 w-4"/>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-1">{t(translations.lastSeen)}: {kds.lastSeen}</p>
+                                        </Card>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addKDS}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> {t(translations.addKDS)}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                      )}
+                      
+                      <DialogFooter className="pt-4 border-t">
                           <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>{t(translations.cancel)}</Button>
-                          <Button type="submit">{t(translations.saveStore)}</Button>
+                          <div className="flex-grow" />
+                          {wizardStep > 0 && (
+                            <Button type="button" variant="ghost" onClick={prevStep}>{t(translations.previous)}</Button>
+                          )}
+                          {wizardStep < WIZARD_STEPS.length - 1 ? (
+                            <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
+                          ) : (
+                             <Button type="submit">{t(translations.finishAndCreateMenu)}</Button>
+                          )}
                       </DialogFooter>
                     </form>
                 </DialogContent>

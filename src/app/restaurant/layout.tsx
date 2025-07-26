@@ -142,9 +142,9 @@ export default function RestaurantLayout({
         <SidebarContent>
           <div className="p-2">
             <Button className="w-full justify-start" asChild>
-                <Link href="#">
+                <Link href="/restaurant/stores">
                     <PlusCircle />
-                    <span>{t({fr: "Créer une campagne", en: "Create Campaign"})}</span>
+                    <span>{t({fr: "Ajouter une boutique", en: "Add a Store"})}</span>
                 </Link>
             </Button>
           </div>
