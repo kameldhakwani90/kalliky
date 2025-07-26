@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -16,8 +17,29 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 
-type OrderItem = { name: string; quantity: number; price: string };
-type Order = { id: string; date: string; amount: string; items: OrderItem[] };
+type OrderItemCustomization = {
+    type: 'add' | 'remove';
+    name: string;
+    price?: number;
+};
+
+type DetailedOrderItem = {
+    id: string;
+    name: string;
+    quantity: number;
+    basePrice: number;
+    customizations: OrderItemCustomization[];
+    finalPrice: number; // basePrice + sum of customization prices
+};
+
+type DetailedOrder = {
+    id: string;
+    date: string;
+    items: DetailedOrderItem[];
+    subtotal: number;
+    tax: number;
+    total: number;
+};
 
 type Report = {
     id: string;
@@ -49,10 +71,30 @@ type Customer = {
     totalSpent: string;
     firstSeen: string;
     lastSeen: string;
-    orderHistory: Order[];
+    orderHistory: DetailedOrder[];
     callHistory: Call[];
     reportHistory: Report[];
 };
+
+const mockOrders: DetailedOrder[] = [
+    {
+        id: "#1024",
+        date: "28/05/2024",
+        items: [
+            { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, customizations: [
+                { type: 'add', name: 'Bacon grillé', price: 2.00 },
+                { type: 'add', name: 'Oeuf au plat', price: 1.00 },
+                { type: 'remove', name: 'Oignons' }
+            ], finalPrice: 19.50 },
+            { id: "item-2", name: 'Salade César', quantity: 1, basePrice: 12.50, customizations: [], finalPrice: 12.50 },
+        ],
+        subtotal: 32.00,
+        tax: 3.20,
+        total: 35.20,
+    },
+     { id: "#987", date: "15/05/2024", items: [], subtotal: 82.50, tax: 8.25, total: 90.75 },
+];
+
 
 const mockCustomers: Customer[] = [
     {
@@ -69,12 +111,9 @@ const mockCustomers: Customer[] = [
         totalSpent: "870.00€",
         firstSeen: "12/01/2024",
         lastSeen: "28/05/2024",
-        orderHistory: [
-            { id: "#1024", date: "28/05/2024", amount: "67.00€", items: [{name: 'Pizza Regina', quantity: 2, price: '14.00€'}, {name: 'Salade César', quantity: 1, price: '12.50€'}] },
-            { id: "#987", date: "15/05/2024", amount: "82.50€", items: [] },
-        ],
+        orderHistory: mockOrders,
         callHistory: [
-            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Bonjour, je voudrais commander deux pizzas Regina. Et aussi une salade César s'il vous plaît. Ce sera pour une livraison au 123 Rue de la Paix. Merci." },
+            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Bonjour, je voudrais commander un burger personnalisé avec bacon et oeuf, sans oignons. Et aussi une salade César s'il vous plaît. Ce sera pour une livraison au 123 Rue de la Paix. Merci." },
             { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "..." },
         ],
         reportHistory: [
@@ -91,9 +130,7 @@ const mockCustomers: Customer[] = [
         totalSpent: "57.90€",
         firstSeen: "27/05/2024",
         lastSeen: "27/05/2024",
-        orderHistory: [
-            { id: "#1023", date: "27/05/2024", amount: "57.90€", items: [{name: 'Burger "Le Personnalisé"', quantity: 2, price: '18.50€'}] },
-        ],
+        orderHistory: [],
         callHistory: [
             { id: 'call-3', date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande', transcript: "Salut, je voudrais deux burgers personnalisés. Viande bien cuite pour les deux s'il vous plait. À emporter. C'est tout !" },
         ],
@@ -108,6 +145,8 @@ export default function ClientProfilePage() {
     
     const [isEditing, setIsEditing] = useState(false);
     const [editedCustomer, setEditedCustomer] = useState<Customer | null>(customer ? { ...customer } : null);
+    const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
+    const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
 
     if (!customer || !editedCustomer) {
         return notFound();
@@ -118,12 +157,17 @@ export default function ClientProfilePage() {
     };
     
     const handleSave = () => {
-        // Here you would typically save the data to your backend
         console.log("Saving customer data:", editedCustomer);
         setIsEditing(false);
     };
 
+    const handleViewOrderTicket = (order: DetailedOrder) => {
+        setSelectedOrder(order);
+        setOrderTicketOpen(true);
+    }
+
     return (
+        <>
         <div className="space-y-6">
             <header className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
@@ -230,8 +274,12 @@ export default function ClientProfilePage() {
                                                 <TableRow key={order.id}>
                                                     <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
                                                     <TableCell>{order.date}</TableCell>
-                                                    <TableCell>{order.amount}</TableCell>
-                                                    <TableCell className="text-right"><Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4"/></Button></TableCell>
+                                                    <TableCell>{order.total.toFixed(2)}€</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
+                                                            <Eye className="h-4 w-4"/>
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -322,5 +370,67 @@ export default function ClientProfilePage() {
                 </div>
             </div>
         </div>
+        {selectedOrder && (
+            <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
+                <DialogContent className="sm:max-w-sm font-mono">
+                    <DialogHeader className="text-center space-y-2">
+                        <div className="mx-auto">
+                            <Receipt className="h-10 w-10"/>
+                        </div>
+                        <DialogTitle className="font-headline text-lg">Le Gourmet Parisien</DialogTitle>
+                        <DialogDescription className="text-xs">
+                            12 Rue de la Paix, 75002 Paris<br />
+                            Commande {selectedOrder.id} - {selectedOrder.date}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 my-4 text-xs">
+                        <Separator className="border-dashed" />
+                        {selectedOrder.items.map((item, index) => (
+                            <div key={item.id + index}>
+                                <div className="flex justify-between font-bold">
+                                    <span>{item.quantity}x {item.name}</span>
+                                    <span>{item.finalPrice.toFixed(2)}€</span>
+                                </div>
+                                {item.customizations.length > 0 && (
+                                    <div className="pl-4 mt-1 space-y-1">
+                                        {item.customizations.map((cust, cIndex) => (
+                                            <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
+                                                <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
+                                                {cust.price && <span>{cust.price.toFixed(2)}€</span>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        <Separator className="border-dashed" />
+                        <div className="space-y-1">
+                            <div className="flex justify-between">
+                                <span>SOUS-TOTAL</span>
+                                <span>{selectedOrder.subtotal.toFixed(2)}€</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>TVA (10%)</span>
+                                <span>{selectedOrder.tax.toFixed(2)}€</span>
+                            </div>
+                        </div>
+                        <Separator className="border-dashed" />
+                        <div className="flex justify-between font-bold text-base">
+                            <span>TOTAL</span>
+                            <span>{selectedOrder.total.toFixed(2)}€</span>
+                        </div>
+                         <Separator className="border-dashed" />
+                         <div className="text-center text-gray-500 pt-2">
+                            Merci de votre visite !
+                         </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" className="w-full font-sans">Imprimer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
+        </>
     );
 }
+
