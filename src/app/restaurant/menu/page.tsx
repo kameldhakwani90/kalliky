@@ -358,6 +358,31 @@ const EditableCompositionDisplay: React.FC<{
     onUpdate(newSteps);
   }
 
+  const handleOptionPriceChange = (stepIndex: number, optionIndex: number, variationId: string, channel: SaleChannel, value: string) => {
+      const newSteps = [...view.steps];
+      const option = newSteps[stepIndex].options[optionIndex];
+      if (!option) return;
+
+      const newPrices = { ...(option.prices || {}) };
+      if (!newPrices[variationId]) {
+          newPrices[variationId] = {};
+      }
+
+      const priceValue = parseFloat(value);
+      if (isNaN(priceValue) || priceValue <= 0) {
+          delete newPrices[variationId]![channel];
+          if (Object.keys(newPrices[variationId]!).length === 0) {
+              delete newPrices[variationId];
+          }
+      } else {
+          newPrices[variationId]![channel] = priceValue;
+      }
+
+      (newSteps[stepIndex].options[optionIndex] as any)['prices'] = newPrices;
+      onUpdate(newSteps);
+  };
+
+
   return (
     <div className="space-y-4">
       {view.steps.map((step, stepIndex) => (
@@ -399,11 +424,15 @@ const EditableCompositionDisplay: React.FC<{
                       {variations.map(variation => (
                         <div key={variation.id} className="grid grid-cols-3 gap-2 items-center">
                           <Label className="text-xs text-muted-foreground">{variation.name}</Label>
-                          <Input
-                            type="number"
-                            value={option.prices?.[variation.id] ? Object.values(option.prices[variation.id])[0] : ''}
-                            className="w-full h-7 text-xs"
-                            placeholder="Prix" />
+                           <div className="relative">
+                            <Input
+                                type="number"
+                                value={option.prices?.[variation.id]?.[Object.keys(option.prices?.[variation.id] || {})[0] as SaleChannel]?.toFixed(2) || ''}
+                                onChange={(e) => handleOptionPriceChange(stepIndex, optionIndex, variation.id, 'dine-in', e.target.value)}
+                                className="w-full h-7 text-xs pl-2 pr-5"
+                                placeholder="Prix" />
+                            <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">€</span>
+                          </div>
                           <div className="flex items-center gap-2">
                             <Switch
                                 checked={option.visibility?.[variation.id] ?? true}
@@ -478,7 +507,7 @@ export default function MenuPage() {
   const handleCreateNewItem = () => {
     const newItem: MenuItem = {
       id: `item-${Date.now()}`,
-      name: "",
+      name: "Nouvel article",
       categoryId: categories.length > 0 ? categories[0].id : "cat-1",
       description: '',
       image: 'https://placehold.co/600x400.png',
@@ -505,6 +534,7 @@ export default function MenuPage() {
   };
   
   const getPriceDisplay = (item: MenuItem) => {
+    if (!item.variations[0]) return 'N/A';
     const firstVariationPrices = Object.values(item.variations[0].prices);
     if (firstVariationPrices.length === 0) return 'N/A';
     const firstPrice = firstVariationPrices[0];
