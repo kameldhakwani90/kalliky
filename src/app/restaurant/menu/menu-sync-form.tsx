@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -8,8 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 import { menuSync } from '@/ai/flows/menu-sync-ai';
 import { Loader2, UploadCloud } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/contexts/language-context';
 
 export default function MenuSyncForm() {
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -34,8 +37,8 @@ export default function MenuSyncForm() {
     event.preventDefault();
     if (!file) {
       toast({
-        title: 'Aucun fichier sélectionné',
-        description: 'Veuillez sélectionner un fichier à importer.',
+        title: t({ fr: 'Aucun fichier sélectionné', en: 'No file selected' }),
+        description: t({ fr: 'Veuillez sélectionner un fichier à importer.', en: 'Please select a file to import.' }),
         variant: 'destructive',
       });
       return;
@@ -52,20 +55,28 @@ export default function MenuSyncForm() {
         setResult(formattedJson);
 
         toast({
-            title: 'Synchronisation réussie!',
-            description: 'Votre menu a été analysé et mis à jour.',
+            title: t({ fr: 'Synchronisation réussie!', en: 'Synchronization successful!' }),
+            description: t({ fr: 'Votre menu a été analysé et mis à jour.', en: 'Your menu has been analyzed and updated.' }),
         });
 
     } catch (error) {
       console.error('Menu sync failed:', error);
       toast({
-        title: 'Erreur de synchronisation',
-        description: 'Impossible de traiter le fichier. Veuillez vérifier le format et réessayer.',
+        title: t({ fr: 'Erreur de synchronisation', en: 'Synchronization error' }),
+        description: t({ fr: 'Impossible de traiter le fichier. Veuillez vérifier le format et réessayer.', en: 'Could not process the file. Please check the format and try again.' }),
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
+  };
+  
+  const translations = {
+    dropOrSelect: { fr: 'Glissez-déposez un fichier ou cliquez pour sélectionner', en: 'Drag and drop a file or click to select' },
+    fileSelected: { fr: 'Fichier sélectionné', en: 'File selected' },
+    loading: { fr: 'Analyse en cours...', en: 'Analyzing...' },
+    sync: { fr: 'Lancer la synchronisation', en: 'Start synchronization' },
+    analysisResult: { fr: 'Résultat de l\'analyse :', en: 'Analysis Result:' },
   };
 
   return (
@@ -74,7 +85,7 @@ export default function MenuSyncForm() {
         <div className="border-dashed border-2 border-muted rounded-lg p-6 text-center">
             <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
             <Label htmlFor="menu-file" className="mt-4 block text-sm font-medium text-foreground">
-                Glissez-déposez un fichier ou cliquez pour sélectionner
+                {t(translations.dropOrSelect)}
             </Label>
             <Input
             id="menu-file"
@@ -84,7 +95,7 @@ export default function MenuSyncForm() {
             disabled={loading}
             className="sr-only"
             />
-            {file && <p className="text-xs text-muted-foreground mt-2">Fichier sélectionné: {file.name}</p>}
+            {file && <p className="text-xs text-muted-foreground mt-2">{t(translations.fileSelected)}: {file.name}</p>}
         </div>
         <Button type="submit" disabled={loading || !file} className="w-full">
           {loading ? (
@@ -92,13 +103,13 @@ export default function MenuSyncForm() {
           ) : (
             <UploadCloud className="mr-2 h-4 w-4" />
           )}
-          {loading ? 'Analyse en cours...' : 'Lancer la synchronisation'}
+          {loading ? t(translations.loading) : t(translations.sync)}
         </Button>
       </form>
 
       {result && (
         <div className="mt-4">
-            <h4 className="font-semibold mb-2">Résultat de l'analyse :</h4>
+            <h4 className="font-semibold mb-2">{t(translations.analysisResult)}</h4>
             <pre className="bg-muted p-4 rounded-md text-xs overflow-x-auto">
                 <code>
                     {result}

@@ -48,7 +48,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -58,6 +58,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/contexts/language-context';
 
 type DayAvailability = {
   enabled: boolean;
@@ -80,11 +81,11 @@ type Availability = {
 
 type SaleChannel = 'dine-in' | 'takeaway' | 'delivery' | 'call-and-collect';
 
-const saleChannels: { id: SaleChannel, label: string }[] = [
-    { id: 'dine-in', label: 'Sur place' },
-    { id: 'takeaway', label: 'À emporter' },
-    { id: 'delivery', label: 'Livraison' },
-    { id: 'call-and-collect', label: 'Call & Collect' },
+const saleChannels: { id: SaleChannel, label: Record<'fr' | 'en', string> }[] = [
+    { id: 'dine-in', label: { fr: 'Sur place', en: 'Dine-in' } },
+    { id: 'takeaway', label: { fr: 'À emporter', en: 'Takeaway' } },
+    { id: 'delivery', label: { fr: 'Livraison', en: 'Delivery' } },
+    { id: 'call-and-collect', label: { fr: 'Call & Collect', en: 'Call & Collect' } },
 ];
 
 type PricesByChannel = Partial<Record<SaleChannel, number>>;
@@ -306,13 +307,13 @@ const initialMenuItems: MenuItem[] = [
 ];
 
 const daysOfWeek = [
-    { id: 'monday', label: 'Lundi' },
-    { id: 'tuesday', label: 'Mardi' },
-    { id: 'wednesday', label: 'Mercredi' },
-    { id: 'thursday', label: 'Jeudi' },
-    { id: 'friday', label: 'Vendredi' },
-    { id: 'saturday', label: 'Samedi' },
-    { id: 'sunday', label: 'Dimanche' },
+    { id: 'monday', label: { fr: 'Lundi', en: 'Monday' } },
+    { id: 'tuesday', label: { fr: 'Mardi', en: 'Tuesday' } },
+    { id: 'wednesday', label: { fr: 'Mercredi', en: 'Wednesday' } },
+    { id: 'thursday', label: { fr: 'Jeudi', en: 'Thursday' } },
+    { id: 'friday', label: { fr: 'Vendredi', en: 'Friday' } },
+    { id: 'saturday', label: { fr: 'Samedi', en: 'Saturday' } },
+    { id: 'sunday', label: { fr: 'Dimanche', en: 'Sunday' } },
 ];
 
 const currentUserPlan = 'pro';
@@ -329,11 +330,12 @@ const EditableCompositionDisplay: React.FC<{
   onOptionCompositionCreate: (stepIndex: number, optionIndex: number) => void;
   onUpdate: (steps: CompositionStep[]) => void;
 }> = ({ view, variations, onNavigate, onOptionCompositionCreate, onUpdate }) => {
+  const { t } = useLanguage();
 
   const handleAddStep = () => {
     const newStep: CompositionStep = {
       id: `step_${Date.now()}`,
-      title: 'Nouvelle étape',
+      title: t({ fr: 'Nouvelle étape', en: 'New step' }),
       selectionType: 'single',
       isRequired: false,
       options: [],
@@ -350,7 +352,7 @@ const EditableCompositionDisplay: React.FC<{
     const newSteps = [...view.steps];
     const newOption: CompositionOption = {
         id: `opt_${Date.now()}`,
-        name: 'Nouvelle option',
+        name: t({ fr: 'Nouvelle option', en: 'New option' }),
         prices: {}
     };
     newSteps[stepIndex].options.push(newOption);
@@ -393,6 +395,20 @@ const EditableCompositionDisplay: React.FC<{
       onUpdate(newSteps);
   };
 
+  const translations = {
+    required: { fr: 'Requis', en: 'Required' },
+    optional: { fr: 'Optionnel', en: 'Optional' },
+    confirmStepDeletion: { fr: 'Êtes-vous sûr de vouloir supprimer cette étape ?', en: 'Are you sure you want to delete this step?' },
+    irreversibleAction: { fr: 'Cette action est irréversible.', en: 'This action is irreversible.' },
+    cancel: { fr: 'Annuler', en: 'Cancel' },
+    delete: { fr: 'Supprimer', en: 'Delete' },
+    edit: { fr: 'Modifier', en: 'Edit' },
+    confirmOptionDeletion: { fr: 'Êtes-vous sûr de vouloir supprimer cette option ?', en: 'Are you sure you want to delete this option?' },
+    price: { fr: 'Prix', en: 'Price' },
+    visible: { fr: 'Visible', en: 'Visible' },
+    addOption: { fr: 'Ajouter une option', en: 'Add an option' },
+    addCompositionStep: { fr: 'Ajouter une étape de composition', en: 'Add composition step' },
+  };
 
   return (
     <div className="space-y-4">
@@ -402,7 +418,7 @@ const EditableCompositionDisplay: React.FC<{
             <CardHeader className="py-3 px-4 flex-row items-center justify-between">
               <Input defaultValue={step.title} className="text-base font-semibold border-none shadow-none focus-visible:ring-1 p-1 h-auto" />
               <div className="flex items-center gap-2">
-                  <Badge variant={step.isRequired ? "destructive" : "secondary"} className="text-xs">{step.isRequired ? "Requis" : "Optionnel"}</Badge>
+                  <Badge variant={step.isRequired ? "destructive" : "secondary"} className="text-xs">{step.isRequired ? t(translations.required) : t(translations.optional)}</Badge>
                   <Switch checked={step.isRequired} />
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -410,12 +426,12 @@ const EditableCompositionDisplay: React.FC<{
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                           <AlertDialogHeader>
-                              <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette étape ?</AlertDialogTitle>
-                              <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
+                              <AlertDialogTitle>{t(translations.confirmStepDeletion)}</AlertDialogTitle>
+                              <AlertDialogDescription>{t(translations.irreversibleAction)}</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleRemoveStep(stepIndex)}>Supprimer</AlertDialogAction>
+                              <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRemoveStep(stepIndex)}>{t(translations.delete)}</AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
                   </AlertDialog>
@@ -434,12 +450,12 @@ const EditableCompositionDisplay: React.FC<{
                     <div className="flex items-center gap-2">
                       <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => {
                         if (option.composition) {
-                          onNavigate(option.composition, `Composition de : ${option.name}`)
+                          onNavigate(option.composition, `${t({fr: "Composition de", en: "Composition of"})}: ${option.name}`)
                         } else {
                           onOptionCompositionCreate(stepIndex, optionIndex);
                         }
                       }}>
-                        Modifier <ChevronRight className="h-4 w-4 ml-1" />
+                        {t(translations.edit)} <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                       <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -447,12 +463,12 @@ const EditableCompositionDisplay: React.FC<{
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                               <AlertDialogHeader>
-                                  <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette option ?</AlertDialogTitle>
-                                  <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
+                                  <AlertDialogTitle>{t(translations.confirmOptionDeletion)}</AlertDialogTitle>
+                                  <AlertDialogDescription>{t(translations.irreversibleAction)}</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleRemoveOption(stepIndex, optionIndex)}>Supprimer</AlertDialogAction>
+                                  <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleRemoveOption(stepIndex, optionIndex)}>{t(translations.delete)}</AlertDialogAction>
                               </AlertDialogFooter>
                           </AlertDialogContent>
                       </AlertDialog>
@@ -469,7 +485,7 @@ const EditableCompositionDisplay: React.FC<{
                                 value={option.prices?.[variation.id]?.[Object.keys(option.prices?.[variation.id] || {})[0] as SaleChannel]?.toFixed(2) || ''}
                                 onChange={(e) => handleOptionPriceChange(stepIndex, optionIndex, variation.id, 'dine-in', e.target.value)}
                                 className="w-full h-7 text-xs pl-2 pr-5"
-                                placeholder="Prix" />
+                                placeholder={t(translations.price)} />
                             <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">€</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -477,7 +493,7 @@ const EditableCompositionDisplay: React.FC<{
                                 checked={option.visibility?.[variation.id] ?? true}
                                 onCheckedChange={(checked) => handleOptionChange(stepIndex, optionIndex, 'visibility', {...option.visibility, [variation.id]: checked})}
                             />
-                            <span className="text-xs text-muted-foreground">Visible</span>
+                            <span className="text-xs text-muted-foreground">{t(translations.visible)}</span>
                           </div>
                         </div>
                       ))}
@@ -486,17 +502,18 @@ const EditableCompositionDisplay: React.FC<{
                 </li>
               ))}
             </ul>
-             <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => handleAddOption(stepIndex)}><Plus className="mr-2 h-4 w-4"/> Ajouter une option</Button>
+             <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => handleAddOption(stepIndex)}><Plus className="mr-2 h-4 w-4"/> {t(translations.addOption)}</Button>
           </CardContent>
         </Card>
       ))}
-      <Button variant="secondary" className="w-full" onClick={handleAddStep}><Plus className="mr-2 h-4 w-4"/> Ajouter une étape de composition</Button>
+      <Button variant="secondary" className="w-full" onClick={handleAddStep}><Plus className="mr-2 h-4 w-4"/> {t(translations.addCompositionStep)}</Button>
     </div>
   );
 };
 
 
 export default function MenuPage() {
+  const { t } = useLanguage();
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [editedItem, setEditedItem] = useState<MenuItem | null>(null);
@@ -521,10 +538,10 @@ export default function MenuPage() {
       return compositionHistory[compositionHistory.length - 1];
     }
     if (editedItem?.composition) {
-      return { title: "Composition de l'article", steps: editedItem.composition };
+      return { title: t({fr: "Composition de l'article", en: "Item Composition"}), steps: editedItem.composition };
     }
     return null;
-  }, [editedItem, compositionHistory]);
+  }, [editedItem, compositionHistory, t]);
 
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter(item => {
@@ -546,7 +563,7 @@ export default function MenuPage() {
   const handleCreateNewItem = () => {
     const newItem: MenuItem = {
       id: `item-${Date.now()}`,
-      name: "Nouvel article",
+      name: t({fr: "Nouvel article", en: "New Item"}),
       categoryId: categories.length > 0 ? categories[0].id : "cat-1",
       description: '',
       image: 'https://placehold.co/600x400.png',
@@ -583,7 +600,7 @@ export default function MenuPage() {
     const firstPrice = firstVariationPrices[0];
     
     if (item.variations.length > 1) {
-        return `à partir de ${firstPrice.toFixed(2)}€`
+        return `${t({fr: 'à partir de', en: 'from'})} ${firstPrice.toFixed(2)}€`
     }
     return `${firstPrice.toFixed(2)}€`
   }
@@ -614,7 +631,7 @@ export default function MenuPage() {
     if (!editedItem) return;
     const firstStep: CompositionStep = {
       id: `step_${Date.now()}`,
-      title: isStepped ? 'Étape 1' : '',
+      title: isStepped ? t({fr: 'Étape 1', en: 'Step 1'}) : '',
       selectionType: 'single',
       isRequired: false,
       options: [],
@@ -629,7 +646,7 @@ export default function MenuPage() {
     const optionToUpdate = newSteps[stepIndex].options[optionIndex];
     if (optionToUpdate) {
         optionToUpdate.composition = [];
-        handleNavigateComposition(optionToUpdate.composition, `Composition de : ${optionToUpdate.name}`);
+        handleNavigateComposition(optionToUpdate.composition, `${t({fr: "Composition de", en: "Composition of"})}: ${optionToUpdate.name}`);
     }
   };
 
@@ -720,68 +737,132 @@ export default function MenuPage() {
     return categories.find(c => c.id === categoryId)?.name || 'N/A';
   }
 
+  const translations = {
+    title: { fr: "Gestion du Menu", en: "Menu Management" },
+    description: { fr: "Gérez votre menu, ajoutez de nouveaux plats et synchronisez avec l'IA.", en: "Manage your menu, add new items, and sync with AI." },
+    yourMenu: { fr: "Votre Menu", en: "Your Menu" },
+    yourMenuDescription: { fr: "Consultez, modifiez et gérez la disponibilité de vos articles.", en: "View, edit, and manage the availability of your items." },
+    addSync: { fr: "Ajouter / Synchroniser", en: "Add / Sync" },
+    searchByName: { fr: "Rechercher par nom...", en: "Search by name..." },
+    allCategories: { fr: "Toutes les catégories", en: "All categories" },
+    allStores: { fr: "Toutes les boutiques", en: "All stores" },
+    allStatuses: { fr: "Tous les statuts", en: "All statuses" },
+    image: { fr: "Image", en: "Image" },
+    name: { fr: "Nom", en: "Name" },
+    category: { fr: "Catégorie", en: "Category" },
+    price: { fr: "Prix", en: "Price" },
+    availability: { fr: "Disponibilité", en: "Availability" },
+    outOfStock: { fr: "En rupture", en: "Out of stock" },
+    action: { fr: "Action", en: "Action" },
+    always: { fr: "Toujours", en: "Always" },
+    creationTools: { fr: "Outils de création et synchronisation", en: "Creation and Synchronization Tools" },
+    selectStoreAction: { fr: "Sélectionnez une boutique puis choisissez une action.", en: "Select a store then choose an action." },
+    applyToStore: { fr: "Appliquer à la boutique", en: "Apply to store" },
+    selectStore: { fr: "Sélectionner une boutique", en: "Select a store" },
+    item: { fr: "Article", en: "Item" },
+    import: { fr: "Importer", en: "Import" },
+    createItemManually: { fr: "Créez un nouvel article manuellement et configurez toutes ses options en détail.", en: "Create a new item manually and configure all its options in detail." },
+    createNewItem: { fr: "Créer un nouvel article", en: "Create a new item" },
+    newCategoryName: { fr: "Nom de la nouvelle catégorie", en: "New category name" },
+    categoryNamePlaceholder: { fr: "Ex: Boissons fraîches", en: "Ex: Cold Drinks" },
+    addCategory: { fr: "Ajouter la catégorie", en: "Add category" },
+    importDescription: { fr: "Importez depuis un fichier Excel ou une image (flyer, menu existant). Notre IA détectera et ajoutera les plats pour vous.", en: "Import from an Excel file or an image (flyer, existing menu). Our AI will detect and add the dishes for you." },
+    openMenu: { fr: "Ouvrir le menu", en: "Open menu" },
+    edit: { fr: "Modifier", en: "Edit" },
+    delete: { fr: "Supprimer", en: "Delete" },
+    areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
+    deleteItemConfirmation: { fr: "Cette action est irréversible et supprimera cet article définitivement.", en: "This action is irreversible and will permanently delete this item." },
+    cancel: { fr: "Annuler", en: "Cancel" },
+    back: { fr: "Retour", en: "Back" },
+    newItem: { fr: "Nouvel Article", en: "New Item" },
+    generalInfo: { fr: "Informations générales", en: "General Information" },
+    changeImage: { fr: "Changer l'image", en: "Change image" },
+    itemName: { fr: "Nom de l'article", en: "Item name" },
+    itemDescription: { fr: "Description", en: "Description" },
+    sizesAndPrices: { fr: "Tailles & Tarifs", en: "Sizes & Prices" },
+    sizesAndPricesDescription: { fr: "Définissez les tailles et les prix par canal de vente.", en: "Define sizes and prices per sales channel." },
+    sizeNamePlaceholder: { fr: "Nom de la taille (ex: Large)", en: "Size name (e.g., Large)" },
+    pricePerChannel: { fr: "Prix par mode de vente", en: "Price per sales channel" },
+    addSize: { fr: "Ajouter une taille/variation", en: "Add a size/variation" },
+    availabilityTitle: { fr: "Disponibilité", en: "Availability" },
+    availabilityDescription: { fr: "Définissez quand cet article peut être commandé.", en: "Define when this item can be ordered." },
+    salesTags: { fr: "Tags de Vente", en: "Sales Tags" },
+    suggestWithAI: { fr: "Suggérer par IA", en: "Suggest with AI" },
+    addTag: { fr: "Ajouter un tag...", en: "Add a tag..." },
+    add: { fr: "Ajouter", en: "Add" },
+    noComposition: { fr: "Ce plat n'a pas de composition.", en: "This dish has no composition." },
+    createSteppedComposition: { fr: "Créer une composition par étapes", en: "Create stepped composition" },
+    addSimpleOptionList: { fr: "Ajouter une liste d'options simple", en: "Add a simple option list" },
+    saveChanges: { fr: "Enregistrer les modifications", en: "Save changes" },
+    active: { fr: "Actif", en: "Active" },
+    outOfStockStatus: { fr: "En rupture", en: "Out of stock" },
+    inactive: { fr: "Inactif", en: "Inactive" },
+    confirmVariationDeletion: { fr: "Êtes-vous sûr de vouloir supprimer cette variation ?", en: "Are you sure you want to delete this variation?" },
+    variationDeletionDescription: { fr: "Toutes les données de prix et de disponibilité pour cette taille seront perdues.", en: "All price and availability data for this size will be lost." },
+
+  };
 
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Gestion du Menu</h1>
-        <p className="text-muted-foreground">Gérez votre menu, ajoutez de nouveaux plats et synchronisez avec l'IA.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
+        <p className="text-muted-foreground">{t(translations.description)}</p>
       </header>
 
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div className="flex-1">
-            <CardTitle>Votre Menu</CardTitle>
-            <CardDescription>Consultez, modifiez et gérez la disponibilité de vos articles.</CardDescription>
+            <CardTitle>{t(translations.yourMenu)}</CardTitle>
+            <CardDescription>{t(translations.yourMenuDescription)}</CardDescription>
           </div>
            <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
              <DialogTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Ajouter / Synchroniser
+                  {t(translations.addSync)}
                 </Button>
               </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Outils de création et synchronisation</DialogTitle>
+                    <DialogTitle>{t(translations.creationTools)}</DialogTitle>
                     <DialogDescription>
-                        Sélectionnez une boutique puis choisissez une action.
+                        {t(translations.selectStoreAction)}
                     </DialogDescription>
                 </DialogHeader>
                  <div className="space-y-2 py-2">
-                    <Label>Appliquer à la boutique</Label>
+                    <Label>{t(translations.applyToStore)}</Label>
                     <Select value={dialogSelectedStoreId} onValueChange={setDialogSelectedStoreId}>
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Sélectionner une boutique" />
+                            <SelectValue placeholder={t(translations.selectStore)} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Toutes les boutiques</SelectItem>
+                            <SelectItem value="all">{t(translations.allStores)}</SelectItem>
                             {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                  <Tabs defaultValue="article" className="pt-2">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="article">Article</TabsTrigger>
-                        <TabsTrigger value="category">Catégorie</TabsTrigger>
-                        <TabsTrigger value="import">Importer</TabsTrigger>
+                        <TabsTrigger value="article">{t(translations.item)}</TabsTrigger>
+                        <TabsTrigger value="category">{t(translations.category)}</TabsTrigger>
+                        <TabsTrigger value="import">{t(translations.import)}</TabsTrigger>
                     </TabsList>
                     <TabsContent value="article" className="pt-4 space-y-4">
                        <p className="text-sm text-muted-foreground">
-                        Créez un nouvel article manuellement et configurez toutes ses options en détail.
+                        {t(translations.createItemManually)}
                        </p>
-                       <Button className="w-full" onClick={handleCreateNewItem}><PlusCircle className="mr-2 h-4 w-4"/>Créer un nouvel article</Button>
+                       <Button className="w-full" onClick={handleCreateNewItem}><PlusCircle className="mr-2 h-4 w-4"/>{t(translations.createNewItem)}</Button>
                     </TabsContent>
                     <TabsContent value="category" className="pt-4 space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="cat-name">Nom de la nouvelle catégorie</Label>
-                            <Input id="cat-name" placeholder="Ex: Boissons fraîches"/>
+                            <Label htmlFor="cat-name">{t(translations.newCategoryName)}</Label>
+                            <Input id="cat-name" placeholder={t(translations.categoryNamePlaceholder)}/>
                         </div>
-                        <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4"/>Ajouter la catégorie</Button>
+                        <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4"/>{t(translations.addCategory)}</Button>
                     </TabsContent>
                     <TabsContent value="import" className="pt-4">
                       <p className="text-sm text-muted-foreground mb-4">
-                        Importez depuis un fichier Excel ou une image (flyer, menu existant). Notre IA détectera et ajoutera les plats pour vous.
+                        {t(translations.importDescription)}
                       </p>
                       <MenuSyncForm />
                     </TabsContent>
@@ -793,30 +874,30 @@ export default function MenuPage() {
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Rechercher par nom..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <Input placeholder={t(translations.searchByName)} className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                 <div className="flex gap-4 md:w-auto w-full">
                     <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="md:w-48 w-full"><SelectValue placeholder="Catégorie" /></SelectTrigger>
+                        <SelectTrigger className="md:w-48 w-full"><SelectValue placeholder={t(translations.category)} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Toutes les catégories</SelectItem>
+                            <SelectItem value="all">{t(translations.allCategories)}</SelectItem>
                             {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Select value={selectedStore} onValueChange={setSelectedStore}>
-                        <SelectTrigger className="md:w-48 w-full"><Store className="h-4 w-4 mr-2" /><SelectValue placeholder="Boutique" /></SelectTrigger>
+                        <SelectTrigger className="md:w-48 w-full"><Store className="h-4 w-4 mr-2" /><SelectValue placeholder={t({fr: "Boutique", en: "Store"})} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Toutes les boutiques</SelectItem>
+                            <SelectItem value="all">{t(translations.allStores)}</SelectItem>
                             {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                        <SelectTrigger className="md:w-48 w-full"><SelectValue placeholder="Statut" /></SelectTrigger>
+                        <SelectTrigger className="md:w-48 w-full"><SelectValue placeholder={t({fr: "Statut", en: "Status"})} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Tous les statuts</SelectItem>
-                            <SelectItem value="active">Actif</SelectItem>
-                            <SelectItem value="out-of-stock">En rupture</SelectItem>
-                            <SelectItem value="inactive">Inactif</SelectItem>
+                            <SelectItem value="all">{t(translations.allStatuses)}</SelectItem>
+                            <SelectItem value="active">{t(translations.active)}</SelectItem>
+                            <SelectItem value="out-of-stock">{t(translations.outOfStockStatus)}</SelectItem>
+                            <SelectItem value="inactive">{t(translations.inactive)}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -826,13 +907,13 @@ export default function MenuPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-[80px]">Image</TableHead>
-                        <TableHead>Nom</TableHead>
-                        <TableHead>Catégorie</TableHead>
-                        <TableHead>Prix</TableHead>
-                        <TableHead>Disponibilité</TableHead>
-                        <TableHead>En rupture</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead className="w-[80px]">{t(translations.image)}</TableHead>
+                        <TableHead>{t(translations.name)}</TableHead>
+                        <TableHead>{t(translations.category)}</TableHead>
+                        <TableHead>{t(translations.price)}</TableHead>
+                        <TableHead>{t(translations.availability)}</TableHead>
+                        <TableHead>{t(translations.outOfStock)}</TableHead>
+                        <TableHead className="text-right">{t(translations.action)}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -859,7 +940,7 @@ export default function MenuPage() {
                                     <Clock className="h-4 w-4" />
                                 </div>
                             ) : (
-                                <span className="text-xs text-muted-foreground italic">Toujours</span>
+                                <span className="text-xs text-muted-foreground italic">{t(translations.always)}</span>
                             )}
                         </TableCell>
                         <TableCell>
@@ -875,32 +956,32 @@ export default function MenuPage() {
                            <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="h-8 w-8 p-0">
-                                        <span className="sr-only">Ouvrir le menu</span>
+                                        <span className="sr-only">{t(translations.openMenu)}</span>
                                         <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => handleItemClick(item)}>
                                         <Pencil className="mr-2 h-4 w-4" />
-                                        Modifier
+                                        {t(translations.edit)}
                                     </DropdownMenuItem>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
                                                 <Trash2 className="mr-2 h-4 w-4" />
-                                                Supprimer
+                                                {t(translations.delete)}
                                             </DropdownMenuItem>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                                                <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                    Cette action est irréversible et supprimera cet article définitivement.
+                                                    {t(translations.deleteItemConfirmation)}
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => deleteMenuItem(item.id)}>Supprimer</AlertDialogAction>
+                                                <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => deleteMenuItem(item.id)}>{t(translations.delete)}</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -922,11 +1003,11 @@ export default function MenuPage() {
                {compositionHistory.length > 0 && (
                 <Button variant="ghost" size="sm" onClick={handleBackComposition} className="absolute left-4 top-4 h-auto p-1.5 rounded-md z-10">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour
+                  {t(translations.back)}
                 </Button>
               )}
                <DialogTitle className="text-center text-2xl font-headline pt-2">
-                {compositionHistory.length > 0 ? currentView?.title : (editedItem.name || 'Nouvel Article')}
+                {compositionHistory.length > 0 ? currentView?.title : (editedItem.name || t(translations.newItem))}
                </DialogTitle>
             </DialogHeader>
 
@@ -936,7 +1017,7 @@ export default function MenuPage() {
                 <div className="space-y-4 md:col-span-1">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base font-headline">Informations générales</CardTitle>
+                            <CardTitle className="text-base font-headline">{t(translations.generalInfo)}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative group cursor-pointer" onClick={() => imageInputRef.current?.click()}>
@@ -951,17 +1032,17 @@ export default function MenuPage() {
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                                     <Button size="sm" className="pointer-events-none">
                                         <ImagePlus className="mr-2 h-4 w-4" />
-                                        Changer l'image
+                                        {t(translations.changeImage)}
                                     </Button>
                                 </div>
                                 <Input type="file" ref={imageInputRef} className="sr-only" accept="image/*" onChange={handleImageChange} />
                             </div>
                              <div>
-                                <Label htmlFor="item-name">Nom de l'article</Label>
+                                <Label htmlFor="item-name">{t(translations.itemName)}</Label>
                                 <Input id="item-name" value={editedItem.name} onChange={(e) => setEditedItem({...editedItem, name: e.target.value})} />
                              </div>
                              <div>
-                                <Label htmlFor="item-desc">Description</Label>
+                                <Label htmlFor="item-desc">{t(translations.itemDescription)}</Label>
                                 <Textarea id="item-desc" value={editedItem.description} onChange={(e) => setEditedItem({...editedItem, description: e.target.value})} />
                              </div>
                         </CardContent>
@@ -969,9 +1050,9 @@ export default function MenuPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base font-headline flex items-center gap-2"><Ruler className="h-4 w-4" /> Tailles & Tarifs</CardTitle>
+                            <CardTitle className="text-base font-headline flex items-center gap-2"><Ruler className="h-4 w-4" /> {t(translations.sizesAndPrices)}</CardTitle>
                             <CardDescription>
-                                Définissez les tailles et les prix par canal de vente.
+                                {t(translations.sizesAndPricesDescription)}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -990,32 +1071,32 @@ export default function MenuPage() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette variation ?</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t(translations.confirmVariationDeletion)}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        Toutes les données de prix et de disponibilité pour cette taille seront perdues.
+                                                        {t(translations.variationDeletionDescription)}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleRemoveVariation(variation.id)}>Supprimer</AlertDialogAction>
+                                                    <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleRemoveVariation(variation.id)}>{t(translations.delete)}</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     )}
                                     <Input
-                                        placeholder="Nom de la taille (ex: Large)"
+                                        placeholder={t(translations.sizeNamePlaceholder)}
                                         value={variation.name}
                                         onChange={(e) => handleVariationChange(variation.id, 'name', e.target.value)}
                                         className="font-semibold"
                                     />
                                     <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Prix par mode de vente</Label>
+                                        <Label className="text-xs text-muted-foreground">{t(translations.pricePerChannel)}</Label>
                                         <div className="grid grid-cols-2 gap-2">
                                             {saleChannels.map(channel => (
                                                 <div key={channel.id} className="relative">
                                                     <Input
                                                         type="number"
-                                                        placeholder={channel.label}
+                                                        placeholder={t(channel.label)}
                                                         value={variation.prices[channel.id]?.toFixed(2) || ''}
                                                         onChange={(e) => handleVariationPriceChange(variation.id, channel.id, e.target.value)}
                                                         className="pl-3 pr-5 text-sm h-9"
@@ -1028,21 +1109,21 @@ export default function MenuPage() {
                                     </div>
                                 </div>
                             ))}
-                            <Button variant="outline" size="sm" className="w-full" onClick={handleAddVariation}><Plus className="mr-2 h-4 w-4" />Ajouter une taille/variation</Button>
+                            <Button variant="outline" size="sm" className="w-full" onClick={handleAddVariation}><Plus className="mr-2 h-4 w-4" />{t(translations.addSize)}</Button>
                         </CardContent>
                     </Card>
 
                      <Card>
                         <CardHeader>
                             <CardTitle className="text-base font-headline flex items-center justify-between">
-                                <span>Disponibilité</span>
+                                <span>{t(translations.availabilityTitle)}</span>
                                 <Switch
                                     checked={editedItem.availability.type === 'scheduled'}
                                     onCheckedChange={(checked) => setEditedItem(prev => prev ? {...prev, availability: {...prev.availability, type: checked ? 'scheduled' : 'always'}} : null)}
                                 />
                             </CardTitle>
                              <CardDescription>
-                                Définissez quand cet article peut être commandé.
+                                {t(translations.availabilityDescription)}
                             </CardDescription>
                         </CardHeader>
                         {editedItem.availability.type === 'scheduled' && (
@@ -1055,7 +1136,7 @@ export default function MenuPage() {
                                                 checked={editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].enabled}
                                                 onCheckedChange={(checked) => handleDayAvailabilityChange(day.id as keyof Availability['schedule'], 'enabled', !!checked)}
                                             />
-                                            <Label htmlFor={day.id}>{day.label}</Label>
+                                            <Label htmlFor={day.id}>{t(day.label)}</Label>
                                         </div>
                                         <div className={cn("col-span-2 grid grid-cols-2 gap-2", !editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].enabled && "opacity-50 pointer-events-none")}>
                                             <Input
@@ -1079,10 +1160,10 @@ export default function MenuPage() {
                         <Card>
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-lg flex items-center justify-between font-headline">
-                                    <span>Tags de Vente</span>
+                                    <span>{t(translations.salesTags)}</span>
                                     <Button variant="ghost" size="sm" className="h-auto p-1 text-sm font-normal text-muted-foreground hover:text-primary">
                                         <Wand2 className="mr-2 h-4 w-4" />
-                                        Suggérer par IA
+                                        {t(translations.suggestWithAI)}
                                     </Button>
                                 </CardTitle>
                             </CardHeader>
@@ -1098,12 +1179,12 @@ export default function MenuPage() {
                                 </div>
                                 <div className="flex gap-2 mt-4">
                                     <Input
-                                      placeholder="Ajouter un tag..."
+                                      placeholder={t(translations.addTag)}
                                       value={tagInput}
                                       onChange={(e) => setTagInput(e.target.value)}
                                       onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
                                     />
-                                    <Button onClick={handleAddTag}>Ajouter</Button>
+                                    <Button onClick={handleAddTag}>{t(translations.add)}</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -1124,13 +1205,13 @@ export default function MenuPage() {
                     <Card className="flex items-center justify-center p-4 bg-muted/50 h-full">
                         <div className="text-center">
                            <Info className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-                           <p className="text-sm text-muted-foreground mb-4">Ce plat n'a pas de composition.</p>
+                           <p className="text-sm text-muted-foreground mb-4">{t(translations.noComposition)}</p>
                            <div className="flex flex-col gap-3">
                                 <Button variant="secondary" onClick={() => handleCreateBaseComposition(true)}>
-                                    <Layers className="mr-2 h-4 w-4"/> Créer une composition par étapes
+                                    <Layers className="mr-2 h-4 w-4"/> {t(translations.createSteppedComposition)}
                                 </Button>
                                 <Button variant="secondary" onClick={() => handleCreateBaseComposition(false)}>
-                                    <List className="mr-2 h-4 w-4"/> Ajouter une liste d'options simple
+                                    <List className="mr-2 h-4 w-4"/> {t(translations.addSimpleOptionList)}
                                 </Button>
                            </div>
                         </div>
@@ -1139,8 +1220,8 @@ export default function MenuPage() {
               </div>
             </div>
             <DialogFooter className="pt-4 border-t">
-                <Button variant="outline" onClick={closePopup}>Annuler</Button>
-                <Button>Enregistrer les modifications</Button>
+                <Button variant="outline" onClick={closePopup}>{t(translations.cancel)}</Button>
+                <Button>{t(translations.saveChanges)}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1148,5 +1229,3 @@ export default function MenuPage() {
     </div>
   );
 }
-
-    

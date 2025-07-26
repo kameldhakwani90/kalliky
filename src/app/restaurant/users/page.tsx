@@ -26,12 +26,15 @@ import { PlusCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/contexts/language-context';
+
+type UserRole = 'Propriétaire' | 'Cuisinier' | 'Serveur';
 
 type User = {
     id: string;
     name: string;
     email: string;
-    role: 'Propriétaire' | 'Cuisinier' | 'Serveur';
+    role: UserRole;
     assignedStores: string[]; // Array of store IDs
 };
 
@@ -58,6 +61,7 @@ const availableStores: Store[] = [
 
 
 export default function UsersPage() {
+    const { t } = useLanguage();
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -81,33 +85,67 @@ export default function UsersPage() {
         return availableStores.find(store => store.id === id)?.name;
     };
 
+    const roleTranslations: Record<UserRole, Record<'fr'|'en', string>> = {
+        'Propriétaire': { fr: 'Propriétaire', en: 'Owner' },
+        'Cuisinier': { fr: 'Cuisinier', en: 'Cook' },
+        'Serveur': { fr: 'Serveur', en: 'Waiter' },
+    };
+
+    const translations = {
+        title: { fr: "Gestion des Utilisateurs", en: "User Management" },
+        description: { fr: "Gérez les accès et les rôles des membres de votre équipe.", en: "Manage access and roles for your team members." },
+        addUser: { fr: "Ajouter un utilisateur", en: "Add user" },
+        userList: { fr: "Liste de vos utilisateurs", en: "Your user list" },
+        name: { fr: "Nom", en: "Name" },
+        email: { fr: "Email", en: "Email" },
+        role: { fr: "Rôle", en: "Role" },
+        assignedStores: { fr: "Boutiques Assignées", en: "Assigned Stores" },
+        actions: { fr: "Actions", en: "Actions" },
+        openMenu: { fr: "Ouvrir le menu", en: "Open menu" },
+        edit: { fr: "Modifier", en: "Edit" },
+        delete: { fr: "Supprimer", en: "Delete" },
+        areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
+        deleteUserConfirmation: { fr: "Cette action est irréversible et supprimera cet utilisateur.", en: "This action is irreversible and will permanently delete this user." },
+        cancel: { fr: "Annuler", en: "Cancel" },
+        editUser: { fr: "Modifier l'utilisateur", en: "Edit user" },
+        addNewUser: { fr: "Ajouter un nouvel utilisateur", en: "Add new user" },
+        manageInfo: { fr: "Gérez les informations et les accès de vos collaborateurs.", en: "Manage information and access for your collaborators." },
+        firstName: { fr: "Prénom", en: "First Name" },
+        lastName: { fr: "Nom", en: "Last Name" },
+        selectRole: { fr: "Sélectionner un rôle", en: "Select a role" },
+        cookAccess: { fr: "Cuisinier (Accès KDS)", en: "Cook (KDS Access)" },
+        waiterAccess: { fr: "Serveur (Accès Dashboard)", en: "Waiter (Dashboard Access)" },
+        assignToStores: { fr: "Assigner à des boutiques", en: "Assign to stores" },
+        save: { fr: "Enregistrer", en: "Save" },
+    };
+
 
     return (
         <div className="space-y-8">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Gestion des Utilisateurs</h1>
-                    <p className="text-muted-foreground">Gérez les accès et les rôles des membres de votre équipe.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
+                    <p className="text-muted-foreground">{t(translations.description)}</p>
                 </div>
                 <Button onClick={() => handleOpenDialog()}>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Ajouter un utilisateur
+                    {t(translations.addUser)}
                 </Button>
             </header>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Liste de vos utilisateurs</CardTitle>
+                    <CardTitle>{t(translations.userList)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Nom</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Rôle</TableHead>
-                                <TableHead>Boutiques Assignées</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>{t(translations.name)}</TableHead>
+                                <TableHead>{t(translations.email)}</TableHead>
+                                <TableHead>{t(translations.role)}</TableHead>
+                                <TableHead>{t(translations.assignedStores)}</TableHead>
+                                <TableHead className="text-right">{t(translations.actions)}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -116,7 +154,7 @@ export default function UsersPage() {
                                     <TableCell className="font-medium">{user.name}</TableCell>
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>
-                                        <Badge variant="outline">{user.role}</Badge>
+                                        <Badge variant="outline">{t(roleTranslations[user.role])}</Badge>
                                     </TableCell>
                                     <TableCell>
                                        {user.assignedStores.map(id => getStoreNameById(id)).join(', ')}
@@ -125,32 +163,32 @@ export default function UsersPage() {
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Ouvrir le menu</span>
+                                                    <span className="sr-only">{t(translations.openMenu)}</span>
                                                     <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onClick={() => handleOpenDialog(user)}>
                                                     <Pencil className="mr-2 h-4 w-4" />
-                                                    Modifier
+                                                    {t(translations.edit)}
                                                 </DropdownMenuItem>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
                                                             <Trash2 className="mr-2 h-4 w-4" />
-                                                            Supprimer
+                                                            {t(translations.delete)}
                                                         </DropdownMenuItem>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
-                                                            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                                                            <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                Cette action est irréversible et supprimera cet utilisateur.
+                                                                {t(translations.deleteUserConfirmation)}
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
-                                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => deleteUser(user.id)}>Supprimer</AlertDialogAction>
+                                                            <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => deleteUser(user.id)}>{t(translations.delete)}</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
@@ -167,37 +205,37 @@ export default function UsersPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>{selectedUser ? "Modifier l'utilisateur" : "Ajouter un nouvel utilisateur"}</DialogTitle>
+                        <DialogTitle>{selectedUser ? t(translations.editUser) : t(translations.addNewUser)}</DialogTitle>
                         <DialogDescription>
-                           Gérez les informations et les accès de vos collaborateurs.
+                           {t(translations.manageInfo)}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSaveUser}>
                         <div className="space-y-6 py-4 px-1">
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="firstname">Prénom</Label>
+                                    <Label htmlFor="firstname">{t(translations.firstName)}</Label>
                                     <Input id="firstname" name="firstname" defaultValue={selectedUser?.name.split(' ')[0] || ''} required />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="lastname">Nom</Label>
+                                    <Label htmlFor="lastname">{t(translations.lastName)}</Label>
                                     <Input id="lastname" name="lastname" defaultValue={selectedUser?.name.split(' ')[1] || ''} required />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">{t(translations.email)}</Label>
                                 <Input id="email" name="email" type="email" defaultValue={selectedUser?.email || ''} required />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="role">Rôle</Label>
+                                <Label htmlFor="role">{t(translations.role)}</Label>
                                 <Select name="role" defaultValue={selectedUser?.role}>
                                     <SelectTrigger id="role">
-                                        <SelectValue placeholder="Sélectionner un rôle" />
+                                        <SelectValue placeholder={t(translations.selectRole)} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Propriétaire">Propriétaire</SelectItem>
-                                        <SelectItem value="Cuisinier">Cuisinier (Accès KDS)</SelectItem>
-                                        <SelectItem value="Serveur">Serveur (Accès Dashboard)</SelectItem>
+                                        <SelectItem value="Propriétaire">{t(roleTranslations['Propriétaire'])}</SelectItem>
+                                        <SelectItem value="Cuisinier">{t(translations.cookAccess)}</SelectItem>
+                                        <SelectItem value="Serveur">{t(translations.waiterAccess)}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -205,7 +243,7 @@ export default function UsersPage() {
                             <Separator />
 
                             <div className="space-y-4">
-                               <h4 className="font-medium">Assigner à des boutiques</h4>
+                               <h4 className="font-medium">{t(translations.assignToStores)}</h4>
                                 <div className="space-y-2">
                                     {availableStores.map(store => (
                                         <div key={store.id} className="flex items-center space-x-2">
@@ -223,8 +261,8 @@ export default function UsersPage() {
 
                         </div>
                         <DialogFooter className="mt-6">
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-                            <Button type="submit">Enregistrer</Button>
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>{t(translations.cancel)}</Button>
+                            <Button type="submit">{t(translations.save)}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -232,5 +270,3 @@ export default function UsersPage() {
         </div>
     );
 }
-
-    
