@@ -1,21 +1,30 @@
 
+
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit } from 'lucide-react';
+import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit, Phone, PlayCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import Link from 'next/link';
 
 type ReportStatus = 'Ouvert' | 'En cours' | 'Résolu';
+
+type Call = {
+    id: string;
+    date: string;
+    duration: string;
+    type: 'Commande' | 'Info' | 'Signalement';
+    transcript: string;
+    audioUrl?: string;
+};
 
 type Report = {
     id: string;
@@ -29,6 +38,7 @@ type Report = {
         phone: string;
     };
     storeId: string;
+    call?: Call;
 };
 
 const initialReports: Report[] = [
@@ -40,6 +50,7 @@ const initialReports: Report[] = [
         details: 'La commande #987 a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.',
         customer: { id: 'cust-1', name: 'Alice Martin', phone: '0612345678' },
         storeId: 'store-1',
+        call: { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "Bonjour, je voudrais passer la commande #987...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
     },
     {
         id: 'rep-2',
@@ -80,7 +91,6 @@ export default function ReportsPage() {
     const [reports, setReports] = useState<Report[]>(initialReports);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const router = useRouter();
 
     const handleViewReport = (report: Report) => {
         setSelectedReport(report);
@@ -186,6 +196,21 @@ export default function ReportsPage() {
                                         <p className="text-sm">{selectedReport.details}</p>
                                     </CardContent>
                                 </Card>
+
+                                {selectedReport.call && (
+                                     <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-base flex items-center gap-2"><PlayCircle className="h-4 w-4"/> Échange téléphonique lié</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <audio controls className="w-full h-10" src={selectedReport.call.audioUrl} />
+                                            <p className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded-md line-clamp-2">
+                                                {selectedReport.call.transcript}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
                                  <Card>
                                     <CardHeader className="pb-2">
                                         <CardTitle className="text-base flex items-center gap-2"><Edit className="h-4 w-4"/> Notes internes</CardTitle>
