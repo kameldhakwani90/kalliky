@@ -4,14 +4,26 @@
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit, Phone, PlayCircle, Printer, Receipt } from 'lucide-react';
+import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit, Phone, PlayCircle, Printer, Receipt, FileImage, Send } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -74,6 +86,11 @@ type Report = {
     storeId: string;
     orderId: string;
     call?: Call;
+    proofs?: {
+        url: string;
+        hint: string;
+        caption: string;
+    }[]
 };
 
 type TaxRate = {
@@ -94,6 +111,7 @@ type StoreInfo = {
     id: string;
     name: string;
     address: string;
+    whatsappNumber?: string;
     taxRates: TaxRate[];
     printers?: PrinterDevice[];
 };
@@ -103,6 +121,7 @@ const mockStores: StoreInfo[] = [
         id: "store-1",
         name: "Le Gourmet Parisien",
         address: "12 Rue de la Paix, 75002 Paris",
+        whatsappNumber: "+33612345678",
         taxRates: [
             { id: 'tax-1', name: 'Réduit', rate: 5.5, isDefault: false },
             { id: 'tax-2', name: 'Intermédiaire', rate: 10, isDefault: true },
@@ -126,6 +145,7 @@ const mockStores: StoreInfo[] = [
         id: "store-3",
         name: "Pizzeria Bella - Bastille",
         address: "3 Rue de la Roquette, 75011 Paris",
+        whatsappNumber: "+33611223344",
         taxRates: [
              { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
              { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
@@ -188,6 +208,13 @@ const initialReports: Report[] = [
         storeId: 'store-3',
         orderId: "#1028",
         call: { id: 'call-4', date: "29/05/2024 - 19:10", duration: "3m 15s", type: 'Commande', transcript: "Bonjour, je voudrais une pizza 4 fromages et deux coca...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+        proofs: [
+            {
+                url: 'https://placehold.co/600x400.png',
+                hint: 'wrong pizza',
+                caption: 'Photo envoyée par le client le 29/05/2024'
+            }
+        ]
     },
     {
         id: 'rep-3',
@@ -367,14 +394,14 @@ export default function ReportsPage() {
             
             {selectedReport && (
                  <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-                    <DialogContent className="sm:max-w-2xl">
+                    <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                         <DialogHeader>
-                            <DialogTitle>Détail du Signalement</DialogTitle>
+                            <DialogTitle className="text-2xl font-headline">Détail du Signalement</DialogTitle>
                             <DialogDescription>
                                 Signalement n°{selectedReport.id} - {selectedReport.reason}
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 flex-1 overflow-y-auto">
                            <div className="md:col-span-2 space-y-4">
                                 <Card>
                                     <CardHeader className="pb-2">
@@ -385,6 +412,33 @@ export default function ReportsPage() {
                                         <Button variant="link" size="sm" className="p-0 h-auto mt-2" onClick={() => setIsTicketDialogOpen(true)}>
                                             <Receipt className="mr-2 h-4 w-4"/> Voir le ticket (Commande {selectedReport.orderId})
                                         </Button>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-base flex items-center gap-2"><FileImage className="h-4 w-4"/> Preuves du client</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {selectedReport.proofs && selectedReport.proofs.length > 0 ? (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {selectedReport.proofs.map((proof, i) => (
+                                                    <div key={i} className="space-y-2">
+                                                        <Image
+                                                            src={proof.url}
+                                                            alt={proof.caption}
+                                                            width={300}
+                                                            height={200}
+                                                            data-ai-hint={proof.hint}
+                                                            className="rounded-md object-cover border"
+                                                        />
+                                                        <p className="text-xs text-muted-foreground">{proof.caption}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground text-center py-4">Aucune preuve fournie.</p>
+                                        )}
                                     </CardContent>
                                 </Card>
 
@@ -457,7 +511,27 @@ export default function ReportsPage() {
                                 </Card>
                            </div>
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="border-t pt-4">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="secondary">
+                                        <Send className="mr-2 h-4 w-4" /> Demander une preuve
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmer la demande de preuve ?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Un message va être envoyé à <span className="font-semibold">{selectedReport.customer.phone}</span> pour lui demander de fournir une preuve par photo via WhatsApp. Le numéro de référence du signalement ({selectedReport.id}) sera inclus.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction>Confirmer et envoyer</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                            <div className="flex-grow"></div>
                             <Button variant="outline" onClick={() => setIsReportDialogOpen(false)}>Fermer</Button>
                             <Button>Enregistrer les modifications</Button>
                         </DialogFooter>
