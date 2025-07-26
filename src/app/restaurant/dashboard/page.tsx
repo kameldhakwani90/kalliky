@@ -269,25 +269,35 @@ export default function RestaurantDashboard() {
             </div>
         </div>
 
-        <DialogTrigger asChild>
-            <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer">
-                <CardHeader className="flex flex-row items-center gap-6 space-y-0">
-                    <div className="p-4 bg-primary/10 rounded-full">
-                         <Store className="h-8 w-8 text-primary" />
-                    </div>
-                    <div>
-                        <CardTitle>{t(translations.addStoreTitle)}</CardTitle>
-                        <CardDescription>{t(translations.addStoreDescription)}</CardDescription>
-                    </div>
-                    <div className="ml-auto">
-                        <Button>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {t(translations.addStoreButton)}
-                        </Button>
-                    </div>
-                </CardHeader>
-            </Card>
-        </DialogTrigger>
+        <Dialog>
+            <DialogTrigger asChild>
+                <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer">
+                    <CardHeader className="flex flex-row items-center gap-6 space-y-0">
+                        <div className="p-4 bg-primary/10 rounded-full">
+                            <Store className="h-8 w-8 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle>{t(translations.addStoreTitle)}</CardTitle>
+                            <CardDescription>{t(translations.addStoreDescription)}</CardDescription>
+                        </div>
+                        <div className="ml-auto">
+                            <Button>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                {t(translations.addStoreButton)}
+                            </Button>
+                        </div>
+                    </CardHeader>
+                </Card>
+            </DialogTrigger>
+            <DialogContent>
+                {/* The wizard from stores/page.tsx will go here in a future step. For now, it's just a placeholder */}
+                 <DialogHeader>
+                    <DialogTitle>{t(translations.addStoreTitle)}</DialogTitle>
+                    <DialogDescription>{t(translations.addStoreDescription)}</DialogDescription>
+                </DialogHeader>
+            </DialogContent>
+        </Dialog>
+
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
