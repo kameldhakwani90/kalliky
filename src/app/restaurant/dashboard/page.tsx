@@ -36,15 +36,25 @@ import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { useLanguage } from "@/contexts/language-context";
 
 
-const chartData = [
+const chartDataFr = [
   { name: "Jan", revenue: 2800 },
   { name: "Fev", revenue: 3200 },
   { name: "Mar", revenue: 2500 },
   { name: "Avr", revenue: 4100 },
   { name: "Mai", revenue: 3800 },
   { name: "Jui", revenue: 5200 },
+]
+
+const chartDataEn = [
+  { name: "Jan", revenue: 2800 },
+  { name: "Feb", revenue: 3200 },
+  { name: "Mar", revenue: 2500 },
+  { name: "Apr", revenue: 4100 },
+  { name: "May", revenue: 3800 },
+  { name: "Jun", revenue: 5200 },
 ]
 
 type OrderItemCustomization = {
@@ -178,8 +188,8 @@ export default function RestaurantDashboard() {
   const [isClientFileOpen, setClientFileOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
   const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(undefined)
-
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const { language, t } = useLanguage();
 
   const handleViewClientFile = (phone: string) => {
     const customerData = customersData[phone] || defaultCustomer(phone);
@@ -191,22 +201,64 @@ export default function RestaurantDashboard() {
     setSelectedOrder(order);
     setOrderTicketOpen(true);
   }
+
+  const translations = {
+      dashboardTitle: { fr: "Tableau de Bord", en: "Dashboard" },
+      dashboardSubtitle: { fr: "Voici un aperçu de la performance de votre restaurant.", en: "Here is an overview of your restaurant's performance." },
+      filter: { fr: "Filtre", en: "Filter" },
+      export: { fr: "Exporter", en: "Export" },
+      totalRevenue: { fr: "Revenu Total", en: "Total Revenue" },
+      sinceLastMonth: { fr: "depuis le mois dernier", en: "since last month" },
+      orders: { fr: "Commandes", en: "Orders" },
+      avgBasket: { fr: "Panier Moyen", en: "Average Basket" },
+      uniqueCustomers: { fr: "Clients Uniques", en: "Unique Customers" },
+      salesPerformance: { fr: "Performance des Ventes", en: "Sales Performance" },
+      monthlyRevenue: { fr: "Revenus mensuels de votre restaurant.", en: "Monthly revenue of your restaurant." },
+      recentOrders: { fr: "Commandes Récentes", en: "Recent Orders" },
+      latestOrders: { fr: "Les dernières commandes passées par téléphone.", en: "The latest orders placed by phone." },
+      items: { fr: "article(s)", en: "item(s)" },
+      loyal: { fr: "Fidèle", en: "Loyal" },
+      new: { fr: "Nouveau", en: "New" },
+      customerFile: { fr: "Fiche Client", en: "Customer File" },
+      status: { fr: "Statut", en: "Status" },
+      totalSpent: { fr: "Total Dépensé", en: "Total Spent" },
+      lastVisit: { fr: "Dernière Visite", en: "Last Visit" },
+      orderHistory: { fr: "Historique des Commandes", en: "Order History" },
+      callHistory: { fr: "Historique des Appels", en: "Call History" },
+      chooseDate: { fr: "Choisir une date", en: "Choose a date" },
+      order: { fr: "Commande", en: "Order" },
+      dateLabel: { fr: "Date", en: "Date" },
+      amount: { fr: "Montant", en: "Amount" },
+      action: { fr: "Action", en: "Action" },
+      noOrders: { fr: "Aucune commande", en: "No orders" },
+      call: { fr: "Appel", en: "Call" },
+      duration: { fr: "Durée", en: "Duration" },
+      noCalls: { fr: "Aucun appel", en: "No calls" },
+      sendSMS: { fr: "Envoyer un SMS", en: "Send SMS" },
+      contactCustomer: { fr: "Contacter le client", en: "Contact Customer" },
+      orderTicket: { fr: "Ticket de Commande", en: "Order Ticket" },
+      print: { fr: "Imprimer", en: "Print" },
+      subtotal: { fr: "SOUS-TOTAL", en: "SUBTOTAL" },
+      tax: { fr: "TVA", en: "TAX" },
+      total: { fr: "TOTAL", en: "TOTAL" },
+      thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
+  }
     
   return (
     <>
     <div className="flex-1 space-y-6">
         <div className="flex items-center justify-between space-y-2">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">Tableau de Bord</h2>
-              <p className="text-muted-foreground">Voici un aperçu de la performance de votre restaurant.</p>
+              <h2 className="text-3xl font-bold tracking-tight">{t(translations.dashboardTitle)}</h2>
+              <p className="text-muted-foreground">{t(translations.dashboardSubtitle)}</p>
             </div>
             <div className="flex items-center space-x-2">
                 <Button variant="outline" className="h-9">
                     <Filter className="mr-2 h-4 w-4" />
-                    Filtre
+                    {t(translations.filter)}
                 </Button>
                 <Button className="h-9">
-                    Exporter
+                    {t(translations.export)}
                 </Button>
             </div>
         </div>
@@ -214,49 +266,49 @@ export default function RestaurantDashboard() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Revenu Total</CardTitle>
+                <CardTitle className="text-sm font-medium">{t(translations.totalRevenue)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">21,495€</div>
                 <div className="flex items-center text-xs text-green-600">
                     <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>12% depuis le mois dernier</span>
+                    <span>12% {t(translations.sinceLastMonth)}</span>
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Commandes</CardTitle>
+                <CardTitle className="text-sm font-medium">{t(translations.orders)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">780</div>
                 <div className="flex items-center text-xs text-green-600">
                     <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>8.2% depuis le mois dernier</span>
+                    <span>8.2% {t(translations.sinceLastMonth)}</span>
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Panier Moyen</CardTitle>
+                <CardTitle className="text-sm font-medium">{t(translations.avgBasket)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">27.55€</div>
                 <div className="flex items-center text-xs text-green-600">
                     <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>2.1% depuis le mois dernier</span>
+                    <span>2.1% {t(translations.sinceLastMonth)}</span>
                 </div>
               </CardContent>
             </Card>
              <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Clients Uniques</CardTitle>
+                <CardTitle className="text-sm font-medium">{t(translations.uniqueCustomers)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">482</div>
                  <div className="flex items-center text-xs text-green-600">
                     <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>15% depuis le mois dernier</span>
+                    <span>15% {t(translations.sinceLastMonth)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -265,12 +317,12 @@ export default function RestaurantDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>Performance des Ventes</CardTitle>
-                <CardDescription>Revenus mensuels de votre restaurant.</CardDescription>
+                <CardTitle>{t(translations.salesPerformance)}</CardTitle>
+                <CardDescription>{t(translations.monthlyRevenue)}</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <BarChart data={language === 'fr' ? chartDataFr : chartDataEn} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
                         <XAxis
                             dataKey="name"
@@ -302,9 +354,9 @@ export default function RestaurantDashboard() {
 
              <Card className="lg:col-span-1">
               <CardHeader>
-                <CardTitle>Commandes Récentes</CardTitle>
+                <CardTitle>{t(translations.recentOrders)}</CardTitle>
                 <CardDescription>
-                  Les dernières commandes passées par téléphone.
+                  {t(translations.latestOrders)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -323,10 +375,10 @@ export default function RestaurantDashboard() {
                                     {customer.name && <span className="text-xs text-muted-foreground"> ({customer.name})</span>}
                                 </p>
                                 <div className="text-xs text-muted-foreground flex items-center">
-                                  <span>{order.items.length} article(s)</span>
+                                  <span>{order.items.length} {t(translations.items)}</span>
                                   {customer.status && 
                                       <Badge variant="outline" className={`ml-2 ${customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
-                                      {customer.status}
+                                      {customer.status === 'Fidèle' ? t(translations.loyal) : t(translations.new)}
                                       </Badge>}
                                 </div>
                             </div>
@@ -363,15 +415,15 @@ export default function RestaurantDashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">Statut</CardTitle>
+                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.status)}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-lg font-semibold flex items-center gap-2"><Star className="text-yellow-500"/> {selectedCustomer.status}</p>
+                                <p className="text-lg font-semibold flex items-center gap-2"><Star className="text-yellow-500"/> {selectedCustomer.status === 'Fidèle' ? t(translations.loyal) : t(translations.new)}</p>
                             </CardContent>
                         </Card>
                          <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">Panier Moyen</CardTitle>
+                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.avgBasket)}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-lg font-semibold">{selectedCustomer.avgBasket}</p>
@@ -379,7 +431,7 @@ export default function RestaurantDashboard() {
                         </Card>
                          <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">Total Dépensé</CardTitle>
+                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.totalSpent)}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-lg font-semibold">{selectedCustomer.totalSpent}</p>
@@ -387,7 +439,7 @@ export default function RestaurantDashboard() {
                         </Card>
                          <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">Dernière Visite</CardTitle>
+                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.lastVisit)}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-lg font-semibold">{selectedCustomer.lastSeen}</p>
@@ -398,7 +450,7 @@ export default function RestaurantDashboard() {
                     <div className="grid lg:grid-cols-2 gap-6">
                         <div>
                             <div className="flex justify-between items-center mb-3">
-                                <h3 className="text-lg font-semibold">Historique des Commandes</h3>
+                                <h3 className="text-lg font-semibold">{t(translations.orderHistory)}</h3>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -406,7 +458,7 @@ export default function RestaurantDashboard() {
                                         className="w-[240px] justify-start text-left font-normal"
                                         >
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {date ? format(date, "PPP") : <span>Choisir une date</span>}
+                                        {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
@@ -424,16 +476,16 @@ export default function RestaurantDashboard() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Commande</TableHead>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead>Montant</TableHead>
-                                                <TableHead className="text-right">Action</TableHead>
+                                                <TableHead>{t(translations.order)}</TableHead>
+                                                <TableHead>{t(translations.dateLabel)}</TableHead>
+                                                <TableHead>{t(translations.amount)}</TableHead>
+                                                <TableHead className="text-right">{t(translations.action)}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {selectedCustomer.orderHistory.length > 0 ? selectedCustomer.orderHistory.map(order => (
                                                 <TableRow key={order.id}>
-                                                    <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
+                                                    <TableCell className="font-medium">{order.id} ({order.items.length} {t(translations.items)})</TableCell>
                                                     <TableCell>{order.date}</TableCell>
                                                     <TableCell>{order.total.toFixed(2)}€</TableCell>
                                                     <TableCell className="text-right">
@@ -444,7 +496,7 @@ export default function RestaurantDashboard() {
                                                 </TableRow>
                                             )) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={4} className="text-center h-24">Aucune commande</TableCell>
+                                                    <TableCell colSpan={4} className="text-center h-24">{t(translations.noOrders)}</TableCell>
                                                 </TableRow>
                                             )}
                                         </TableBody>
@@ -453,7 +505,7 @@ export default function RestaurantDashboard() {
                             </Card>
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold mb-3">Historique des Appels</h3>
+                            <h3 className="text-lg font-semibold mb-3">{t(translations.callHistory)}</h3>
                              <Card>
                                 <CardContent className="p-4 space-y-4">
                                      {selectedCustomer.callHistory.length > 0 ? selectedCustomer.callHistory.map((call, index) => (
@@ -462,7 +514,7 @@ export default function RestaurantDashboard() {
                                                 <Phone className="h-4 w-4 text-muted-foreground"/>
                                                 <div>
                                                     <p className="font-medium">{call.date}</p>
-                                                    <p className="text-xs text-muted-foreground">{call.type} - Durée: {call.duration}</p>
+                                                    <p className="text-xs text-muted-foreground">{call.type} - {t(translations.duration)}: {call.duration}</p>
                                                 </div>
                                             </div>
                                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -470,7 +522,7 @@ export default function RestaurantDashboard() {
                                             </Button>
                                         </div>
                                      )) : (
-                                        <div className="text-center h-24 flex items-center justify-center text-sm text-muted-foreground">Aucun appel</div>
+                                        <div className="text-center h-24 flex items-center justify-center text-sm text-muted-foreground">{t(translations.noCalls)}</div>
                                      )}
                                 </CardContent>
                             </Card>
@@ -478,8 +530,8 @@ export default function RestaurantDashboard() {
                     </div>
                 </div>
                  <DialogFooter className="pt-4 border-t">
-                    <Button variant="outline">Envoyer un SMS</Button>
-                    <Button>Contacter le client</Button>
+                    <Button variant="outline">{t(translations.sendSMS)}</Button>
+                    <Button>{t(translations.contactCustomer)}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -494,7 +546,7 @@ export default function RestaurantDashboard() {
                     <DialogTitle className="font-headline text-lg">{getStoreInfo(selectedOrder.storeId)?.name}</DialogTitle>
                     <DialogDescription className="text-xs">
                         {getStoreInfo(selectedOrder.storeId)?.address}<br />
-                        Commande {selectedOrder.id} - {selectedOrder.date}
+                        {t(translations.order)} {selectedOrder.id} - {selectedOrder.date}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 my-4 text-xs">
@@ -520,26 +572,26 @@ export default function RestaurantDashboard() {
                     <Separator className="border-dashed" />
                     <div className="space-y-1">
                         <div className="flex justify-between">
-                            <span>SOUS-TOTAL</span>
+                            <span>{t(translations.subtotal)}</span>
                             <span>{selectedOrder.subtotal.toFixed(2)}€</span>
                         </div>
                         <div className="flex justify-between">
-                            <span>TVA ({selectedOrder.taxRate}%)</span>
+                            <span>{t(translations.tax)} ({selectedOrder.taxRate}%)</span>
                             <span>{selectedOrder.tax.toFixed(2)}€</span>
                         </div>
                     </div>
                     <Separator className="border-dashed" />
                     <div className="flex justify-between font-bold text-base">
-                        <span>TOTAL</span>
+                        <span>{t(translations.total)}</span>
                         <span>{selectedOrder.total.toFixed(2)}€</span>
                     </div>
                      <Separator className="border-dashed" />
                      <div className="text-center text-gray-500 pt-2">
-                        Merci de votre visite !
+                        {t(translations.thankYou)}
                      </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" className="w-full font-sans">Imprimer</Button>
+                    <Button variant="outline" className="w-full font-sans">{t(translations.print)}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
