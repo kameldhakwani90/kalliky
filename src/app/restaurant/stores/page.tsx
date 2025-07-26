@@ -29,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/language-context';
 
 
 type TaxRate = {
@@ -94,10 +95,12 @@ const initialStores: Store[] = [
     },
 ];
 
-const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const daysOfWeekEn = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const daysOfWeekFr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 
 export default function StoresPage() {
+    const { t, language } = useLanguage();
     const [stores, setStores] = useState<Store[]>(initialStores);
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [isConnectionsDialogOpen, setIsConnectionsDialogOpen] = useState(false);
@@ -105,10 +108,11 @@ export default function StoresPage() {
     const [editableTaxRates, setEditableTaxRates] = useState<TaxRate[]>([]);
     const [editablePrinters, setEditablePrinters] = useState<PrinterDevice[]>([]);
 
+    const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
 
     const handleOpenFormDialog = (store: Store | null = null) => {
         setSelectedStore(store);
-        setEditableTaxRates(store ? [...store.taxRates] : [{ id: `tax_${Date.now()}`, name: 'TVA par défaut', rate: 0, isDefault: true }]);
+        setEditableTaxRates(store ? [...store.taxRates] : [{ id: `tax_${Date.now()}`, name: t({fr: 'TVA par défaut', en: 'Default VAT'}), rate: 0, isDefault: true }]);
         setEditablePrinters(store ? [...(store.printers || [])] : []);
         setIsFormDialogOpen(true);
     };
@@ -196,12 +200,88 @@ export default function StoresPage() {
     };
 
     const addPrinter = () => {
-        setEditablePrinters([...editablePrinters, { id: `printer_${Date.now()}`, name: 'Nouvelle imprimante', role: 'receipt', width: '80mm', connectionType: 'network' }]);
+        setEditablePrinters([...editablePrinters, { id: `printer_${Date.now()}`, name: t({fr: 'Nouvelle imprimante', en: 'New Printer'}), role: 'receipt', width: '80mm', connectionType: 'network' }]);
     };
     
     const removePrinter = (index: number) => {
         const newPrinters = editablePrinters.filter((_, i) => i !== index);
         setEditablePrinters(newPrinters);
+    };
+    
+    const translations = {
+        title: { fr: "Gestion des Boutiques", en: "Store Management" },
+        description: { fr: "Gérez vos points de vente et les menus associés.", en: "Manage your points of sale and associated menus." },
+        addStore: { fr: "Ajouter une boutique", en: "Add store" },
+        storeList: { fr: "Liste de vos boutiques", en: "List of your stores" },
+        name: { fr: "Nom", en: "Name" },
+        address: { fr: "Adresse", en: "Address" },
+        phone: { fr: "Téléphone", en: "Phone" },
+        status: { fr: "Statut", en: "Status" },
+        actions: { fr: "Actions", en: "Actions" },
+        active: { fr: "Actif", en: "Active" },
+        inactive: { fr: "Inactif", en: "Inactive" },
+        openMenu: { fr: "Ouvrir le menu", en: "Open menu" },
+        editInfo: { fr: "Modifier les informations", en: "Edit information" },
+        connections: { fr: "Connexions", en: "Connections" },
+        delete: { fr: "Supprimer", en: "Delete" },
+        areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
+        deleteConfirmation: { fr: "Cette action est irréversible. La boutique, son menu et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The store, its menu, and all associated data will be permanently deleted." },
+        cancel: { fr: "Annuler", en: "Cancel" },
+        editStore: { fr: "Modifier la boutique", en: "Edit store" },
+        addNewStore: { fr: "Ajouter une nouvelle boutique", en: "Add a new store" },
+        formDescription: { fr: "Renseignez toutes les informations de votre point de vente pour une configuration optimale.", en: "Enter all your point of sale information for optimal configuration." },
+        general: { fr: "Général", en: "General" },
+        openingHours: { fr: "Horaires", en: "Hours" },
+        taxes: { fr: "Taxes", en: "Taxes" },
+        peripherals: { fr: "Périphériques", en: "Peripherals" },
+        generalInfo: { fr: "Informations générales", en: "General information" },
+        restaurantName: { fr: "Nom du restaurant", en: "Restaurant Name" },
+        cuisineType: { fr: "Type de cuisine", en: "Cuisine Type" },
+        fullAddress: { fr: "Adresse complète", en: "Full address" },
+        landline: { fr: "Téléphone fixe", en: "Landline phone" },
+        contactEmail: { fr: "Email de contact", en: "Contact email" },
+        logoVisual: { fr: "Logo / Visuel", en: "Logo / Visual" },
+        logoRecommendation: { fr: "Recommandé pour une meilleure présentation.", en: "Recommended for a better presentation." },
+        openingDaysHours: { fr: "Jours et horaires d’ouverture", en: "Opening days and hours" },
+        openingHoursDesc: { fr: "Utilisé pour accepter ou refuser les commandes automatiquement.", en: "Used to automatically accept or refuse orders." },
+        defaultCurrency: { fr: "Devise par défaut", en: "Default currency" },
+        vatRates: { fr: "Taux de TVA applicables", en: "Applicable VAT rates" },
+        taxNamePlaceholder: { fr: "Nom (ex: Normal)", en: "Name (e.g. Standard)" },
+        rate: { fr: "Taux", en: "Rate" },
+        default: { fr: "Défaut", en: "Default" },
+        addVatRate: { fr: "Ajouter un taux de TVA", en: "Add a VAT rate" },
+        printerManagement: { fr: "Gestion des imprimantes", en: "Printer Management" },
+        role: { fr: "Rôle", en: "Role" },
+        receipt: { fr: "Ticket de caisse", en: "Receipt" },
+        kitchenTicket: { fr: "Ticket de cuisine", en: "Kitchen ticket" },
+        width: { fr: "Largeur", en: "Width" },
+        connectionType: { fr: "Type de connexion", en: "Connection Type" },
+        networkIp: { fr: "Réseau (IP)", en: "Network (IP)" },
+        usbOther: { fr: "USB / Autre", en: "USB / Other" },
+        ipAddress: { fr: "Adresse IP", en: "IP Address" },
+        port: { fr: "Port", en: "Port" },
+        testPage: { fr: "Lancer une page de test", en: "Run a test page" },
+        addPrinter: { fr: "Ajouter une imprimante", en: "Add a printer" },
+        saveStore: { fr: "Enregistrer la boutique", en: "Save store" },
+        manageConnections: { fr: "Gérer les connexions", en: "Manage connections" },
+        connectionsDescription: { fr: "Connectez des services externes à votre boutique {storeName} pour étendre ses fonctionnalités.", en: "Connect external services to your store {storeName} to extend its functionality." },
+        endCustomerPayments: { fr: "Paiements des clients finaux", en: "End-customer payments" },
+        connected: { fr: "Connecté", en: "Connected" },
+        notConnected: { fr: "Non connecté", en: "Not connected" },
+        stripeDescription: { fr: "Permet à vos clients de payer leurs commandes en ligne. L'argent est directement versé sur votre compte Stripe.", en: "Allows your customers to pay for their orders online. The money is paid directly into your Stripe account." },
+        stripeConnectedInfo: { fr: "Cette boutique est correctement connectée à Stripe.", en: "This store is correctly connected to Stripe." },
+        redirectToStripe: { fr: "Redirection vers Stripe", en: "Redirect to Stripe" },
+        stripeRedirectDesc: { fr: "Vous allez être redirigé vers le site de Stripe pour connecter votre compte en toute sécurité. Une fois l'opération terminée, vous reviendrez automatiquement ici.", en: "You will be redirected to the Stripe website to connect your account securely. Once the operation is complete, you will automatically return here." },
+        learnMoreStripe: { fr: "En savoir plus sur Stripe Connect", en: "Learn more about Stripe Connect" },
+        continueToStripe: { fr: "Continuer vers Stripe", en: "Continue to Stripe" },
+        connectStripe: { fr: "Connecter mon compte Stripe", en: "Connect my Stripe account" },
+        messaging: { fr: "Messagerie", en: "Messaging" },
+        configured: { fr: "Configuré", en: "Configured" },
+        notConfigured: { fr: "Non configuré", en: "Not configured" },
+        messagingDescription: { fr: "Utilisé pour les demandes de preuve (Plan Pro et +).", en: "Used for proof requests (Pro Plan and up)." },
+        whatsappNumber: { fr: "Numéro WhatsApp de la boutique", en: "Store's WhatsApp number" },
+        twilioNumberInfo: { fr: "Doit être un numéro activé sur la plateforme Twilio.", en: "Must be a number activated on the Twilio platform." },
+        saveConnections: { fr: "Enregistrer les connexions", en: "Save connections" },
     };
 
 
@@ -209,28 +289,28 @@ export default function StoresPage() {
         <div className="space-y-8">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Gestion des Boutiques</h1>
-                    <p className="text-muted-foreground">Gérez vos points de vente et les menus associés.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
+                    <p className="text-muted-foreground">{t(translations.description)}</p>
                 </div>
                 <Button onClick={() => handleOpenFormDialog()}>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Ajouter une boutique
+                    {t(translations.addStore)}
                 </Button>
             </header>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Liste de vos boutiques</CardTitle>
+                    <CardTitle>{t(translations.storeList)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Nom</TableHead>
-                                <TableHead>Adresse</TableHead>
-                                <TableHead>Téléphone</TableHead>
-                                <TableHead>Statut</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>{t(translations.name)}</TableHead>
+                                <TableHead>{t(translations.address)}</TableHead>
+                                <TableHead>{t(translations.phone)}</TableHead>
+                                <TableHead>{t(translations.status)}</TableHead>
+                                <TableHead className="text-right">{t(translations.actions)}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -241,7 +321,7 @@ export default function StoresPage() {
                                     <TableCell>{store.phone}</TableCell>
                                     <TableCell>
                                         <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className={store.status === 'active' ? 'bg-green-100 text-green-700' : ''}>
-                                            {store.status === 'active' ? 'Actif' : 'Inactif'}
+                                            {store.status === 'active' ? t(translations.active) : t(translations.inactive)}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -249,42 +329,42 @@ export default function StoresPage() {
                                             <Switch
                                                 checked={store.status === 'active'}
                                                 onCheckedChange={() => toggleStoreStatus(store.id)}
-                                                aria-label="Activer/Désactiver la boutique"
+                                                aria-label={t({fr: "Activer/Désactiver la boutique", en: "Activate/Deactivate store"})}
                                             />
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Ouvrir le menu</span>
+                                                        <span className="sr-only">{t(translations.openMenu)}</span>
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => handleOpenFormDialog(store)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
-                                                        Modifier les informations
+                                                        {t(translations.editInfo)}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleOpenConnectionsDialog(store)}>
                                                         <Zap className="mr-2 h-4 w-4" />
-                                                        Connexions
+                                                        {t(translations.connections)}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>
                                                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
                                                                 <Trash2 className="mr-2 h-4 w-4" />
-                                                                Supprimer
+                                                                {t(translations.delete)}
                                                             </DropdownMenuItem>
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                                                                <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Cette action est irréversible. La boutique, son menu et toutes ses données associées seront définitivement supprimés.
+                                                                    {t(translations.deleteConfirmation)}
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
-                                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => deleteStore(store.id)}>Supprimer</AlertDialogAction>
+                                                                <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => deleteStore(store.id)}>{t(translations.delete)}</AlertDialogAction>
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
@@ -302,55 +382,55 @@ export default function StoresPage() {
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
                 <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
-                        <DialogTitle>{selectedStore ? 'Modifier la boutique' : 'Ajouter une nouvelle boutique'}</DialogTitle>
+                        <DialogTitle>{selectedStore ? t(translations.editStore) : t(translations.addNewStore)}</DialogTitle>
                         <DialogDescription>
-                            Renseignez toutes les informations de votre point de vente pour une configuration optimale.
+                            {t(translations.formDescription)}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto">
                       <Tabs defaultValue="general" className="p-1">
                           <TabsList className="grid w-full grid-cols-4">
-                              <TabsTrigger value="general">Général</TabsTrigger>
-                              <TabsTrigger value="opening">Horaires</TabsTrigger>
-                              <TabsTrigger value="taxes">Taxes</TabsTrigger>
-                              <TabsTrigger value="peripherals">Périphériques</TabsTrigger>
+                              <TabsTrigger value="general">{t(translations.general)}</TabsTrigger>
+                              <TabsTrigger value="opening">{t(translations.openingHours)}</TabsTrigger>
+                              <TabsTrigger value="taxes">{t(translations.taxes)}</TabsTrigger>
+                              <TabsTrigger value="peripherals">{t(translations.peripherals)}</TabsTrigger>
                           </TabsList>
                           <TabsContent value="general" className="space-y-6 pt-4">
                               <div className="space-y-4">
-                                <h4 className="font-medium">Informations générales</h4>
+                                <h4 className="font-medium">{t(translations.generalInfo)}</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name">Nom du restaurant</Label>
-                                        <Input id="name" name="name" defaultValue={selectedStore?.name || ''} placeholder="Ex: Le Gourmet Parisien" required />
+                                        <Label htmlFor="name">{t(translations.restaurantName)}</Label>
+                                        <Input id="name" name="name" defaultValue={selectedStore?.name || ''} placeholder={t({fr: "Ex: Le Gourmet Parisien", en: "E.g.: The Parisian Gourmet"})} required />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="cuisine-type">Type de cuisine</Label>
-                                        <Input id="cuisine-type" name="cuisine-type" placeholder="Ex: Pizza, Sushi, Burger..." />
+                                        <Label htmlFor="cuisine-type">{t(translations.cuisineType)}</Label>
+                                        <Input id="cuisine-type" name="cuisine-type" placeholder={t({fr: "Ex: Pizza, Sushi, Burger...", en: "E.g.: Pizza, Sushi, Burger..."})} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="address">Adresse complète</Label>
-                                    <Input id="address" name="address" defaultValue={selectedStore?.address || ''} placeholder="123 Rue Principale, 75000 Ville" required />
+                                    <Label htmlFor="address">{t(translations.fullAddress)}</Label>
+                                    <Input id="address" name="address" defaultValue={selectedStore?.address || ''} placeholder={t({fr: "123 Rue Principale, 75000 Ville", en: "123 Main Street, 10001 City"})} required />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="phone">Téléphone fixe</Label>
+                                        <Label htmlFor="phone">{t(translations.landline)}</Label>
                                         <Input id="phone" name="phone" type="tel" defaultValue={selectedStore?.phone || ''} placeholder="01 23 45 67 89" required />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="email">Email de contact</Label>
+                                        <Label htmlFor="email">{t(translations.contactEmail)}</Label>
                                         <Input id="email" name="email" type="email" placeholder="contact@exemple.com" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Logo / Visuel</Label>
+                                    <Label>{t(translations.logoVisual)}</Label>
                                     <Input id="logo" name="logo" type="file" className="h-auto"/>
-                                    <p className="text-xs text-muted-foreground">Recommandé pour une meilleure présentation.</p>
+                                    <p className="text-xs text-muted-foreground">{t(translations.logoRecommendation)}</p>
                                 </div>
                              </div>
                           </TabsContent>
                           <TabsContent value="opening" className="space-y-4 pt-4">
-                              <h4 className="font-medium">Jours et horaires d’ouverture</h4>
+                              <h4 className="font-medium">{t(translations.openingDaysHours)}</h4>
                               <div className="space-y-3">
                                   {daysOfWeek.map(day => (
                                       <div key={day} className="grid grid-cols-3 items-center gap-4">
@@ -363,13 +443,13 @@ export default function StoresPage() {
                                   ))}
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                       <Clock className="h-4 w-4" />
-                                      <span>Utilisé pour accepter ou refuser les commandes automatiquement.</span>
+                                      <span>{t(translations.openingHoursDesc)}</span>
                                   </div>
                               </div>
                           </TabsContent>
                            <TabsContent value="taxes" className="space-y-6 pt-4">
                                 <div>
-                                    <Label htmlFor="currency">Devise par défaut</Label>
+                                    <Label htmlFor="currency">{t(translations.defaultCurrency)}</Label>
                                     <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="mt-2 flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
                                         <option value="EUR">Euro (€)</option>
                                         <option value="USD">Dollar ($)</option>
@@ -377,20 +457,20 @@ export default function StoresPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <Label>Taux de TVA applicables</Label>
+                                    <Label>{t(translations.vatRates)}</Label>
                                     <div className="mt-2 space-y-2 p-3 border rounded-md">
                                         {editableTaxRates.map((taxRate, index) => (
                                             <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
                                                 <div className="col-span-5">
-                                                    <Input placeholder="Nom (ex: Normal)" value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
+                                                    <Input placeholder={t(translations.taxNamePlaceholder)} value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
                                                 </div>
                                                 <div className="col-span-3 relative">
-                                                    <Input placeholder="Taux" type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
+                                                    <Input placeholder={t(translations.rate)} type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
                                                      <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
                                                 </div>
                                                 <div className="col-span-3 flex items-center gap-2">
                                                     <input type="radio" id={`default-tax-${index}`} name="default-tax" checked={taxRate.isDefault} onChange={(e) => handleTaxRateChange(index, 'isDefault', e.target.checked)} />
-                                                    <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">Défaut</Label>
+                                                    <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">{t(translations.default)}</Label>
                                                 </div>
                                                 {editableTaxRates.length > 1 &&
                                                     <div className="col-span-1">
@@ -402,13 +482,13 @@ export default function StoresPage() {
                                             </div>
                                         ))}
                                         <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addTaxRate}>
-                                            <PlusCircle className="mr-2 h-4 w-4"/> Ajouter un taux de TVA
+                                            <PlusCircle className="mr-2 h-4 w-4"/> {t(translations.addVatRate)}
                                         </Button>
                                     </div>
                                 </div>
                           </TabsContent>
                           <TabsContent value="peripherals" className="space-y-4 pt-4">
-                               <h4 className="font-medium">Gestion des imprimantes</h4>
+                               <h4 className="font-medium">{t(translations.printerManagement)}</h4>
                                <div className="space-y-3">
                                   {editablePrinters.map((printer, index) => (
                                     <Card key={printer.id} className="bg-muted/50">
@@ -428,17 +508,17 @@ export default function StoresPage() {
                                       <CardContent className="p-4 pt-0 space-y-4">
                                           <div className="grid grid-cols-2 gap-4">
                                               <div>
-                                                  <Label className="text-xs">Rôle</Label>
+                                                  <Label className="text-xs">{t(translations.role)}</Label>
                                                    <Select value={printer.role} onValueChange={(value) => handlePrinterChange(index, 'role', value)}>
                                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                                       <SelectContent>
-                                                        <SelectItem value="receipt">Ticket de caisse</SelectItem>
-                                                        <SelectItem value="kitchen">Ticket de cuisine</SelectItem>
+                                                        <SelectItem value="receipt">{t(translations.receipt)}</SelectItem>
+                                                        <SelectItem value="kitchen">{t(translations.kitchenTicket)}</SelectItem>
                                                       </SelectContent>
                                                   </Select>
                                               </div>
                                                <div>
-                                                  <Label className="text-xs">Largeur</Label>
+                                                  <Label className="text-xs">{t(translations.width)}</Label>
                                                   <Select value={printer.width} onValueChange={(value) => handlePrinterChange(index, 'width', value)}>
                                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                                       <SelectContent>
@@ -449,43 +529,43 @@ export default function StoresPage() {
                                               </div>
                                           </div>
                                           <div>
-                                             <Label className="text-xs">Type de connexion</Label>
+                                             <Label className="text-xs">{t(translations.connectionType)}</Label>
                                              <Select value={printer.connectionType} onValueChange={(value) => handlePrinterChange(index, 'connectionType', value)}>
                                                   <SelectTrigger><SelectValue /></SelectTrigger>
                                                   <SelectContent>
-                                                    <SelectItem value="network">Réseau (IP)</SelectItem>
-                                                    <SelectItem value="usb">USB / Autre</SelectItem>
+                                                    <SelectItem value="network">{t(translations.networkIp)}</SelectItem>
+                                                    <SelectItem value="usb">{t(translations.usbOther)}</SelectItem>
                                                   </SelectContent>
                                               </Select>
                                           </div>
                                           {printer.connectionType === 'network' && (
                                               <div className="grid grid-cols-2 gap-4">
                                                   <div>
-                                                      <Label className="text-xs">Adresse IP</Label>
+                                                      <Label className="text-xs">{t(translations.ipAddress)}</Label>
                                                       <Input value={printer.ipAddress || ''} onChange={(e) => handlePrinterChange(index, 'ipAddress', e.target.value)} placeholder="192.168.1.100"/>
                                                   </div>
                                                   <div>
-                                                      <Label className="text-xs">Port</Label>
+                                                      <Label className="text-xs">{t(translations.port)}</Label>
                                                       <Input value={printer.port || ''} onChange={(e) => handlePrinterChange(index, 'port', e.target.value)} placeholder="9100"/>
                                                   </div>
                                               </div>
                                           )}
                                           <Button type="button" variant="ghost" className="w-full text-muted-foreground" disabled>
-                                              <TestTube2 className="mr-2 h-4 w-4" /> Lancer une page de test
+                                              <TestTube2 className="mr-2 h-4 w-4" /> {t(translations.testPage)}
                                           </Button>
                                       </CardContent>
                                     </Card>
                                   ))}
                                   <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addPrinter}>
-                                      <Printer className="mr-2 h-4 w-4"/> Ajouter une imprimante
+                                      <Printer className="mr-2 h-4 w-4"/> {t(translations.addPrinter)}
                                   </Button>
                                </div>
                           </TabsContent>
                       </Tabs>
 
                       <DialogFooter className="mt-6 pt-4 border-t">
-                          <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>Annuler</Button>
-                          <Button type="submit">Enregistrer la boutique</Button>
+                          <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>{t(translations.cancel)}</Button>
+                          <Button type="submit">{t(translations.saveStore)}</Button>
                       </DialogFooter>
                     </form>
                 </DialogContent>
@@ -494,14 +574,14 @@ export default function StoresPage() {
              <Dialog open={isConnectionsDialogOpen} onOpenChange={setIsConnectionsDialogOpen}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Gérer les connexions</DialogTitle>
+                        <DialogTitle>{t(translations.manageConnections)}</DialogTitle>
                         <DialogDescription>
-                            Connectez des services externes à votre boutique <span className="font-semibold">{selectedStore?.name}</span> pour étendre ses fonctionnalités.
+                            {t(translations.connectionsDescription).replace('{storeName}', selectedStore?.name || '')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6 pt-4">
                         <div>
-                            <h3 className="text-sm font-medium text-muted-foreground mb-2">Paiements des clients finaux</h3>
+                            <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.endCustomerPayments)}</h3>
                              <Card>
                                 <CardHeader className="flex flex-row items-start justify-between gap-4">
                                     <div>
@@ -512,39 +592,39 @@ export default function StoresPage() {
                                     </div>
                                     {selectedStore?.stripeStatus === 'connected' ? (
                                         <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
-                                            <CheckCircle className="mr-1 h-3 w-3" /> Connecté
+                                            <CheckCircle className="mr-1 h-3 w-3" /> {t(translations.connected)}
                                         </Badge>
                                     ) : (
-                                        <Badge variant="secondary">Non connecté</Badge>
+                                        <Badge variant="secondary">{t(translations.notConnected)}</Badge>
                                     )}
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xs text-muted-foreground pt-1">
-                                        Permet à vos clients de payer leurs commandes en ligne. L'argent est directement versé sur votre compte Stripe.
+                                        {t(translations.stripeDescription)}
                                     </div>
                                     {selectedStore?.stripeStatus === 'connected' ? (
                                         <div className="mt-4 p-4 bg-muted rounded-md text-sm text-muted-foreground">
-                                            Cette boutique est correctement connectée à Stripe.
+                                            {t(translations.stripeConnectedInfo)}
                                         </div>
                                     ) : (
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button className="mt-4">
                                                     <LinkIcon className="mr-2 h-4 w-4" />
-                                                    Connecter mon compte Stripe
+                                                    {t(translations.connectStripe)}
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Redirection vers Stripe</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t(translations.redirectToStripe)}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        Vous allez être redirigé vers le site de Stripe pour connecter votre compte en toute sécurité. Une fois l'opération terminée, vous reviendrez automatiquement ici.
-                                                         <a href="#" className="underline text-primary block mt-2">En savoir plus sur Stripe Connect</a>.
+                                                        {t(translations.stripeRedirectDesc)}
+                                                         <a href="#" className="underline text-primary block mt-2">{t(translations.learnMoreStripe)}</a>.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleStripeConnect}>Continuer vers Stripe</AlertDialogAction>
+                                                    <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleStripeConnect}>{t(translations.continueToStripe)}</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -553,7 +633,7 @@ export default function StoresPage() {
                             </Card>
                         </div>
                         <div>
-                             <h3 className="text-sm font-medium text-muted-foreground mb-2">Messagerie</h3>
+                             <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.messaging)}</h3>
                              <Card>
                                  <CardHeader className="flex flex-row items-start justify-between gap-4">
                                      <div>
@@ -562,33 +642,33 @@ export default function StoresPage() {
                                             <span>WhatsApp (via Twilio)</span>
                                         </CardTitle>
                                         <div className="flex items-center text-xs pt-1 text-muted-foreground">
-                                            <span>Utilisé pour les demandes de preuve (Plan Pro et +).</span>
+                                            <span>{t(translations.messagingDescription)}</span>
                                         </div>
                                      </div>
                                       {selectedStore?.whatsappNumber ? (
                                         <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
-                                            <CheckCircle className="mr-1 h-3 w-3" /> Configuré
+                                            <CheckCircle className="mr-1 h-3 w-3" /> {t(translations.configured)}
                                         </Badge>
                                     ) : (
-                                        <Badge variant="secondary">Non configuré</Badge>
+                                        <Badge variant="secondary">{t(translations.notConfigured)}</Badge>
                                     )}
                                  </CardHeader>
                                  <CardContent>
-                                    <Label htmlFor="whatsapp-number">Numéro WhatsApp de la boutique</Label>
+                                    <Label htmlFor="whatsapp-number">{t(translations.whatsappNumber)}</Label>
                                     <Input 
                                         id="whatsapp-number" 
                                         placeholder="+33612345678" 
                                         value={selectedStore?.whatsappNumber || ''}
                                         onChange={(e) => setSelectedStore(prev => prev ? {...prev, whatsappNumber: e.target.value} : null)}
                                     />
-                                    <p className="text-xs text-muted-foreground mt-2">Doit être un numéro activé sur la plateforme Twilio.</p>
+                                    <p className="text-xs text-muted-foreground mt-2">{t(translations.twilioNumberInfo)}</p>
                                  </CardContent>
                              </Card>
                         </div>
                     </div>
                     <DialogFooter className="mt-6">
-                        <Button type="button" variant="outline" onClick={() => setIsConnectionsDialogOpen(false)}>Annuler</Button>
-                        <Button type="button" onClick={handleSaveConnections}>Enregistrer les connexions</Button>
+                        <Button type="button" variant="outline" onClick={() => setIsConnectionsDialogOpen(false)}>{t(translations.cancel)}</Button>
+                        <Button type="button" onClick={handleSaveConnections}>{t(translations.saveConnections)}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
