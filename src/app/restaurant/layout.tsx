@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -7,18 +6,16 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   CreditCard,
-  LayoutDashboard,
   Settings,
-  CookingPot,
-  Users,
-  Bell,
-  PlusCircle,
-  Home,
   User,
   Store,
+  Flag,
+  CookingPot, 
+  Home,
   Zap,
   XCircle,
-  Flag,
+  PlusCircle,
+  Bell
 } from "lucide-react"
 
 import {
@@ -30,7 +27,6 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarInset,
-  SidebarFooter,
   SidebarTrigger,
   SidebarMenuSub,
   SidebarMenuSubButton,
@@ -49,6 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/contexts/language-context"
 
 function KallikyLogo() {
     return (
@@ -64,18 +61,19 @@ export default function RestaurantLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   const menuItems = [
-    { href: "/restaurant/dashboard", label: "Aperçu", icon: Home },
-    { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
-    { href: "/restaurant/clients", label: "Clients", icon: User },
-    { href: "/restaurant/reports", label: "Signalements", icon: Flag },
+    { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
+    { href: "/restaurant/menu", label: {fr: "Menu", en: "Menu"}, icon: CookingPot },
+    { href: "/restaurant/clients", label: {fr: "Clients", en: "Customers"}, icon: User },
+    { href: "/restaurant/reports", label: {fr: "Signalements", en: "Reports"}, icon: Flag },
   ];
   
   const settingsItems = [
-    { href: "/restaurant/stores", label: "Boutiques", icon: Store },
-    { href: "/restaurant/users", label: "Utilisateurs", icon: Users },
-    { href: "/restaurant/billing", label: "Facturation", icon: CreditCard },
+    { href: "/restaurant/stores", label: {fr: "Boutiques", en: "Stores"}, icon: Store },
+    { href: "/restaurant/users", label: {fr: "Utilisateurs", en: "Users"}, icon: User },
+    { href: "/restaurant/billing", label: {fr: "Facturation", en: "Billing"}, icon: CreditCard },
   ];
 
   const isSettingsPathActive = settingsItems.some(item => pathname.startsWith(item.href));
@@ -91,22 +89,22 @@ export default function RestaurantLayout({
             <Button className="w-full justify-start" asChild>
                 <Link href="#">
                     <PlusCircle />
-                    <span>Créer une campagne</span>
+                    <span>{t({fr: "Créer une campagne", en: "Create Campaign"})}</span>
                 </Link>
             </Button>
           </div>
           <SidebarMenu>
             {menuItems.map((item) => (
-              <SidebarMenuItem key={item.label}>
+              <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname.startsWith(item.href)}
-                  tooltip={item.label}
+                  tooltip={t(item.label)}
                   className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold"
                 >
                   <Link href={item.href}>
                     <item.icon />
-                    <span>{item.label}</span>
+                    <span>{t(item.label)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -115,7 +113,7 @@ export default function RestaurantLayout({
                 <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton
-                            tooltip="Configuration"
+                            tooltip={t({fr: "Configuration", en: "Settings"})}
                             className={cn(
                                 "data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold",
                                 "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -123,18 +121,18 @@ export default function RestaurantLayout({
                             isActive={isSettingsPathActive}
                         >
                             <Settings />
-                            <span>Configuration</span>
+                            <span>{t({fr: "Configuration", en: "Settings"})}</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
                 <CollapsibleContent asChild>
                     <SidebarMenuSub>
                         {settingsItems.map((item) => (
-                            <SidebarMenuSubItem key={item.label}>
+                            <SidebarMenuSubItem key={item.href}>
                                 <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)}>
                                     <Link href={item.href}>
                                         <item.icon />
-                                        <span>{item.label}</span>
+                                        <span>{t(item.label)}</span>
                                     </Link>
                                 </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
@@ -144,9 +142,6 @@ export default function RestaurantLayout({
             </Collapsible>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-            {/* Footer can be used for other elements if needed */}
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-16 items-center gap-4 border-b bg-card px-6">
@@ -166,20 +161,22 @@ export default function RestaurantLayout({
                     </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
-                    <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
+                    <DropdownMenuLabel>{t({fr: "Mon Compte", en: "My Account"})}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                     <DropdownMenuItem>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profil</span>
+                     <DropdownMenuItem asChild>
+                        <Link href="/restaurant/profile">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>{t({fr: "Profil", en: "Profile"})}</span>
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                         <Zap className="mr-2 h-4 w-4" />
-                        <span>Intégrations</span>
+                        <span>{t({fr: "Intégrations", en: "Integrations"})}</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem className="text-destructive">
                         <XCircle className="mr-2 h-4 w-4" />
-                        <span>Se déconnecter</span>
+                        <span>{t({fr: "Se déconnecter", en: "Log Out"})}</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

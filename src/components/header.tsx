@@ -1,8 +1,18 @@
+
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
+import { useLanguage } from '@/contexts/language-context';
 
 export function Header() {
+  const { t } = useLanguage();
+
+  const loginLabel = { fr: "Connexion", en: "Log In" };
+  const signupLabel = { fr: "S'inscrire", en: "Sign Up" };
+  const kdsLabel = { fr: "Accès KDS", en: "KDS Access" };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -14,13 +24,13 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end space-x-2">
           <nav className="flex items-center space-x-2">
             <Button variant="ghost" asChild>
-              <Link href="/login">Connexion</Link>
+              <Link href="/login">{t(loginLabel)}</Link>
             </Button>
             <Button asChild>
-              <Link href="/signup">S'inscrire</Link>
+              <Link href="/signup">{t(signupLabel)}</Link>
             </Button>
              <Button variant="outline" asChild>
-              <Link href="/kds">Accès KDS</Link>
+              <Link href="/kds">{t(kdsLabel)}</Link>
             </Button>
           </nav>
         </div>
