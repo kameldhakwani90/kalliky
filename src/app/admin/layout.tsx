@@ -69,10 +69,10 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Monitoring">
-                <Link href="#">
-                  <Building />
-                  <span>Monitoring</span>
+              <SidebarMenuButton asChild tooltip="Paramètres">
+                <Link href="/admin/settings">
+                  <Settings />
+                  <span>Paramètres</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

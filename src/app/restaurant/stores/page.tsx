@@ -499,7 +499,7 @@ export default function StoresPage() {
                     <div className="space-y-6 pt-4">
                         <div>
                             <h3 className="text-sm font-medium text-muted-foreground mb-2">Paiements</h3>
-                            <Card>
+                             <Card>
                                 <CardHeader className="flex flex-row items-start justify-between gap-4">
                                     <div>
                                         <CardTitle className="flex items-center gap-3">
@@ -521,10 +521,26 @@ export default function StoresPage() {
                                             Cette boutique est correctement connectée à Stripe.
                                         </div>
                                     ) : (
-                                        <Button onClick={handleStripeConnect}>
-                                            <LinkIcon className="mr-2 h-4 w-4" />
-                                            Connecter avec Stripe
-                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button>
+                                                    <LinkIcon className="mr-2 h-4 w-4" />
+                                                    Connecter avec Stripe
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Redirection vers Stripe</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Vous allez être redirigé vers Stripe pour connecter votre compte en toute sécurité. Une fois l'opération terminée, vous reviendrez automatiquement ici.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleStripeConnect}>Continuer vers Stripe</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     )}
                                 </CardContent>
                             </Card>
@@ -538,9 +554,9 @@ export default function StoresPage() {
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24"><path fill="#25D366" d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.73-1.11-5.2-2.9-7.01zm-7.01 15.26c-1.53 0-3.01-.47-4.29-1.36l-.3-.18l-3.18.83l.85-3.1l-.2-.31a8.084 8.084 0 0 1-1.23-4.38c0-4.54 3.7-8.24 8.24-8.24c2.2 0 4.23.86 5.82 2.45c1.59 1.59 2.45 3.62 2.45 5.82c0 4.54-3.7 8.24-8.24 8.24zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81c-.23-.08-.39-.12-.56.12c-.17.25-.64.81-.79.97c-.15.17-.29.19-.54.06c-.25-.12-1.06-.39-2.02-1.25c-.75-.67-1.25-1.5-1.4-1.75c-.14-.25-.02-.38.11-.51c.11-.11.25-.29.37-.43s.17-.25.25-.41c.08-.17.04-.31-.02-.43c-.06-.12-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42c-.14,0-.3,0-.46,0s-.39.06-.6.3c-.2.25-.79.76-.79,1.85s.81,2.15.93,2.3c.12.17 1.58,2.41 3.83,3.39c.54.24.97.38,1.3.48c.55.17,1.05.14,1.44.09c.44-.06 1.47-.6 1.68-1.18c.21-.58.21-1.07.14-1.18c-.05-.12-.19-.19-.43-.31z"/></svg>
                                             <span>WhatsApp (via Twilio)</span>
                                         </CardTitle>
-                                        <div className="flex items-center text-xs pt-1 text-muted-foreground">
+                                         <div className="flex items-center text-xs pt-1 text-muted-foreground">
                                             <span>Utilisé pour les demandes de preuve.</span>
-                                            <Badge className="ml-2">Plan Pro</Badge>
+                                            <div className="ml-2"><Badge>Plan Pro</Badge></div>
                                         </div>
                                      </div>
                                       {selectedStore?.whatsappNumber ? (
