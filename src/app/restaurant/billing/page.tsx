@@ -12,6 +12,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -164,7 +175,7 @@ export default function BillingPage() {
                                 </div>
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full border-t pt-4">
                                     <div className="text-xs text-muted-foreground text-center sm:text-left">
-                                        En continuant, vous acceptez nos <Link href="#" className="underline">Conditions Générales de Vente</Link> et <Link href="#" className="underline">d'Utilisation</Link>.
+                                         En continuant, vous acceptez nos <Link href="#" className="underline">CGV</Link>, <Link href="#" className="underline">CGU</Link> et notre <Link href="#" className="underline">Politique de Confidentialité (RGPD)</Link>.
                                     </div>
                                     <Button disabled={selectedPlan === currentPlanName}>
                                         Confirmer le changement
@@ -187,7 +198,22 @@ export default function BillingPage() {
                                 <p className="text-sm text-muted-foreground">Expire le 12/26</p>
                             </div>
                         </div>
-                         <Button variant="outline" className="w-full">Mettre à jour</Button>
+                         <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="w-full">Mettre à jour</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Fonctionnalité en cours de développement</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                La mise à jour du moyen de paiement sera bientôt disponible directement depuis cette interface.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Compris</AlertDialogCancel>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     </CardContent>
                 </Card>
             </div>
