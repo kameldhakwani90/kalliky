@@ -101,12 +101,6 @@ export default function ClientsPage() {
                         <Filter className="mr-2 h-4 w-4" />
                         {t(translations.filters)}
                     </Button>
-                     <Button asChild>
-                        <Link href="/restaurant/clients/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {t(translations.newClient)}
-                        </Link>
-                    </Button>
                 </div>
             </header>
 
