@@ -22,18 +22,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-
+import Image from 'next/image';
 
 type TaxRate = {
     id: string;
@@ -116,11 +115,15 @@ const daysOfWeekFr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi
 
 
 const WIZARD_STEPS = [
-    { id: 'general', title: { fr: 'Informations Générales', en: 'General Information' }, description: {fr: 'Donnez un nom et une adresse à votre boutique.', en: 'Give your store a name and address.'} },
-    { id: 'opening', title: { fr: 'Horaires d\'ouverture', en: 'Opening Hours' }, description: {fr: 'Définissez quand vos clients peuvent commander.', en: 'Set when your customers can order.'} },
-    { id: 'taxes', title: { fr: 'Taxes et Devise', en: 'Taxes and Currency' }, description: {fr: 'Configurez la TVA et la devise principale.', en: 'Configure VAT and the main currency.'} },
-    { id: 'peripherals', title: { fr: 'Périphériques & KDS', en: 'Peripherals & KDS' }, description: {fr: 'Connectez vos imprimantes et tablettes de cuisine.', en: 'Connect your printers and kitchen displays.'} },
+    { id: 'welcome', title: { fr: 'Bienvenue', en: 'Welcome' } },
+    { id: 'general', title: { fr: 'Infos Générales', en: 'General Info' } },
+    { id: 'opening', title: { fr: 'Horaires', en: 'Opening Hours' } },
+    { id: 'taxes', title: { fr: 'Taxes & Connexions', en: 'Taxes & Connections' } },
+    { id: 'peripherals', title: { fr: 'Périphériques', en: 'Peripherals' } },
+    { id: 'finish', title: { fr: 'Finalisation', en: 'Finalization' } },
 ];
+
+const currentUserPlan = 'pro'; // Should be dynamic in a real app
 
 export default function StoresPage() {
     const { toast } = useToast();
@@ -261,6 +264,13 @@ export default function StoresPage() {
         editStore: { fr: "Modifier la boutique", en: "Edit store" },
         addNewStore: { fr: "Assistant de création de boutique", en: "Store Creation Wizard" },
         formDescription: { fr: "Suivez les étapes pour configurer votre nouveau point de vente.", en: "Follow the steps to set up your new point of sale." },
+        
+        // Wizard Steps
+        welcomeTitle: { fr: 'Bienvenue chez Kalliky.ai !', en: 'Welcome to Kalliky.ai!' },
+        welcomeDescription: { fr: 'Prêt à transformer la gestion de votre restaurant ? Cet assistant va vous guider pour configurer votre premier point de vente en quelques minutes.', en: 'Ready to transform your restaurant management? This wizard will guide you to set up your first point of sale in minutes.' },
+        welcomeVideoSub: { fr: 'Découvrez comment notre IA peut vous aider :', en: 'See how our AI can help you:' },
+        startConfig: { fr: 'Commencer la configuration', en: 'Start Configuration' },
+
         general: { fr: "Général", en: "General" },
         openingHours: { fr: "Horaires", en: "Hours" },
         taxes: { fr: "Taxes", en: "Taxes" },
@@ -294,36 +304,38 @@ export default function StoresPage() {
         testPage: { fr: "Lancer une page de test", en: "Run a test page" },
         addPrinter: { fr: "Ajouter une imprimante", en: "Add a printer" },
         saveStore: { fr: "Enregistrer la boutique", en: "Save store" },
-        manageConnections: { fr: "Gérer les connexions", en: "Manage connections" },
-        connectionsDescription: { fr: "Connectez des services externes à votre boutique {storeName} pour étendre ses fonctionnalités.", en: "Connect external services to your store {storeName} to extend its functionality." },
+        
+        connectionsTitle: { fr: 'Connexions & Services', en: 'Connections & Services' },
         endCustomerPayments: { fr: "Paiements des clients finaux", en: "End-customer payments" },
         connected: { fr: "Connecté", en: "Connected" },
         notConnected: { fr: "Non connecté", en: "Not connected" },
         stripeDescription: { fr: "Permet à vos clients de payer leurs commandes en ligne. L'argent est directement versé sur votre compte Stripe.", en: "Allows your customers to pay for their orders online. The money is paid directly into your Stripe account." },
-        stripeConnectedInfo: { fr: "Cette boutique est correctement connectée à Stripe.", en: "This store is correctly connected to Stripe." },
-        redirectToStripe: { fr: "Redirection vers Stripe", en: "Redirect to Stripe" },
-        stripeRedirectDesc: { fr: "Vous allez être redirigé vers le site de Stripe pour connecter votre compte en toute sécurité. Une fois l'opération terminée, vous reviendrez automatiquement ici.", en: "You will be redirected to the Stripe website to connect your account securely. Once the operation is complete, you will automatically return here." },
-        learnMoreStripe: { fr: "En savoir plus sur Stripe Connect", en: "Learn more about Stripe Connect" },
-        continueToStripe: { fr: "Continuer vers Stripe", en: "Continue to Stripe" },
         connectStripe: { fr: "Connecter mon compte Stripe", en: "Connect my Stripe account" },
+        planProRequired: { fr: 'Plan Pro requis', en: 'Pro Plan required' },
         messaging: { fr: "Messagerie", en: "Messaging" },
-        configured: { fr: "Configuré", en: "Configured" },
-        notConfigured: { fr: "Non configuré", en: "Not configured" },
         messagingDescription: { fr: "Utilisé pour les demandes de preuve (Plan Pro et +).", en: "Used for proof requests (Pro Plan and up)." },
         whatsappNumber: { fr: "Numéro WhatsApp de la boutique", en: "Store's WhatsApp number" },
-        twilioNumberInfo: { fr: "Doit être un numéro activé sur la plateforme Twilio.", en: "Must be a number activated on the Twilio platform." },
-        saveConnections: { fr: "Enregistrer les connexions", en: "Save connections" },
+        
         kdsConnections: { fr: 'Connexions KDS', en: 'KDS Connections' },
         kdsDescription: { fr: "Connectez vos tablettes de cuisine (KDS) pour recevoir les commandes en temps réel.", en: "Connect your kitchen display systems (KDS) to receive orders in real time." },
         deviceName: { fr: "Nom de l'appareil", en: "Device Name" },
         connectionCode: { fr: "Code de connexion", en: "Connection Code" },
         lastSeen: { fr: "Dernière connexion", en: "Last seen" },
         addKDS: { fr: "Ajouter un KDS", en: "Add a KDS" },
-        kdsSync: { fr: "Synchronisation KDS", en: "KDS Sync" },
+        
+        finishTitle: { fr: 'Votre boutique est prête !', en: 'Your store is ready!' },
+        finishDescription: { fr: "Il ne reste plus qu'à créer votre menu. C'est simple et rapide.", en: "All that's left is to create your menu. It's quick and easy." },
+        menuCreationMethod: { fr: 'Méthodes de création de menu', en: 'Menu Creation Methods' },
+        method1Title: { fr: 'Import de fichier', en: 'File Import' },
+        method1Desc: { fr: 'Importez votre menu depuis un fichier Excel ou une simple photo.', en: 'Import your menu from an Excel file or a simple photo.' },
+        method2Title: { fr: 'Création IA', en: 'AI Creation' },
+        method2Desc: { fr: "Décrivez vos plats et laissez notre IA générer les descriptions et les images.", en: "Describe your dishes and let our AI generate descriptions and images." },
+        method3Title: { fr: 'Création manuelle', en: 'Manual Creation' },
+        method3Desc: { fr: 'Utilisez notre éditeur complet pour créer vos articles et menus pas à pas.', en: 'Use our comprehensive editor to create your items and menus step-by-step.' },
+
         previous: { fr: 'Précédent', en: 'Previous' },
         next: { fr: 'Suivant', en: 'Next' },
         finishAndCreateMenu: { fr: 'Terminer et créer ma carte', en: 'Finish and Create Menu' },
-        step: { fr: 'Étape', en: 'Step' },
     };
 
 
@@ -417,31 +429,36 @@ export default function StoresPage() {
             </Card>
 
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+                <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
-                        <DialogTitle>{selectedStore ? t(translations.editStore) : t(translations.addNewStore)}</DialogTitle>
-                        <DialogDescription>
-                            {t(translations.formDescription)}
-                        </DialogDescription>
+                        <DialogTitle>{t(WIZARD_STEPS[wizardStep].title)}</DialogTitle>
+                         {WIZARD_STEPS[wizardStep].id !== 'welcome' && WIZARD_STEPS[wizardStep].id !== 'finish' && (
+                             <DialogDescription>
+                                {t({fr: `Étape ${wizardStep} sur ${WIZARD_STEPS.length - 2}`, en: `Step ${wizardStep} of ${WIZARD_STEPS.length - 2}`})} - {t(WIZARD_STEPS[wizardStep].description!)}
+                             </DialogDescription>
+                         )}
                     </DialogHeader>
                     
                     <div className="px-1 py-2">
-                      <Progress value={((wizardStep + 1) / WIZARD_STEPS.length) * 100} className="h-2" />
-                      <div className="flex justify-between mt-2">
-                        {WIZARD_STEPS.map((step, index) => (
-                           <div key={step.id} className="flex-1 text-center">
-                                <p className={cn("text-sm font-medium", wizardStep >= index ? "text-primary" : "text-muted-foreground")}>{t(step.title)}</p>
-                                <p className={cn("text-xs", wizardStep >= index ? "text-primary" : "text-muted-foreground")}>{t({fr: `Étape ${index + 1}`, en: `Step ${index + 1}`})}</p>
-                           </div>
-                        ))}
-                      </div>
+                      <Progress value={(wizardStep / (WIZARD_STEPS.length - 1)) * 100} className="h-2" />
                     </div>
 
-                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6 p-1">
+                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6 p-1 -mx-2 px-2">
+                       {wizardStep === 0 && (
+                            <div className="grid md:grid-cols-2 gap-8 items-center">
+                                <div className="space-y-4">
+                                    <h2 className="text-2xl font-bold font-headline">{t(translations.welcomeTitle)}</h2>
+                                    <p className="text-muted-foreground">{t(translations.welcomeDescription)}</p>
+                                    <p className="text-sm font-semibold">{t(translations.welcomeVideoSub)}</p>
+                                </div>
+                                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                                    <video src="https://www.w3schools.com/html/mov_bbb.mp4" controls className="w-full h-full rounded-lg object-cover"></video>
+                                </div>
+                            </div>
+                        )}
                       
-                      {wizardStep === 0 && (
+                      {wizardStep === 1 && (
                         <div className="space-y-4">
-                            <h4 className="font-medium">{t(translations.generalInfo)}</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">{t(translations.restaurantName)}</Label>
@@ -474,9 +491,8 @@ export default function StoresPage() {
                         </div>
                       )}
 
-                      {wizardStep === 1 && (
+                      {wizardStep === 2 && (
                         <div className="space-y-4">
-                            <h4 className="font-medium">{t(translations.openingDaysHours)}</h4>
                             <div className="space-y-3">
                                 {daysOfWeek.map(day => (
                                     <div key={day} className="grid grid-cols-3 items-center gap-4">
@@ -495,50 +511,80 @@ export default function StoresPage() {
                         </div>
                       )}
 
-                      {wizardStep === 2 && (
+                      {wizardStep === 3 && (
                          <div className="space-y-6">
-                            <div>
-                                <Label htmlFor="currency">{t(translations.defaultCurrency)}</Label>
-                                <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="mt-2 flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                    <option value="EUR">Euro (€)</option>
-                                    <option value="USD">Dollar ($)</option>
-                                    <option value="TND">Dinar (DT)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <Label>{t(translations.vatRates)}</Label>
-                                <div className="mt-2 space-y-2 p-3 border rounded-md">
-                                    {editableTaxRates.map((taxRate, index) => (
-                                        <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
-                                            <div className="col-span-5">
-                                                <Input placeholder={t(translations.taxNamePlaceholder)} value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
-                                            </div>
-                                            <div className="col-span-3 relative">
-                                                <Input placeholder={t(translations.rate)} type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
-                                                 <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
-                                            </div>
-                                            <div className="col-span-3 flex items-center gap-2">
-                                                <input type="radio" id={`default-tax-${index}`} name="default-tax" checked={taxRate.isDefault} onChange={(e) => handleTaxRateChange(index, 'isDefault', e.target.checked)} />
-                                                <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">{t(translations.default)}</Label>
-                                            </div>
-                                            {editableTaxRates.length > 1 &&
-                                                <div className="col-span-1">
-                                                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
-                                                        <X className="h-4 w-4"/>
-                                                    </Button>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2"><BadgeEuro className="h-4 w-4"/> {t(translations.vatRates)}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div>
+                                        <Label htmlFor="currency">{t(translations.defaultCurrency)}</Label>
+                                        <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="mt-2 flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                            <option value="EUR">Euro (€)</option>
+                                            <option value="USD">Dollar ($)</option>
+                                            <option value="TND">Dinar (DT)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <Label>{t(translations.vatRates)}</Label>
+                                        <div className="mt-2 space-y-2 p-3 border rounded-md">
+                                            {editableTaxRates.map((taxRate, index) => (
+                                                <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
+                                                    <div className="col-span-5">
+                                                        <Input placeholder={t(translations.taxNamePlaceholder)} value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
+                                                    </div>
+                                                    <div className="col-span-3 relative">
+                                                        <Input placeholder={t(translations.rate)} type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
+                                                         <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
+                                                    </div>
+                                                    <div className="col-span-3 flex items-center gap-2">
+                                                        <input type="radio" id={`default-tax-${index}`} name="default-tax" checked={taxRate.isDefault} onChange={(e) => handleTaxRateChange(index, 'isDefault', e.target.checked)} />
+                                                        <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">{t(translations.default)}</Label>
+                                                    </div>
+                                                    {editableTaxRates.length > 1 &&
+                                                        <div className="col-span-1">
+                                                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
+                                                                <X className="h-4 w-4"/>
+                                                            </Button>
+                                                        </div>
+                                                    }
                                                 </div>
-                                            }
+                                            ))}
+                                            <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addTaxRate}>
+                                                <PlusCircle className="mr-2 h-4 w-4"/> {t(translations.addVatRate)}
+                                            </Button>
                                         </div>
-                                    ))}
-                                    <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addTaxRate}>
-                                        <PlusCircle className="mr-2 h-4 w-4"/> {t(translations.addVatRate)}
-                                    </Button>
-                                </div>
-                            </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4"/> {t(translations.connectionsTitle)}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                     <div className={cn("p-4 rounded-md", currentUserPlan === 'starter' ? "bg-muted/50" : "")}>
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <h4 className="font-semibold text-sm">{t(translations.endCustomerPayments)} (Stripe)</h4>
+                                                <p className="text-xs text-muted-foreground">{t(translations.stripeDescription)}</p>
+                                            </div>
+                                             <Button variant="outline" size="sm" disabled={currentUserPlan === 'starter'}>{t(translations.connectStripe)}</Button>
+                                        </div>
+                                        {currentUserPlan === 'starter' && <Badge variant="secondary" className="mt-2">{t(translations.planProRequired)}</Badge>}
+                                    </div>
+                                    <div className={cn("p-4 rounded-md", currentUserPlan === 'starter' ? "bg-muted/50" : "")}>
+                                        <h4 className="font-semibold text-sm">{t(translations.messaging)} (WhatsApp)</h4>
+                                        <p className="text-xs text-muted-foreground mb-2">{t(translations.messagingDescription)}</p>
+                                        <Input disabled={currentUserPlan === 'starter'} placeholder={t(translations.whatsappNumber)} />
+                                        {currentUserPlan === 'starter' && <Badge variant="secondary" className="mt-2">{t(translations.planProRequired)}</Badge>}
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
                       )}
 
-                      {wizardStep === 3 && (
+                      {wizardStep === 4 && (
                         <div className="space-y-4">
                            <Card>
                                 <CardHeader>
@@ -651,15 +697,49 @@ export default function StoresPage() {
                         </div>
                       )}
                       
-                      <DialogFooter className="pt-4 border-t">
+                       {wizardStep === 5 && (
+                            <div className="text-center space-y-6 py-8">
+                                <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+                                <h2 className="text-2xl font-bold font-headline">{t(translations.finishTitle)}</h2>
+                                <p className="text-muted-foreground max-w-md mx-auto">{t(translations.finishDescription)}</p>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>{t(translations.menuCreationMethod)}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="grid md:grid-cols-3 gap-4 text-left">
+                                        <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                            <FileText className="h-6 w-6 text-primary" />
+                                            <h3 className="font-semibold">{t(translations.method1Title)}</h3>
+                                            <p className="text-xs text-muted-foreground">{t(translations.method1Desc)}</p>
+                                        </div>
+                                         <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                            <Bot className="h-6 w-6 text-primary" />
+                                            <h3 className="font-semibold">{t(translations.method2Title)}</h3>
+                                            <p className="text-xs text-muted-foreground">{t(translations.method2Desc)}</p>
+                                        </div>
+                                         <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                            <Pencil className="h-6 w-6 text-primary" />
+                                            <h3 className="font-semibold">{t(translations.method3Title)}</h3>
+                                            <p className="text-xs text-muted-foreground">{t(translations.method3Desc)}</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                      <DialogFooter className="pt-4 border-t sticky bottom-0 bg-background pb-0 -mb-6">
                           <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>{t(translations.cancel)}</Button>
                           <div className="flex-grow" />
                           {wizardStep > 0 && (
                             <Button type="button" variant="ghost" onClick={prevStep}>{t(translations.previous)}</Button>
                           )}
-                          {wizardStep < WIZARD_STEPS.length - 1 ? (
+                          {wizardStep === 0 && (
+                            <Button type="button" onClick={nextStep}>{t(translations.startConfig)}</Button>
+                          )}
+                          {wizardStep > 0 && wizardStep < WIZARD_STEPS.length - 1 && (
                             <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
-                          ) : (
+                          )}
+                          {wizardStep === WIZARD_STEPS.length - 1 && (
                              <Button type="submit">{t(translations.finishAndCreateMenu)}</Button>
                           )}
                       </DialogFooter>

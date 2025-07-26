@@ -18,7 +18,9 @@ import {
     Eye,
     Filter,
     Phone,
+    PlusCircle,
     Receipt,
+    Store,
     Star
 } from 'lucide-react';
 import {
@@ -31,12 +33,13 @@ import {
   } from "@/components/ui/table"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { useLanguage } from "@/contexts/language-context";
+import Image from "next/image";
 
 
 const chartDataFr = [
@@ -242,6 +245,9 @@ export default function RestaurantDashboard() {
       tax: { fr: "TVA", en: "TAX" },
       total: { fr: "TOTAL", en: "TOTAL" },
       thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
+      addStoreTitle: { fr: "Créez votre première boutique", en: "Create your first store" },
+      addStoreDescription: { fr: "Commencez à configurer votre point de vente pour recevoir vos premières commandes avec Kalliky.ai.", en: "Start configuring your point of sale to receive your first orders with Kalliky.ai." },
+      addStoreButton: { fr: "Ajouter une boutique", en: "Add a store" },
   }
     
   return (
@@ -262,6 +268,26 @@ export default function RestaurantDashboard() {
                 </Button>
             </div>
         </div>
+
+        <DialogTrigger asChild>
+            <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer">
+                <CardHeader className="flex flex-row items-center gap-6 space-y-0">
+                    <div className="p-4 bg-primary/10 rounded-full">
+                         <Store className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                        <CardTitle>{t(translations.addStoreTitle)}</CardTitle>
+                        <CardDescription>{t(translations.addStoreDescription)}</CardDescription>
+                    </div>
+                    <div className="ml-auto">
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            {t(translations.addStoreButton)}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+        </DialogTrigger>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>

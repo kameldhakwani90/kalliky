@@ -140,14 +140,6 @@ export default function RestaurantLayout({
            <KallikyLogo />
         </SidebarHeader>
         <SidebarContent>
-          <div className="p-2">
-            <Button className="w-full justify-start" asChild>
-                <Link href="/restaurant/stores">
-                    <PlusCircle />
-                    <span>{t({fr: "Ajouter une boutique", en: "Add a Store"})}</span>
-                </Link>
-            </Button>
-          </div>
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.href}>
@@ -279,12 +271,6 @@ export default function RestaurantLayout({
                         <Link href="/restaurant/profile">
                             <User className="mr-2 h-4 w-4" />
                             <span>{t({fr: "Profil", en: "Profile"})}</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/restaurant/stores">
-                           <PlusCircle className="mr-2 h-4 w-4" />
-                           <span>{t({fr: "Ajouter une boutique", en: "Add store"})}</span>
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
