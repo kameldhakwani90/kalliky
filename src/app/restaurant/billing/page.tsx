@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, CheckCircle, XCircle, FileUp, Bot, BarChart, FileText, Phone, CreditCard, Users, History, BrainCircuit, Lightbulb, BadgeEuro, Flag } from "lucide-react";
+import { Calendar as CalendarIcon, Download, CheckCircle, XCircle, FileUp, Bot, BarChart, FileText, Phone, CreditCard, Users, History, BrainCircuit, Lightbulb, BadgeEuro, Flag, ArrowRight, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +69,7 @@ const plans = [
   {
     name: "Starter",
     price: "129€",
+    priceValue: 129,
     priceDetails: "/ mois + 10% commission",
     target: "Petit restaurant local",
     features: starterFeatures,
@@ -79,6 +80,7 @@ const plans = [
     name: "Pro",
     subtitle: "IA + historique",
     price: "329€",
+    priceValue: 329,
     priceDetails: "/ mois + 1€ / ticket",
     target: "Restaurateurs réguliers ou chaîne",
     features: proFeatures,
@@ -90,6 +92,7 @@ const plans = [
     name: "Business",
     subtitle: "Sur mesure",
     price: "Sur devis",
+    priceValue: 800, // Example value for proration calculation
     priceDetails: "personnalisé",
     target: "Groupes, franchises, haut volume",
     features: businessFeatures,
@@ -105,8 +108,9 @@ const currentPlanName = "Pro";
 
 export default function BillingPage() {
     const [date, setDate] = useState<Date | undefined>(undefined);
-    const [selectedPlan, setSelectedPlan] = useState<string>(currentPlanName);
+    const [selectedPlanName, setSelectedPlanName] = useState<string>(currentPlanName);
     const [isUpdatePaymentOpen, setIsUpdatePaymentOpen] = useState(false);
+    const [isChangePlanOpen, setIsChangePlanOpen] = useState(false);
 
     const handleSavePayment = (e: React.FormEvent) => {
         e.preventDefault();
@@ -114,6 +118,14 @@ export default function BillingPage() {
         // Here you would normally send the data to your payment provider (Stripe)
         setIsUpdatePaymentOpen(false);
     }
+    
+    const selectedPlan = plans.find(p => p.name === selectedPlanName);
+    const currentPlan = plans.find(p => p.name === currentPlanName);
+
+    const daysInMonth = 30;
+    const daysRemaining = 15;
+    const proratedCost = selectedPlan && currentPlan ? (((selectedPlan.priceValue - currentPlan.priceValue) / daysInMonth) * daysRemaining) : 0;
+
 
     return (
         <div className="space-y-6">
@@ -134,7 +146,7 @@ export default function BillingPage() {
                         </div>
                         <p className="text-sm text-muted-foreground">Votre abonnement sera renouvellé le 1er juin 2024.</p>
                         
-                        <Dialog>
+                        <Dialog open={isChangePlanOpen} onOpenChange={setIsChangePlanOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="outline" className="w-full">Changer de plan</Button>
                             </DialogTrigger>
@@ -151,9 +163,9 @@ export default function BillingPage() {
                                         key={plan.name} 
                                         className={cn(
                                             "cursor-pointer flex flex-col", 
-                                            {"border-primary border-2 shadow-lg": selectedPlan === plan.name}
+                                            {"border-primary border-2 shadow-lg": selectedPlanName === plan.name}
                                         )}
-                                        onClick={() => setSelectedPlan(plan.name)}
+                                        onClick={() => setSelectedPlanName(plan.name)}
                                     >
                                         <CardHeader className="text-center">
                                             <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
@@ -179,8 +191,8 @@ export default function BillingPage() {
                                             </ul>
                                         </CardContent>
                                         <CardFooter>
-                                            <Button className="w-full" variant={selectedPlan === plan.name ? "default" : "outline"} disabled={currentPlanName === plan.name}>
-                                                {currentPlanName === plan.name ? 'Plan Actuel' : (selectedPlan === plan.name ? 'Sélectionné' : 'Choisir')}
+                                            <Button className="w-full" variant={selectedPlanName === plan.name ? (plan.name === "Business" ? 'default' : 'secondary') : "outline"} disabled={currentPlanName === plan.name}>
+                                                {currentPlanName === plan.name ? 'Plan Actuel' : (selectedPlanName === plan.name ? 'Sélectionné' : 'Choisir')}
                                             </Button>
                                         </CardFooter>
                                     </Card>
@@ -190,9 +202,45 @@ export default function BillingPage() {
                                      <div className="text-xs text-muted-foreground text-center sm:text-left">
                                          En continuant, vous acceptez nos <a href="#" className="underline">CGV</a>, <a href="#" className="underline">CGU</a> et notre <a href="#" className="underline">Politique de Confidentialité (RGPD)</a>.
                                      </div>
-                                    <Button disabled={selectedPlan === currentPlanName}>
-                                        Confirmer le changement
-                                    </Button>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                           <Button disabled={selectedPlanName === currentPlanName}>
+                                                Confirmer le changement
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirmation du changement de plan</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Vous êtes sur le point de passer du plan <span className="font-bold">{currentPlan?.name}</span> au plan <span className="font-bold">{selectedPlan?.name}</span>.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                             <div className="my-4 p-4 bg-muted rounded-md text-sm space-y-2">
+                                                 <div className="flex justify-between">
+                                                    <span>Changement de plan</span>
+                                                    <span className="font-medium">{currentPlan?.name} <ArrowRight className="inline h-3 w-3 mx-1"/> {selectedPlan?.name}</span>
+                                                 </div>
+                                                 <div className="flex justify-between">
+                                                    <span className="flex items-center">Ajustement au prorata <Info className="h-3 w-3 ml-1.5 cursor-help" /></span>
+                                                    <span className="font-medium">{proratedCost.toFixed(2)}€</span>
+                                                 </div>
+                                                 <Separator />
+                                                  <div className="flex justify-between font-bold text-base">
+                                                    <span>Total facturé aujourd'hui</span>
+                                                    <span>{proratedCost.toFixed(2)}€</span>
+                                                 </div>
+                                                  <Separator />
+                                                 <div className="flex justify-between text-xs text-muted-foreground">
+                                                    <span>Prochain prélèvement le 01/07/2024</span>
+                                                    <span>{selectedPlan?.priceValue.toFixed(2)}€</span>
+                                                 </div>
+                                             </div>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => setIsChangePlanOpen(false)}>Confirmer et Payer</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
@@ -244,13 +292,13 @@ export default function BillingPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <DialogFooter className="flex-col gap-y-2">
-                                <div className="text-xs text-muted-foreground text-center sm:text-left">
-                                    Paiements sécurisés par <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a>. En continuant, vous acceptez nos <a href="#" className="underline">CGV</a>, <a href="#" className="underline">CGU</a> et <a href="#" className="underline">Politique de Confidentialité</a>.
-                                </div>
+                                <DialogFooter className="flex-col gap-y-2 sm:flex-row sm:justify-between sm:items-center">
+                                <p className="text-xs text-muted-foreground text-center sm:text-left">
+                                    Paiements sécurisés par <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a>.
+                                </p>
                                 <div className="flex justify-end gap-2">
                                     <Button type="button" variant="outline" onClick={() => setIsUpdatePaymentOpen(false)}>Annuler</Button>
-                                    <Button type="submit">Enregistrer la nouvelle carte</Button>
+                                    <Button type="submit">Enregistrer</Button>
                                 </div>
                                 </DialogFooter>
                             </form>
