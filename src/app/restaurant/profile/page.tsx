@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,9 @@ import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
     const { language, setLanguage, t } = useLanguage();
+    const [profileImage, setProfileImage] = useState<string | null>("https://placehold.co/100x100");
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     const translations = {
         title: { fr: "Profil Utilisateur", en: "User Profile" },
@@ -36,6 +40,25 @@ export default function ProfilePage() {
         english: { fr: "Anglais", en: "English" },
         save: { fr: "Enregistrer les modifications", en: "Save Changes" }
     };
+    
+    const handleImageUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setProfileImage(null);
+    };
 
     return (
         <div className="space-y-6">
@@ -51,14 +74,15 @@ export default function ProfilePage() {
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-6">
                         <Avatar className="h-20 w-20">
-                            <AvatarImage src="https://placehold.co/100x100" />
+                            <AvatarImage src={profileImage || undefined} data-ai-hint="user profile"/>
                             <AvatarFallback>LP</AvatarFallback>
                         </Avatar>
                         <div className="space-y-2">
                              <Label>{t(translations.photo)}</Label>
                              <div className="flex gap-2">
-                                <Button variant="outline"><Camera className="mr-2 h-4 w-4" />{t(translations.upload)}</Button>
-                                <Button variant="ghost" className="text-destructive">{t(translations.remove)}</Button>
+                                <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                                <Button variant="outline" onClick={handleImageUploadClick}><Camera className="mr-2 h-4 w-4" />{t(translations.upload)}</Button>
+                                <Button variant="ghost" className="text-destructive" onClick={handleRemoveImage}>{t(translations.remove)}</Button>
                              </div>
                         </div>
                     </div>
