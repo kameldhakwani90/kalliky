@@ -29,19 +29,24 @@ type DetailedOrderItem = {
     quantity: number;
     basePrice: number;
     customizations: OrderItemCustomization[];
-    finalPrice: number; // basePrice + sum of customization prices
+    finalPrice: number;
+    taxRate: number; // The specific tax rate for this item
+};
+
+type OrderTotal = {
+    subtotal: number;
+    taxDetails: { rate: number; amount: number }[];
+    total: number;
 };
 
 type DetailedOrder = {
     id: string;
     date: string;
     items: DetailedOrderItem[];
-    subtotal: number;
-    tax: number;
-    taxRate: number;
-    total: number;
+    total: number; // Just the final total for list display
     storeId: string;
 };
+
 
 type Report = {
     id: string;
@@ -78,9 +83,41 @@ type Customer = {
     reportHistory: Report[];
 };
 
-const mockStores = [
-    { id: "store-1", name: "Le Gourmet Parisien", address: "12 Rue de la Paix, 75002 Paris", taxRate: 10 },
-    { id: "store-2", name: "Pizzeria Bella", address: "3 Rue de la Roquette, 75011 Paris", taxRate: 5.5 },
+type TaxRate = {
+    id: string;
+    name: string;
+    rate: number;
+    isDefault: boolean;
+};
+
+type Store = {
+    id: string;
+    name: string;
+    address: string;
+    taxRates: TaxRate[];
+};
+
+
+const mockStores: Store[] = [
+    { 
+        id: "store-1", 
+        name: "Le Gourmet Parisien", 
+        address: "12 Rue de la Paix, 75002 Paris",
+        taxRates: [
+            { id: 'tax-1', name: 'Réduit', rate: 5.5, isDefault: false },
+            { id: 'tax-2', name: 'Intermédiaire', rate: 10, isDefault: true },
+            { id: 'tax-3', name: 'Normal', rate: 20, isDefault: false },
+        ]
+    },
+    { 
+        id: "store-2", 
+        name: "Pizzeria Bella", 
+        address: "3 Rue de la Roquette, 75011 Paris",
+        taxRates: [
+             { id: 'tax-1', name: 'À emporter', rate: 5.5, isDefault: true },
+             { id: 'tax-2', name: 'Sur place', rate: 10, isDefault: false },
+        ]
+    },
 ];
 
 const mockOrders: DetailedOrder[] = [
@@ -89,19 +126,19 @@ const mockOrders: DetailedOrder[] = [
         date: "28/05/2024",
         storeId: "store-1",
         items: [
-            { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, customizations: [
-                { type: 'add', name: 'Bacon grillé', price: 2.00 },
-                { type: 'add', name: 'Oeuf au plat', price: 1.00 },
-                { type: 'remove', name: 'Oignons' }
-            ], finalPrice: 19.50 },
-            { id: "item-2", name: 'Salade César', quantity: 1, basePrice: 12.50, customizations: [], finalPrice: 12.50 },
+            { 
+                id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, taxRate: 10, customizations: [
+                    { type: 'add', name: 'Bacon grillé', price: 2.00 },
+                    { type: 'add', name: 'Oeuf au plat', price: 1.00 },
+                    { type: 'remove', name: 'Oignons' }
+                ], finalPrice: 19.50 
+            },
+            { id: "item-2", name: 'Bière Blonde', quantity: 1, basePrice: 6.00, taxRate: 20, customizations: [], finalPrice: 6.00 },
+            { id: "item-3", name: 'Eau (bouteille)', quantity: 1, basePrice: 2.50, taxRate: 5.5, customizations: [], finalPrice: 2.50 },
         ],
-        subtotal: 32.00,
-        tax: 3.20,
-        taxRate: 10,
-        total: 35.20,
+        total: 28.00, // this is HT, the final total will be calculated
     },
-     { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], subtotal: 82.50, tax: 8.25, taxRate: 10, total: 90.75 },
+     { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
 ];
 
 
@@ -149,6 +186,31 @@ const mockCustomers: Customer[] = [
 
 const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
+const calculateOrderTotals = (order: DetailedOrder): OrderTotal => {
+    const subtotal = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
+
+    const taxBreakdown = order.items.reduce((acc, item) => {
+        const itemTotal = item.finalPrice * item.quantity;
+        const taxAmount = itemTotal * (item.taxRate / 100);
+        if (!acc[item.taxRate]) {
+            acc[item.taxRate] = 0;
+        }
+        acc[item.taxRate] += taxAmount;
+        return acc;
+    }, {} as Record<number, number>);
+
+    const taxDetails = Object.entries(taxBreakdown).map(([rate, amount]) => ({
+        rate: parseFloat(rate),
+        amount,
+    }));
+
+    const totalTaxAmount = taxDetails.reduce((acc, detail) => acc + detail.amount, 0);
+    const total = subtotal + totalTaxAmount;
+
+    return { subtotal, taxDetails, total };
+};
+
+
 export default function ClientProfilePage() {
     const params = useParams();
     const customerId = params.id as string;
@@ -176,6 +238,8 @@ export default function ClientProfilePage() {
         setSelectedOrder(order);
         setOrderTicketOpen(true);
     }
+    
+    const calculatedTotals = selectedOrder ? calculateOrderTotals(selectedOrder) : null;
 
     return (
         <>
@@ -276,7 +340,7 @@ export default function ClientProfilePage() {
                                             <TableRow>
                                                 <TableHead>Commande</TableHead>
                                                 <TableHead>Date</TableHead>
-                                                <TableHead>Montant</TableHead>
+                                                <TableHead>Montant (TTC)</TableHead>
                                                 <TableHead className="text-right">Action</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -285,7 +349,7 @@ export default function ClientProfilePage() {
                                                 <TableRow key={order.id}>
                                                     <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
                                                     <TableCell>{order.date}</TableCell>
-                                                    <TableCell>{order.total.toFixed(2)}€</TableCell>
+                                                    <TableCell>{calculateOrderTotals(order).total.toFixed(2)}€</TableCell>
                                                     <TableCell className="text-right">
                                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
                                                             <Eye className="h-4 w-4"/>
@@ -381,7 +445,7 @@ export default function ClientProfilePage() {
                 </div>
             </div>
         </div>
-        {selectedOrder && (
+        {selectedOrder && calculatedTotals && (
             <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
                 <DialogContent className="sm:max-w-sm font-mono">
                     <DialogHeader className="text-center space-y-2">
@@ -417,18 +481,20 @@ export default function ClientProfilePage() {
                         <Separator className="border-dashed" />
                         <div className="space-y-1">
                             <div className="flex justify-between">
-                                <span>SOUS-TOTAL</span>
-                                <span>{selectedOrder.subtotal.toFixed(2)}€</span>
+                                <span>TOTAL HT</span>
+                                <span>{calculatedTotals.subtotal.toFixed(2)}€</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span>TVA ({selectedOrder.taxRate}%)</span>
-                                <span>{selectedOrder.tax.toFixed(2)}€</span>
-                            </div>
+                            {calculatedTotals.taxDetails.map(tax => (
+                                <div key={tax.rate} className="flex justify-between">
+                                    <span>TVA ({tax.rate.toFixed(2)}%)</span>
+                                    <span>{tax.amount.toFixed(2)}€</span>
+                                </div>
+                            ))}
                         </div>
                         <Separator className="border-dashed" />
                         <div className="flex justify-between font-bold text-base">
-                            <span>TOTAL</span>
-                            <span>{selectedOrder.total.toFixed(2)}€</span>
+                            <span>TOTAL TTC</span>
+                            <span>{calculatedTotals.total.toFixed(2)}€</span>
                         </div>
                          <Separator className="border-dashed" />
                          <div className="text-center text-gray-500 pt-2">

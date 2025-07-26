@@ -21,11 +21,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+
+type TaxRate = {
+    id: string;
+    name: string;
+    rate: number;
+    isDefault: boolean;
+};
 
 type Store = {
     id: string;
@@ -35,13 +42,33 @@ type Store = {
     status: 'active' | 'inactive';
     stripeStatus: 'connected' | 'disconnected';
     currency: 'EUR' | 'USD' | 'TND';
-    taxRate: number;
+    taxRates: TaxRate[];
 };
 
 const initialStores: Store[] = [
-    { id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active', stripeStatus: 'connected', currency: 'EUR', taxRate: 10 },
-    { id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active', stripeStatus: 'disconnected', currency: 'EUR', taxRate: 10 },
-    { id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', taxRate: 5.5 },
+    { 
+        id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active', stripeStatus: 'connected', currency: 'EUR', 
+        taxRates: [
+            { id: 'tax-1-1', name: 'Réduit', rate: 5.5, isDefault: false },
+            { id: 'tax-1-2', name: 'Intermédiaire', rate: 10, isDefault: true },
+            { id: 'tax-1-3', name: 'Normal', rate: 20, isDefault: false },
+        ]
+    },
+    { 
+        id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active', stripeStatus: 'disconnected', currency: 'EUR', 
+        taxRates: [
+            { id: 'tax-2-1', name: 'Réduit', rate: 5.5, isDefault: false },
+            { id: 'tax-2-2', name: 'Intermédiaire', rate: 10, isDefault: true },
+            { id: 'tax-2-3', name: 'Normal', rate: 20, isDefault: false },
+        ]
+    },
+    { 
+        id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', 
+        taxRates: [
+             { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
+             { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
+        ]
+    },
 ];
 
 const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -52,9 +79,12 @@ export default function StoresPage() {
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [isConnectionsDialogOpen, setIsConnectionsDialogOpen] = useState(false);
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+    const [editableTaxRates, setEditableTaxRates] = useState<TaxRate[]>([]);
+
 
     const handleOpenFormDialog = (store: Store | null = null) => {
         setSelectedStore(store);
+        setEditableTaxRates(store ? [...store.taxRates] : [{ id: `tax_${Date.now()}`, name: 'TVA par défaut', rate: 0, isDefault: true }]);
         setIsFormDialogOpen(true);
     };
 
@@ -75,7 +105,7 @@ export default function StoresPage() {
             status: selectedStore?.status || 'active',
             stripeStatus: selectedStore?.stripeStatus || 'disconnected',
             currency: (formData.get('currency') as Store['currency']) || 'EUR',
-            taxRate: parseFloat(formData.get('taxRate') as string) || 0,
+            taxRates: editableTaxRates,
         } as Store;
 
         if (selectedStore) {
@@ -99,6 +129,31 @@ export default function StoresPage() {
         setStores(stores.map(s => s.id === selectedStore.id ? { ...s, stripeStatus: 'connected' } : s));
         setSelectedStore(prev => prev ? {...prev, stripeStatus: 'connected'} : null);
     }
+    
+    const handleTaxRateChange = (index: number, field: keyof TaxRate, value: string | number | boolean) => {
+        const newTaxRates = [...editableTaxRates];
+        if (field === 'isDefault' && value === true) {
+            newTaxRates.forEach((rate, i) => {
+                rate.isDefault = i === index;
+            });
+        } else {
+            (newTaxRates[index] as any)[field] = value;
+        }
+        setEditableTaxRates(newTaxRates);
+    };
+
+    const addTaxRate = () => {
+        setEditableTaxRates([...editableTaxRates, { id: `tax_${Date.now()}`, name: '', rate: 0, isDefault: false }]);
+    };
+    
+    const removeTaxRate = (index: number) => {
+        const newTaxRates = editableTaxRates.filter((_, i) => i !== index);
+        // Ensure there's always at least one rate and one default
+        if (newTaxRates.length > 0 && !newTaxRates.some(r => r.isDefault)) {
+            newTaxRates[0].isDefault = true;
+        }
+        setEditableTaxRates(newTaxRates);
+    };
 
 
     return (
@@ -241,19 +296,43 @@ export default function StoresPage() {
                             <Separator />
 
                              <div className="space-y-4">
-                                <h4 className="font-medium">Devise & Taxes</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="currency">Devise par défaut</Label>
-                                        <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                            <option value="EUR">Euro (€)</option>
-                                            <option value="USD">Dollar ($)</option>
-                                            <option value="TND">Dinar (DT)</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="taxRate">Taux de TVA (%)</Label>
-                                        <Input id="taxRate" name="taxRate" type="number" defaultValue={selectedStore?.taxRate || ''} placeholder="Ex: 20" step="0.1" required />
+                                <h4 className="font-medium text-lg flex items-center gap-2"><BadgeEuro/>Devise & Taxes</h4>
+                                <div>
+                                    <Label htmlFor="currency">Devise par défaut</Label>
+                                    <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="mt-2 flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                        <option value="EUR">Euro (€)</option>
+                                        <option value="USD">Dollar ($)</option>
+                                        <option value="TND">Dinar (DT)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <Label>Taux de TVA applicables</Label>
+                                    <div className="mt-2 space-y-2 p-3 border rounded-md">
+                                        {editableTaxRates.map((taxRate, index) => (
+                                            <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
+                                                <div className="col-span-5">
+                                                    <Input placeholder="Nom (ex: Normal)" value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
+                                                </div>
+                                                <div className="col-span-3 relative">
+                                                    <Input placeholder="Taux" type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
+                                                     <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
+                                                </div>
+                                                <div className="col-span-3 flex items-center gap-2">
+                                                    <input type="radio" id={`default-tax-${index}`} name="default-tax" checked={taxRate.isDefault} onChange={(e) => handleTaxRateChange(index, 'isDefault', e.target.checked)} />
+                                                    <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">Défaut</Label>
+                                                </div>
+                                                {editableTaxRates.length > 1 &&
+                                                    <div className="col-span-1">
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
+                                                            <X className="h-4 w-4"/>
+                                                        </Button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        ))}
+                                        <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addTaxRate}>
+                                            <PlusCircle className="mr-2 h-4 w-4"/> Ajouter un taux de TVA
+                                        </Button>
                                     </div>
                                 </div>
                              </div>
