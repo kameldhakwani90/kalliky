@@ -207,29 +207,45 @@ const mockCustomers: Customer[] = [
         ],
         reportHistory: []
     },
+    {
+        id: 'cust-3',
+        phone: "06 11 22 33 44",
+        firstName: "Carole",
+        lastName: "Leblanc",
+        status: "Nouveau",
+        avgBasket: "25.00€",
+        totalSpent: "25.00€",
+        firstSeen: "29/05/2024",
+        lastSeen: "29/05/2024",
+        orderHistory: [],
+        callHistory: [],
+        reportHistory: [
+            {id: 'rep-2', date: '29/05/2024', reason: 'Erreur dans la commande', status: 'Ouvert', details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages. Commande #1028.'}
+        ]
+    },
 ];
 
 const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
 const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
-    const taxBreakdown: Record<number, { amount: number }> = {};
-    const totalTTC = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
+    const taxBreakdown: Record<number, number> = {};
+    let totalTTC = 0;
 
     order.items.forEach(item => {
         const itemTTC = item.finalPrice * item.quantity;
+        totalTTC += itemTTC;
         const rate = item.taxRate;
-
-        if (!taxBreakdown[rate]) {
-            taxBreakdown[rate] = { amount: 0 };
-        }
+        const taxAmount = itemTTC - (itemTTC / (1 + rate / 100));
         
-        const taxAmount = (itemTTC / (1 + rate / 100)) * (rate / 100);
-        taxBreakdown[rate].amount += taxAmount;
+        if (!taxBreakdown[rate]) {
+            taxBreakdown[rate] = 0;
+        }
+        taxBreakdown[rate] += taxAmount;
     });
 
-    const taxDetails = Object.entries(taxBreakdown).map(([rate, values]) => ({
+    const taxDetails = Object.entries(taxBreakdown).map(([rate, amount]) => ({
         rate: parseFloat(rate),
-        amount: values.amount,
+        amount,
     }));
 
     return { total: totalTTC, taxDetails };
