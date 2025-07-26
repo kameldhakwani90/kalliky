@@ -169,10 +169,6 @@ export default function RestaurantLayout({
                             <span>{t({fr: "Profil", en: "Profile"})}</span>
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <Zap className="mr-2 h-4 w-4" />
-                        <span>{t({fr: "Intégrations", en: "Integrations"})}</span>
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem className="text-destructive">
                         <XCircle className="mr-2 h-4 w-4" />
