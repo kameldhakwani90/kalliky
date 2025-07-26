@@ -48,7 +48,7 @@ type DetailedOrderItem = {
 
 type OrderTotals = {
     total: number;
-    taxDetails: { rate: number; amount: number; base: number }[];
+    taxDetails: { rate: number; amount: number }[];
 };
 
 
@@ -212,34 +212,29 @@ const mockCustomers: Customer[] = [
 const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
 const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
-    const taxBreakdown: Record<number, { base: number; amount: number }> = {};
+    const taxBreakdown: Record<number, { amount: number }> = {};
+    const totalTTC = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
 
     order.items.forEach(item => {
         const itemTTC = item.finalPrice * item.quantity;
         const rate = item.taxRate;
 
         if (!taxBreakdown[rate]) {
-            taxBreakdown[rate] = { base: 0, amount: 0 };
+            taxBreakdown[rate] = { amount: 0 };
         }
-        taxBreakdown[rate].base += itemTTC;
-    });
-
-    Object.entries(taxBreakdown).forEach(([rate, values]) => {
-        const rateFloat = parseFloat(rate);
-        const taxAmount = (values.base / (1 + rateFloat / 100)) * (rateFloat / 100);
-        taxBreakdown[rateFloat].amount = taxAmount;
+        
+        const taxAmount = (itemTTC / (1 + rate / 100)) * (rate / 100);
+        taxBreakdown[rate].amount += taxAmount;
     });
 
     const taxDetails = Object.entries(taxBreakdown).map(([rate, values]) => ({
         rate: parseFloat(rate),
         amount: values.amount,
-        base: values.base,
     }));
-    
-    const finalTotal = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
 
-    return { total: finalTotal, taxDetails };
+    return { total: totalTTC, taxDetails };
 };
+
 
 
 export default function ClientProfilePage() {
@@ -520,7 +515,13 @@ export default function ClientProfilePage() {
         {selectedOrder && calculatedTotals && (
             <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
                 <DialogContent className="sm:max-w-md">
-                   <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white">
+                   <DialogHeader>
+                        <DialogTitle className="sr-only">Ticket de commande {selectedOrder.id}</DialogTitle>
+                        <DialogDescription className="sr-only">
+                            Détail de la commande {selectedOrder.id} pour {getStoreInfo(selectedOrder.storeId)?.name}.
+                        </DialogDescription>
+                    </DialogHeader>
+                   <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
                         <div className="text-center space-y-2 mb-4">
                             <h2 className="text-lg font-bold">{getStoreInfo(selectedOrder.storeId)?.name}</h2>
                             <p className="text-xs">{getStoreInfo(selectedOrder.storeId)?.address}</p>
@@ -560,7 +561,7 @@ export default function ClientProfilePage() {
                         <Separator className="border-dashed border-black" />
 
                         <div className="space-y-1 my-2 text-xs">
-                           <p className="font-bold">Détail TVA incluse :</p>
+                           <p className="font-bold">Dont TVA :</p>
                            {calculatedTotals.taxDetails.map(tax => (
                                 <div key={tax.rate} className="flex justify-between">
                                     <span>TVA ({tax.rate.toFixed(2)}%)</span>
