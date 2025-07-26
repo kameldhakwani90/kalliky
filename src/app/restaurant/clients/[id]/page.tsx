@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useLanguage } from '@/contexts/language-context';
 
 
 type OrderItemCustomization = {
@@ -78,6 +79,9 @@ type Call = {
     audioUrl?: string;
 };
 
+type CustomerStatus = 'Nouveau' | 'Fidèle' | 'VIP';
+type CustomerGender = 'Homme' | 'Femme' | 'Autre';
+
 type Customer = {
     id: string;
     phone: string;
@@ -86,8 +90,8 @@ type Customer = {
     email?: string;
     address?: string;
     birthDate?: string;
-    gender?: 'Homme' | 'Femme' | 'Autre';
-    status: 'Nouveau' | 'Fidèle' | 'VIP';
+    gender?: CustomerGender;
+    status: CustomerStatus;
     avgBasket: string;
     totalSpent: string;
     firstSeen: string;
@@ -279,6 +283,7 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
 
 
 export default function ClientProfilePage() {
+    const { t } = useLanguage();
     const params = useParams();
     const customerId = params.id as string;
     const customer = mockCustomers.find(c => c.id === customerId);
@@ -289,9 +294,67 @@ export default function ClientProfilePage() {
     const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
     const ticketRef = useRef<HTMLDivElement>(null);
 
+    const translations = {
+        edit: { fr: "Modifier", en: "Edit" },
+        save: { fr: "Enregistrer", en: "Save" },
+        devInProgress: { fr: "Fonctionnalité en cours de développement", en: "Feature in development" },
+        editSoon: { fr: "La modification des fiches clients sera bientôt disponible.", en: "Editing customer files will be available soon." },
+        understood: { fr: "Compris", en: "Got it" },
+        status: { fr: "Statut", en: "Status" },
+        loyal: { fr: "Fidèle", en: "Loyal" },
+        new: { fr: "Nouveau", en: "New" },
+        vip: { fr: "VIP", en: "VIP" },
+        avgBasket: { fr: "Panier Moyen", en: "Average Basket" },
+        totalSpent: { fr: "Total Dépensé", en: "Total Spent" },
+        lastVisit: { fr: "Dernière Visite", en: "Last Visit" },
+        personalInfo: { fr: "Informations Personnelles", en: "Personal Information" },
+        firstName: { fr: "Prénom", en: "First Name" },
+        lastName: { fr: "Nom", en: "Last Name" },
+        email: { fr: "Email", en: "Email" },
+        address: { fr: "Adresse", en: "Address" },
+        birthDate: { fr: "Date de naissance", en: "Birth Date" },
+        gender: { fr: "Genre", en: "Gender" },
+        unspecified: { fr: "Non spécifié", en: "Unspecified" },
+        male: { fr: "Homme", en: "Male" },
+        female: { fr: "Femme", en: "Female" },
+        other: { fr: "Autre", en: "Other" },
+        orderHistory: { fr: "Historique des Commandes", en: "Order History" },
+        callHistory: { fr: "Historique des Appels", en: "Call History" },
+        reportHistory: { fr: "Historique des Signalements", en: "Report History" },
+        order: { fr: "Commande", en: "Order" },
+        date: { fr: "Date", en: "Date" },
+        amountTTC: { fr: "Montant (TTC)", en: "Amount (incl. tax)" },
+        action: { fr: "Action", en: "Action" },
+        items: { fr: "art.", en: "items" },
+        readCall: { fr: "Lire l'échange", en: "Read transcript" },
+        callDetails: { fr: "Détails de l'appel", en: "Call Details" },
+        transcript: { fr: "Transcription :", en: "Transcript:" },
+        close: { fr: "Fermer", en: "Close" },
+        reason: { fr: "Raison", en: "Reason" },
+        status: { fr: "Statut", en: "Status" },
+        resolved: { fr: "Résolu", en: "Resolved" },
+        open: { fr: "Ouvert", en: "Open" },
+        inProgress: { fr: "En cours", en: "In Progress" },
+        reportDetails: { fr: "Détails du Signalement", en: "Report Details" },
+        orderTicket: { fr: "Ticket de commande", en: "Order Ticket" },
+        orderFor: { fr: "Détail de la commande {orderId} pour {storeName}.", en: "Details for order {orderId} for {storeName}." },
+        order: { fr: "Commande", en: "Order" },
+        taxDetails: { fr: "Détail TVA incluse :", en: "Included tax details:" },
+        tax: { fr: "TVA", en: "VAT" },
+        thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
+        print: { fr: "Imprimer", en: "Print" },
+        noPrinter: { fr: "Aucune imprimante configurée", en: "No printer configured" },
+    };
+
     if (!customer || !editedCustomer) {
         return notFound();
     }
+
+    const translateStatus = (status: CustomerStatus) => {
+        const map = { 'Nouveau': translations.new.fr, 'Fidèle': translations.loyal.fr, 'VIP': translations.vip.fr };
+        const mapEn = { 'Nouveau': translations.new.en, 'Fidèle': translations.loyal.en, 'VIP': translations.vip.en };
+        return t({ fr: map[status], en: mapEn[status] });
+    };
 
     const handleInputChange = (field: keyof Customer, value: string) => {
         setEditedCustomer(prev => prev ? { ...prev, [field]: value } : null);
@@ -351,21 +414,21 @@ export default function ClientProfilePage() {
                 </div>
                 <div className="flex items-center gap-2">
                     {isEditing ? (
-                        <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/>Enregistrer</Button>
+                        <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/>{t(translations.save)}</Button>
                     ) : (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button><Edit className="mr-2 h-4 w-4"/>Modifier</Button>
+                            <Button><Edit className="mr-2 h-4 w-4"/>{t(translations.edit)}</Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Fonctionnalité en cours de développement</AlertDialogTitle>
+                              <AlertDialogTitle>{t(translations.devInProgress)}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                La modification des fiches clients sera bientôt disponible.
+                                {t(translations.editSoon)}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Compris</AlertDialogCancel>
+                              <AlertDialogCancel>{t(translations.understood)}</AlertDialogCancel>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -375,19 +438,19 @@ export default function ClientProfilePage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Statut</CardTitle></CardHeader>
-                    <CardContent><p className="text-lg font-semibold flex items-center gap-2"><Star className="text-yellow-500"/> {customer.status}</p></CardContent>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.status)}</CardTitle></CardHeader>
+                    <CardContent><p className="text-lg font-semibold flex items-center gap-2"><Star className="text-yellow-500"/> {translateStatus(customer.status)}</p></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Panier Moyen</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.avgBasket)}</CardTitle></CardHeader>
                     <CardContent><p className="text-lg font-semibold">{customer.avgBasket}</p></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Dépensé</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.totalSpent)}</CardTitle></CardHeader>
                     <CardContent><p className="text-lg font-semibold">{customer.totalSpent}</p></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Dernière Visite</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.lastVisit)}</CardTitle></CardHeader>
                     <CardContent><p className="text-lg font-semibold">{customer.lastSeen}</p></CardContent>
                 </Card>
             </div>
@@ -396,37 +459,37 @@ export default function ClientProfilePage() {
                 <div className="lg:col-span-1">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Informations Personnelles</CardTitle>
+                            <CardTitle>{t(translations.personalInfo)}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Prénom</Label>
+                                <Label>{t(translations.firstName)}</Label>
                                 <Input value={editedCustomer.firstName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('firstName', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Nom</Label>
+                                <Label>{t(translations.lastName)}</Label>
                                 <Input value={editedCustomer.lastName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('lastName', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Email</Label>
+                                <Label>{t(translations.email)}</Label>
                                 <Input type="email" value={editedCustomer.email || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('email', e.target.value)} />
                             </div>
                              <div className="space-y-2">
-                                <Label>Adresse</Label>
+                                <Label>{t(translations.address)}</Label>
                                 <Input value={editedCustomer.address || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('address', e.target.value)} />
                             </div>
                              <div className="space-y-2">
-                                <Label>Date de naissance</Label>
+                                <Label>{t(translations.birthDate)}</Label>
                                 <Input type="date" value={editedCustomer.birthDate || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('birthDate', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Genre</Label>
+                                <Label>{t(translations.gender)}</Label>
                                 <Select value={editedCustomer.gender || ''} disabled={!isEditing} onValueChange={(value) => handleInputChange('gender', value)}>
-                                    <SelectTrigger><SelectValue placeholder="Non spécifié" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t(translations.unspecified)} /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Homme">Homme</SelectItem>
-                                        <SelectItem value="Femme">Femme</SelectItem>
-                                        <SelectItem value="Autre">Autre</SelectItem>
+                                        <SelectItem value="Homme">{t(translations.male)}</SelectItem>
+                                        <SelectItem value="Femme">{t(translations.female)}</SelectItem>
+                                        <SelectItem value="Autre">{t(translations.other)}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -436,9 +499,9 @@ export default function ClientProfilePage() {
                 <div className="lg:col-span-2">
                      <Tabs defaultValue="orders">
                         <TabsList className="mb-4">
-                            <TabsTrigger value="orders"><Receipt className="mr-2 h-4 w-4"/>Historique des Commandes</TabsTrigger>
-                            <TabsTrigger value="calls"><Phone className="mr-2 h-4 w-4"/>Historique des Appels</TabsTrigger>
-                            <TabsTrigger value="reports"><Flag className="mr-2 h-4 w-4"/>Historique des Signalements</TabsTrigger>
+                            <TabsTrigger value="orders"><Receipt className="mr-2 h-4 w-4"/>{t(translations.orderHistory)}</TabsTrigger>
+                            <TabsTrigger value="calls"><Phone className="mr-2 h-4 w-4"/>{t(translations.callHistory)}</TabsTrigger>
+                            <TabsTrigger value="reports"><Flag className="mr-2 h-4 w-4"/>{t(translations.reportHistory)}</TabsTrigger>
                         </TabsList>
                         <TabsContent value="orders">
                             <Card>
@@ -446,16 +509,16 @@ export default function ClientProfilePage() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Commande</TableHead>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead>Montant (TTC)</TableHead>
-                                                <TableHead className="text-right">Action</TableHead>
+                                                <TableHead>{t(translations.order)}</TableHead>
+                                                <TableHead>{t(translations.date)}</TableHead>
+                                                <TableHead>{t(translations.amountTTC)}</TableHead>
+                                                <TableHead className="text-right">{t(translations.action)}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {customer.orderHistory.map(order => (
                                                 <TableRow key={order.id}>
-                                                    <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
+                                                    <TableCell className="font-medium">{order.id} ({order.items.length} {t(translations.items)})</TableCell>
                                                     <TableCell>{order.date}</TableCell>
                                                     <TableCell>{calculateOrderTotals(order).totalTTC.toFixed(2)}€</TableCell>
                                                     <TableCell className="text-right">
@@ -483,12 +546,12 @@ export default function ClientProfilePage() {
                                                     <Dialog>
                                                         <DialogTrigger asChild>
                                                             <Button variant="outline" size="sm" className="h-8">
-                                                                <PlayCircle className="mr-2 h-4 w-4"/> Lire l'échange
+                                                                <PlayCircle className="mr-2 h-4 w-4"/> {t(translations.readCall)}
                                                             </Button>
                                                         </DialogTrigger>
                                                         <DialogContent>
                                                             <DialogHeader>
-                                                                <DialogTitle>Détails de l'appel</DialogTitle>
+                                                                <DialogTitle>{t(translations.callDetails)}</DialogTitle>
                                                                 <DialogDescription>{call.date} - {call.duration}</DialogDescription>
                                                             </DialogHeader>
                                                             {call.audioUrl && (
@@ -500,13 +563,13 @@ export default function ClientProfilePage() {
                                                                 </div>
                                                             )}
                                                             <div className="my-4 p-4 bg-muted rounded-md text-sm max-h-64 overflow-y-auto">
-                                                                <p className="font-semibold mb-2">Transcription :</p>
+                                                                <p className="font-semibold mb-2">{t(translations.transcript)}</p>
                                                                 <p className="whitespace-pre-wrap leading-relaxed">
                                                                     {call.transcript}
                                                                 </p>
                                                             </div>
                                                             <DialogFooter>
-                                                                <Button variant="outline">Fermer</Button>
+                                                                <Button variant="outline">{t(translations.close)}</Button>
                                                             </DialogFooter>
                                                         </DialogContent>
                                                     </Dialog>
@@ -523,10 +586,10 @@ export default function ClientProfilePage() {
                                         <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead>Raison</TableHead>
-                                                <TableHead>Statut</TableHead>
-                                                <TableHead className="text-right">Action</TableHead>
+                                                <TableHead>{t(translations.date)}</TableHead>
+                                                <TableHead>{t(translations.reason)}</TableHead>
+                                                <TableHead>{t(translations.status)}</TableHead>
+                                                <TableHead className="text-right">{t(translations.action)}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -534,7 +597,7 @@ export default function ClientProfilePage() {
                                                 <TableRow key={report.id}>
                                                     <TableCell>{report.date}</TableCell>
                                                     <TableCell className="font-medium">{report.reason}</TableCell>
-                                                    <TableCell><Badge variant={report.status === 'Résolu' ? 'default' : 'secondary'} className={report.status === 'Résolu' ? 'bg-green-100 text-green-700' : ''}>{report.status}</Badge></TableCell>
+                                                    <TableCell><Badge variant={report.status === 'Résolu' ? 'default' : 'secondary'} className={report.status === 'Résolu' ? 'bg-green-100 text-green-700' : ''}>{report.status === 'Résolu' ? t(translations.resolved) : (report.status === 'Ouvert' ? t(translations.open) : t(translations.inProgress))}</Badge></TableCell>
                                                     <TableCell className="text-right">
                                                         <Dialog>
                                                             <DialogTrigger asChild>
@@ -542,7 +605,7 @@ export default function ClientProfilePage() {
                                                             </DialogTrigger>
                                                             <DialogContent>
                                                                 <DialogHeader>
-                                                                    <DialogTitle>Détails du Signalement</DialogTitle>
+                                                                    <DialogTitle>{t(translations.reportDetails)}</DialogTitle>
                                                                     <DialogDescription>{report.reason} - {report.date}</DialogDescription>
                                                                 </DialogHeader>
                                                                 <div className="my-4 p-4 bg-muted rounded-md text-sm">
@@ -566,16 +629,16 @@ export default function ClientProfilePage() {
             <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
                 <DialogContent className="sm:max-w-md">
                    <DialogHeader>
-                        <DialogTitle className="sr-only">Ticket de commande {selectedOrder.id}</DialogTitle>
+                        <DialogTitle className="sr-only">{t(translations.orderTicket)} {selectedOrder.id}</DialogTitle>
                         <DialogDescription className="sr-only">
-                            Détail de la commande {selectedOrder.id} for {getStoreInfo(selectedOrder.storeId)?.name}.
+                           {t(translations.orderFor).replace('{orderId}', selectedOrder.id).replace('{storeName}', getStoreInfo(selectedOrder.storeId)?.name || '')}
                         </DialogDescription>
                     </DialogHeader>
                    <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
                         <div className="text-center space-y-2 mb-4">
                             <h2 className="text-lg font-bold">{getStoreInfo(selectedOrder.storeId)?.name}</h2>
                             <p className="text-xs">{getStoreInfo(selectedOrder.storeId)?.address}</p>
-                            <p className="text-xs">Commande {selectedOrder.id} - {selectedOrder.date}</p>
+                            <p className="text-xs">{t(translations.order)} {selectedOrder.id} - {selectedOrder.date}</p>
                         </div>
                         
                         <Separator className="border-dashed border-black" />
@@ -611,10 +674,10 @@ export default function ClientProfilePage() {
                         <Separator className="border-dashed border-black" />
 
                         <div className="space-y-1 my-2 text-xs">
-                           <p className="font-bold">Détail TVA incluse :</p>
+                           <p className="font-bold">{t(translations.taxDetails)}</p>
                            {calculatedTotals.taxDetails.map(tax => (
                                 <div key={tax.rate} className="flex justify-between">
-                                    <span>TVA ({tax.rate.toFixed(2)}%)</span>
+                                    <span>{t(translations.tax)} ({tax.rate.toFixed(2)}%)</span>
                                     <span>{tax.amount.toFixed(2)}€</span>
                                 </div>
                             ))}
@@ -623,17 +686,17 @@ export default function ClientProfilePage() {
                          <Separator className="border-dashed border-black" />
 
                          <div className="text-center text-xs pt-2">
-                            Merci de votre visite !
+                            {t(translations.thankYou)}
                          </div>
                     </div>
                     <DialogFooter className="print-hide mt-4">
                         {(storePrinters && storePrinters.length > 0) ? (
                             <Button className="w-full font-sans" onClick={handlePrint}>
-                                <Printer className="mr-2 h-4 w-4" /> Imprimer
+                                <Printer className="mr-2 h-4 w-4" /> {t(translations.print)}
                             </Button>
                         ) : (
                              <Button className="w-full font-sans" disabled>
-                                <Printer className="mr-2 h-4 w-4" /> Aucune imprimante configurée
+                                <Printer className="mr-2 h-4 w-4" /> {t(translations.noPrinter)}
                             </Button>
                         )}
                     </DialogFooter>

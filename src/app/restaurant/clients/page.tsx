@@ -12,6 +12,7 @@ import { PlusCircle, Search, Filter, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/language-context';
 
 type Customer = {
     id: string;
@@ -47,33 +48,63 @@ const initialCustomers: Customer[] = [
 ];
 
 export default function ClientsPage() {
+    const { t } = useLanguage();
     const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
     const router = useRouter();
 
     const handleViewCustomer = (customerId: string) => {
         router.push(`/restaurant/clients/${customerId}`);
     };
+    
+    const translations = {
+        title: { fr: "Fichier Clients", en: "Customer File" },
+        description: { fr: "Consultez et gérez les informations de vos clients.", en: "View and manage your customer information." },
+        searchPlaceholder: { fr: "Rechercher par nom, tél...", en: "Search by name, phone..." },
+        filters: { fr: "Filtres", en: "Filters" },
+        newClient: { fr: "Nouveau Client", en: "New Customer" },
+        clientList: { fr: "Liste de vos clients", en: "Your customer list" },
+        client: { fr: "Client", en: "Customer" },
+        contact: { fr: "Contact", en: "Contact" },
+        status: { fr: "Statut", en: "Status" },
+        totalSpent: { fr: "Total Dépensé", en: "Total Spent" },
+        lastOrder: { fr: "Dernière Commande", en: "Last Order" },
+        actions: { fr: "Actions", en: "Actions" },
+        anonymousClient: { fr: "Client Anonyme", en: "Anonymous Customer" },
+        loyal: { fr: "Fidèle", en: "Loyal" },
+        new: { fr: "Nouveau", en: "New" },
+        vip: { fr: "VIP", en: "VIP" },
+    };
+    
+    const translateStatus = (status: Customer['status']) => {
+        switch(status) {
+            case 'Fidèle': return t(translations.loyal);
+            case 'Nouveau': return t(translations.new);
+            case 'VIP': return t(translations.vip);
+            default: return status;
+        }
+    };
+
 
     return (
         <div className="space-y-8">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Fichier Clients</h1>
-                    <p className="text-muted-foreground">Consultez et gérez les informations de vos clients.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
+                    <p className="text-muted-foreground">{t(translations.description)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                      <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Rechercher par nom, tél..." className="pl-10" />
+                        <Input placeholder={t(translations.searchPlaceholder)} className="pl-10" />
                     </div>
                     <Button variant="outline">
                         <Filter className="mr-2 h-4 w-4" />
-                        Filtres
+                        {t(translations.filters)}
                     </Button>
                      <Button asChild>
                         <Link href="/restaurant/clients/new">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Nouveau Client
+                            {t(translations.newClient)}
                         </Link>
                     </Button>
                 </div>
@@ -81,18 +112,18 @@ export default function ClientsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Liste de vos clients</CardTitle>
+                    <CardTitle>{t(translations.clientList)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Client</TableHead>
-                                <TableHead>Contact</TableHead>
-                                <TableHead>Statut</TableHead>
-                                <TableHead>Total Dépensé</TableHead>
-                                <TableHead>Dernière Commande</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>{t(translations.client)}</TableHead>
+                                <TableHead>{t(translations.contact)}</TableHead>
+                                <TableHead>{t(translations.status)}</TableHead>
+                                <TableHead>{t(translations.totalSpent)}</TableHead>
+                                <TableHead>{t(translations.lastOrder)}</TableHead>
+                                <TableHead className="text-right">{t(translations.actions)}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -106,14 +137,14 @@ export default function ClientsPage() {
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <p>{customer.firstName} {customer.lastName || 'Client Anonyme'}</p>
+                                                <p>{customer.firstName} {customer.lastName || t(translations.anonymousClient)}</p>
                                                 <p className="text-xs text-muted-foreground">{customer.phone}</p>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>{customer.email || '-'}</TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className={customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}>{customer.status}</Badge>
+                                        <Badge variant="outline" className={customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}>{translateStatus(customer.status)}</Badge>
                                     </TableCell>
                                     <TableCell>{customer.totalSpent}</TableCell>
                                     <TableCell>{customer.lastSeen}</TableCell>
