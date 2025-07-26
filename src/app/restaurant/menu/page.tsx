@@ -37,7 +37,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 type DayAvailability = {
   enabled: boolean;
@@ -66,11 +67,20 @@ type Availability = {
   };
 };
 
+type VariationPrice = {
+  [variationId: string]: number;
+};
+
+type VariationVisibility = {
+  [variationId: string]: boolean;
+};
+
 type CompositionOption = {
   id: string;
   name: string;
-  price?: number; 
+  prices?: VariationPrice; 
   composition?: CompositionStep[];
+  visibility?: VariationVisibility;
 };
 
 type CompositionStep = {
@@ -81,15 +91,22 @@ type CompositionStep = {
   isRequired: boolean;
 };
 
+type Variation = {
+  id: string;
+  name: string;
+  price: number;
+};
+
 type MenuItem = {
   id: number;
   category: string;
   name:string;
-  price: string;
+  price: string; // "à partir de X €" or single price
   description: string;
   image: string;
   imageHint: string;
   tags?: string[];
+  variations: Variation[];
   composition?: CompositionStep[];
   storeIds: number[];
   status: 'active' | 'out-of-stock' | 'inactive';
@@ -129,6 +146,7 @@ const initialMenuItems: MenuItem[] = [
         storeIds: [1, 2],
         status: 'active',
         availability: defaultAvailability,
+        variations: [{ id: 'default', name: 'Taille unique', price: 16.50 }],
         composition: [
             {
                 id: 'step1',
@@ -174,8 +192,8 @@ const initialMenuItems: MenuItem[] = [
                 isRequired: false,
                 options: [
                     { id: 'opt3.1', name: 'Cheddar' },
-                    { id: 'opt3.2', name: 'Chèvre', price: 1.50 },
-                    { id: 'opt3.3', name: 'Reblochon', price: 1.50 },
+                    { id: 'opt3.2', name: 'Chèvre', prices: { default: 1.50 } },
+                    { id: 'opt3.3', name: 'Reblochon', prices: { default: 1.50 } },
                 ]
             },
             {
@@ -187,8 +205,8 @@ const initialMenuItems: MenuItem[] = [
                     { id: 'opt4.1', name: 'Salade' },
                     { id: 'opt4.2', name: 'Tomate' },
                     { id: 'opt4.3', name: 'Oignons' },
-                    { id: 'opt4.4', name: 'Bacon grillé', price: 2.00 },
-                    { id: 'opt4.5', name: 'Oeuf au plat', price: 1.00 },
+                    { id: 'opt4.4', name: 'Bacon grillé', prices: { default: 2.00 } },
+                    { id: 'opt4.5', name: 'Oeuf au plat', prices: { default: 1.00 } },
                 ]
             }
         ]
@@ -204,6 +222,7 @@ const initialMenuItems: MenuItem[] = [
         tags: ['Léger', 'Midi', 'Froid'],
         storeIds: [1, 3],
         status: 'active',
+        variations: [{ id: 'default', name: 'Taille unique', price: 12.50 }],
         availability: {...defaultAvailability, type: 'scheduled' },
     },
     { 
@@ -217,6 +236,7 @@ const initialMenuItems: MenuItem[] = [
         storeIds: [3],
         status: 'out-of-stock',
         availability: defaultAvailability,
+        variations: [{ id: 'default', name: 'Taille unique', price: 18.00 }],
         composition: [
              {
                 id: 'step_menu1',
@@ -252,6 +272,7 @@ const initialMenuItems: MenuItem[] = [
         storeIds: [1, 2, 3],
         status: 'inactive',
         availability: defaultAvailability,
+        variations: [{ id: 'default', name: 'Taille unique', price: 8.50 }],
     },
 ];
 
@@ -275,10 +296,11 @@ type CompositionView = {
 
 const EditableCompositionDisplay: React.FC<{
   view: CompositionView;
+  variations: Variation[];
   onNavigate: (steps: CompositionStep[], title: string) => void;
   onOptionCompositionCreate: (stepIndex: number, optionIndex: number) => void;
   onUpdate: (steps: CompositionStep[]) => void;
-}> = ({ view, onNavigate, onOptionCompositionCreate, onUpdate }) => {
+}> = ({ view, variations, onNavigate, onOptionCompositionCreate, onUpdate }) => {
 
   const handleAddStep = () => {
     const newStep: CompositionStep = {
@@ -301,7 +323,7 @@ const EditableCompositionDisplay: React.FC<{
     const newOption: CompositionOption = {
         id: `opt_${Date.now()}`,
         name: 'Nouvelle option',
-        price: 0
+        prices: {}
     };
     newSteps[stepIndex].options.push(newOption);
     onUpdate(newSteps);
@@ -312,6 +334,12 @@ const EditableCompositionDisplay: React.FC<{
     newSteps[stepIndex].options = newSteps[stepIndex].options.filter((_, i) => i !== optionIndex);
     onUpdate(newSteps);
   };
+
+  const handleOptionChange = (stepIndex: number, optionIndex: number, field: keyof CompositionOption, value: any) => {
+    const newSteps = [...view.steps];
+    (newSteps[stepIndex].options[optionIndex] as any)[field] = value;
+    onUpdate(newSteps);
+  }
 
   return (
     <div className="space-y-4">
@@ -329,25 +357,49 @@ const EditableCompositionDisplay: React.FC<{
             </CardHeader>
           )}
           <CardContent className={cn("p-4 space-y-2", !step.title && "pt-4")}>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {step.options.map((option, optionIndex) => (
-                <li key={option.id} className="flex flex-col text-sm border-t border-border pt-3">
+                <li key={option.id} className="text-sm border-t border-border pt-3">
                   <div className="flex justify-between items-center gap-2">
-                    <Input defaultValue={option.name} className="font-medium h-8" />
+                    <Input 
+                      value={option.name} 
+                      onChange={(e) => handleOptionChange(stepIndex, optionIndex, 'name', e.target.value)}
+                      className="font-medium h-8" />
                     <div className="flex items-center gap-2">
-                      <Input type="number" defaultValue={option.price} className="w-24 h-8" placeholder="Prix sup." />
-                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => {
-                          if (option.composition) {
-                            onNavigate(option.composition, `Composition de : ${option.name}`)
-                          } else {
-                            onOptionCompositionCreate(stepIndex, optionIndex);
-                          }
-                        }}>
-                          Modifier <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
+                      <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => {
+                        if (option.composition) {
+                          onNavigate(option.composition, `Composition de : ${option.name}`)
+                        } else {
+                          onOptionCompositionCreate(stepIndex, optionIndex);
+                        }
+                      }}>
+                        Modifier <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveOption(stepIndex, optionIndex)}><Trash2 className="h-4 w-4"/></Button>
                     </div>
                   </div>
+                  {variations.length > 1 && (
+                    <div className="mt-2 pl-4 space-y-2">
+                      {variations.map(variation => (
+                        <div key={variation.id} className="grid grid-cols-3 gap-2 items-center">
+                          <Label className="text-xs text-muted-foreground">{variation.name}</Label>
+                          <Input 
+                            type="number" 
+                            value={option.prices?.[variation.id] ?? ''}
+                            onChange={(e) => handleOptionChange(stepIndex, optionIndex, 'prices', {...option.prices, [variation.id]: parseFloat(e.target.value)})}
+                            className="w-full h-7 text-xs" 
+                            placeholder="Prix" />
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                                checked={option.visibility?.[variation.id] ?? true}
+                                onCheckedChange={(checked) => handleOptionChange(stepIndex, optionIndex, 'visibility', {...option.visibility, [variation.id]: checked})}
+                            />
+                            <span className="text-xs text-muted-foreground">Visible</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -415,6 +467,7 @@ export default function MenuPage() {
       image: 'https://placehold.co/600x400.png',
       imageHint: 'new item',
       tags: [],
+      variations: [{ id: 'default', name: 'Taille unique', price: 0 }],
       storeIds: availableStores.map(s => s.id),
       status: 'inactive',
       availability: defaultAvailability,
@@ -520,6 +573,29 @@ export default function MenuPage() {
     const newAvailability = { ...editedItem.availability };
     (newAvailability.schedule[day] as any)[field] = value;
     setEditedItem({ ...editedItem, availability: newAvailability });
+  };
+
+  const handleAddVariation = () => {
+    if (!editedItem) return;
+    const newVariation: Variation = {
+      id: `var_${Date.now()}`,
+      name: 'Nouvelle taille',
+      price: 0,
+    };
+    setEditedItem({ ...editedItem, variations: [...editedItem.variations, newVariation] });
+  };
+
+  const handleRemoveVariation = (variationId: string) => {
+    if (!editedItem || editedItem.variations.length <= 1) return;
+    setEditedItem({ ...editedItem, variations: editedItem.variations.filter(v => v.id !== variationId) });
+  };
+
+  const handleVariationChange = (variationId: string, field: keyof Variation, value: string | number) => {
+    if (!editedItem) return;
+    setEditedItem({
+      ...editedItem,
+      variations: editedItem.variations.map(v => v.id === variationId ? { ...v, [field]: value } : v)
+    });
   };
 
 
@@ -745,6 +821,44 @@ export default function MenuPage() {
                         </CardContent>
                     </Card>
 
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base font-headline flex items-center justify-between">
+                                <span className="flex items-center gap-2"><Ruler className="h-4 w-4" /> Tailles / Variations</span>
+                            </CardTitle>
+                             <CardDescription>
+                                Définissez les différentes tailles et leurs prix de base.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {editedItem.variations.map((variation) => (
+                                <div key={variation.id} className="grid grid-cols-3 gap-2 items-center">
+                                    <Input 
+                                        placeholder="Nom (ex: Large)" 
+                                        value={variation.name}
+                                        onChange={(e) => handleVariationChange(variation.id, 'name', e.target.value)}
+                                    />
+                                    <Input 
+                                        type="number" 
+                                        placeholder="Prix de base" 
+                                        value={variation.price}
+                                        onChange={(e) => handleVariationChange(variation.id, 'price', parseFloat(e.target.value) || 0)}
+                                    />
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="text-destructive h-8 w-8"
+                                        onClick={() => handleRemoveVariation(variation.id)}
+                                        disabled={editedItem.variations.length <= 1}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                            <Button variant="outline" size="sm" className="w-full" onClick={handleAddVariation}><Plus className="mr-2 h-4 w-4" />Ajouter une taille/variation</Button>
+                        </CardContent>
+                    </Card>
+
                      <Card>
                         <CardHeader>
                             <CardTitle className="text-base font-headline flex items-center justify-between">
@@ -827,7 +941,8 @@ export default function MenuPage() {
               <div className={compositionHistory.length > 0 ? "md:col-span-2" : "md:col-span-1"}>
                 {currentView ? (
                     <EditableCompositionDisplay 
-                      view={currentView} 
+                      view={currentView}
+                      variations={editedItem.variations}
                       onNavigate={handleNavigateComposition}
                       onOptionCompositionCreate={handleCreateSubComposition} 
                       onUpdate={updateComposition}
