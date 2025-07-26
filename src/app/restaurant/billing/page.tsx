@@ -26,6 +26,8 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const invoices = [
     { id: "INV-2024-005", date: "01/05/2024", amount: "329,00€", status: "Payée" },
@@ -202,22 +204,43 @@ export default function BillingPage() {
                                 <p className="text-sm text-muted-foreground">Expire le 12/26</p>
                             </div>
                         </div>
-                         <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                         <Dialog>
+                          <DialogTrigger asChild>
                             <Button variant="outline" className="w-full">Mettre à jour</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Fonctionnalité en cours de développement</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                La mise à jour du moyen de paiement sera bientôt disponible directement depuis cette interface.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Compris</AlertDialogCancel>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Mettre à jour votre moyen de paiement</DialogTitle>
+                              <DialogDescription>
+                                Saisissez les informations de votre nouvelle carte. Votre prochain prélèvement utilisera ce moyen de paiement.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="card-name">Nom sur la carte</Label>
+                                    <Input id="card-name" placeholder="Ex: Jean Dupont" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="card-number">Numéro de carte</Label>
+                                    <Input id="card-number" placeholder="0000 0000 0000 0000" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="card-expiry">Expiration (MM/AA)</Label>
+                                        <Input id="card-expiry" placeholder="MM/AA" />
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label htmlFor="card-cvc">CVC</Label>
+                                        <Input id="card-cvc" placeholder="123" />
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline">Annuler</Button>
+                              <Button>Enregistrer la nouvelle carte</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                     </CardContent>
                 </Card>
             </div>
