@@ -229,6 +229,12 @@ export default function StoresPage() {
         setEditablePrinters(newPrinters);
     };
 
+    const handleKDSChange = (index: number, field: keyof KDSConnection, value: string) => {
+        const newKDS = [...editableKDS];
+        (newKDS[index] as any)[field] = value;
+        setEditableKDS(newKDS);
+    };
+
     const addKDS = () => {
         const newCode = `${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
         setEditableKDS([...editableKDS, { id: `kds_${Date.now()}`, name: t({fr: 'Nouvelle tablette', en: 'New Tablet'}), connectionCode: newCode, lastSeen: t({fr: 'Jamais vu', en: 'Never seen'})}]);
@@ -679,7 +685,7 @@ export default function StoresPage() {
                                             <div className="grid grid-cols-12 gap-2 items-center">
                                                 <div className="col-span-5 space-y-1">
                                                     <Label className="text-xs">{t(translations.deviceName)}</Label>
-                                                    <Input className="h-8 bg-background" value={kds.name} />
+                                                    <Input className="h-8 bg-background" value={kds.name} onChange={(e) => handleKDSChange(index, 'name', e.target.value)} />
                                                 </div>
                                                 <div className="col-span-5 space-y-1">
                                                     <Label className="text-xs">{t(translations.connectionCode)}</Label>
