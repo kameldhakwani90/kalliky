@@ -47,7 +47,7 @@ type DetailedOrderItem = {
 };
 
 type OrderTotals = {
-    total: number;
+    totalTTC: number;
     taxDetails: { rate: number; amount: number }[];
 };
 
@@ -75,6 +75,7 @@ type Call = {
     duration: string;
     type: 'Commande' | 'Info' | 'Signalement';
     transcript: string;
+    audioUrl?: string;
 };
 
 type Customer = {
@@ -204,8 +205,8 @@ const mockCustomers: Customer[] = [
         lastSeen: "28/05/2024",
         orderHistory: mockOrders.filter(o => ['#1024', '#987'].includes(o.id)),
         callHistory: [
-            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Bonjour, je voudrais commander un burger personnalisé avec bacon et oeuf, sans oignons. Et aussi une salade César s'il vous plaît. Ce sera pour une livraison au 123 Rue de la Paix. Merci." },
-            { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "..." },
+            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Bonjour, je voudrais commander un burger personnalisé avec bacon et oeuf, sans oignons. Et aussi une salade César s'il vous plaît. Ce sera pour une livraison au 123 Rue de la Paix. Merci.", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+            { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
         ],
         reportHistory: [
             {id: 'rep-1', date: '16/05/2024', reason: 'Retard de livraison', status: 'Résolu', details: 'La commande #987 a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.'}
@@ -223,7 +224,7 @@ const mockCustomers: Customer[] = [
         lastSeen: "27/05/2024",
         orderHistory: [],
         callHistory: [
-            { id: 'call-3', date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande', transcript: "Salut, je voudrais deux burgers personnalisés. Viande bien cuite pour les deux s'il vous plait. À emporter. C'est tout !" },
+            { id: 'call-3', date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande', transcript: "Salut, je voudrais deux burgers personnalisés. Viande bien cuite pour les deux s'il vous plait. À emporter. C'est tout !", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
         ],
         reportHistory: []
     },
@@ -248,7 +249,7 @@ const mockCustomers: Customer[] = [
 const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
 const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
-    const taxBreakdown: Record<number, number> = {};
+    const taxBreakdown: Record<number, { baseTTC: number }> = {};
     let totalTTC = 0;
 
     order.items.forEach(item => {
@@ -256,20 +257,23 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
         totalTTC += itemTTC;
         
         const rate = item.taxRate;
-        const taxAmount = itemTTC - (itemTTC / (1 + rate / 100));
         
         if (!taxBreakdown[rate]) {
-            taxBreakdown[rate] = 0;
+            taxBreakdown[rate] = { baseTTC: 0 };
         }
-        taxBreakdown[rate] += taxAmount;
+        taxBreakdown[rate].baseTTC += itemTTC;
     });
 
-    const taxDetails = Object.entries(taxBreakdown).map(([rate, amount]) => ({
-        rate: parseFloat(rate),
-        amount,
-    }));
+    const taxDetails = Object.entries(taxBreakdown).map(([rateStr, { baseTTC }]) => {
+        const rate = parseFloat(rateStr);
+        const amount = baseTTC - (baseTTC / (1 + rate / 100));
+        return {
+            rate: rate,
+            amount: amount,
+        };
+    });
 
-    return { total: totalTTC, taxDetails };
+    return { totalTTC, taxDetails };
 };
 
 
@@ -453,7 +457,7 @@ export default function ClientProfilePage() {
                                                 <TableRow key={order.id}>
                                                     <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
                                                     <TableCell>{order.date}</TableCell>
-                                                    <TableCell>{calculateOrderTotals(order).total.toFixed(2)}€</TableCell>
+                                                    <TableCell>{calculateOrderTotals(order).totalTTC.toFixed(2)}€</TableCell>
                                                     <TableCell className="text-right">
                                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
                                                             <Eye className="h-4 w-4"/>
@@ -484,10 +488,19 @@ export default function ClientProfilePage() {
                                                         </DialogTrigger>
                                                         <DialogContent>
                                                             <DialogHeader>
-                                                                <DialogTitle>Transcription de l'appel</DialogTitle>
+                                                                <DialogTitle>Détails de l'appel</DialogTitle>
                                                                 <DialogDescription>{call.date} - {call.duration}</DialogDescription>
                                                             </DialogHeader>
+                                                            {call.audioUrl && (
+                                                                <div className="my-4">
+                                                                    <audio controls className="w-full">
+                                                                        <source src={call.audioUrl} type="audio/mpeg" />
+                                                                        Your browser does not support the audio element.
+                                                                    </audio>
+                                                                </div>
+                                                            )}
                                                             <div className="my-4 p-4 bg-muted rounded-md text-sm max-h-64 overflow-y-auto">
+                                                                <p className="font-semibold mb-2">Transcription :</p>
                                                                 <p className="whitespace-pre-wrap leading-relaxed">
                                                                     {call.transcript}
                                                                 </p>
@@ -592,13 +605,13 @@ export default function ClientProfilePage() {
 
                         <div className="flex justify-between font-bold text-base my-2">
                             <span>TOTAL TTC</span>
-                            <span>{calculatedTotals.total.toFixed(2)}€</span>
+                            <span>{calculatedTotals.totalTTC.toFixed(2)}€</span>
                         </div>
 
                         <Separator className="border-dashed border-black" />
 
                         <div className="space-y-1 my-2 text-xs">
-                           <p className="font-bold">Dont TVA :</p>
+                           <p className="font-bold">Détail TVA incluse :</p>
                            {calculatedTotals.taxDetails.map(tax => (
                                 <div key={tax.rate} className="flex justify-between">
                                     <span>TVA ({tax.rate.toFixed(2)}%)</span>
