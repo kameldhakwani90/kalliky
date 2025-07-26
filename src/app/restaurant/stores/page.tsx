@@ -21,17 +21,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 type TaxRate = {
     id: string;
     name: string;
     rate: number;
     isDefault: boolean;
+};
+
+type PrinterDevice = {
+    id: string;
+    name: string;
+    role: 'kitchen' | 'receipt';
+    width: '58mm' | '80mm';
 };
 
 type Store = {
@@ -43,6 +51,7 @@ type Store = {
     stripeStatus: 'connected' | 'disconnected';
     currency: 'EUR' | 'USD' | 'TND';
     taxRates: TaxRate[];
+    printers?: PrinterDevice[];
 };
 
 const initialStores: Store[] = [
@@ -52,6 +61,10 @@ const initialStores: Store[] = [
             { id: 'tax-1-1', name: 'Réduit', rate: 5.5, isDefault: false },
             { id: 'tax-1-2', name: 'Intermédiaire', rate: 10, isDefault: true },
             { id: 'tax-1-3', name: 'Normal', rate: 20, isDefault: false },
+        ],
+        printers: [
+            { id: 'p1', name: 'Imprimante Caisse', role: 'receipt', width: '80mm' },
+            { id: 'p2', name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm' },
         ]
     },
     { 
@@ -60,14 +73,16 @@ const initialStores: Store[] = [
             { id: 'tax-2-1', name: 'Réduit', rate: 5.5, isDefault: false },
             { id: 'tax-2-2', name: 'Intermédiaire', rate: 10, isDefault: true },
             { id: 'tax-2-3', name: 'Normal', rate: 20, isDefault: false },
-        ]
+        ],
+        printers: []
     },
     { 
         id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', 
         taxRates: [
              { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
              { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
-        ]
+        ],
+        printers: []
     },
 ];
 
@@ -80,11 +95,13 @@ export default function StoresPage() {
     const [isConnectionsDialogOpen, setIsConnectionsDialogOpen] = useState(false);
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
     const [editableTaxRates, setEditableTaxRates] = useState<TaxRate[]>([]);
+    const [editablePrinters, setEditablePrinters] = useState<PrinterDevice[]>([]);
 
 
     const handleOpenFormDialog = (store: Store | null = null) => {
         setSelectedStore(store);
         setEditableTaxRates(store ? [...store.taxRates] : [{ id: `tax_${Date.now()}`, name: 'TVA par défaut', rate: 0, isDefault: true }]);
+        setEditablePrinters(store ? [...(store.printers || [])] : []);
         setIsFormDialogOpen(true);
     };
 
@@ -106,6 +123,7 @@ export default function StoresPage() {
             stripeStatus: selectedStore?.stripeStatus || 'disconnected',
             currency: (formData.get('currency') as Store['currency']) || 'EUR',
             taxRates: editableTaxRates,
+            printers: editablePrinters,
         } as Store;
 
         if (selectedStore) {
@@ -148,11 +166,25 @@ export default function StoresPage() {
     
     const removeTaxRate = (index: number) => {
         const newTaxRates = editableTaxRates.filter((_, i) => i !== index);
-        // Ensure there's always at least one rate and one default
         if (newTaxRates.length > 0 && !newTaxRates.some(r => r.isDefault)) {
             newTaxRates[0].isDefault = true;
         }
         setEditableTaxRates(newTaxRates);
+    };
+
+    const handlePrinterChange = (index: number, field: keyof PrinterDevice, value: string) => {
+        const newPrinters = [...editablePrinters];
+        (newPrinters[index] as any)[field] = value;
+        setEditablePrinters(newPrinters);
+    };
+
+    const addPrinter = () => {
+        setEditablePrinters([...editablePrinters, { id: `printer_${Date.now()}`, name: '', role: 'receipt', width: '80mm' }]);
+    };
+    
+    const removePrinter = (index: number) => {
+        const newPrinters = editablePrinters.filter((_, i) => i !== index);
+        setEditablePrinters(newPrinters);
     };
 
 
@@ -251,17 +283,24 @@ export default function StoresPage() {
             </Card>
 
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>{selectedStore ? 'Modifier la boutique' : 'Ajouter une nouvelle boutique'}</DialogTitle>
                         <DialogDescription>
                             Renseignez toutes les informations de votre point de vente pour une configuration optimale.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSaveStore}>
-                        <div className="space-y-6 py-4 px-1">
-                             <div className="space-y-4">
-                                <h4 className="font-medium">🏪 Informations générales</h4>
+                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto">
+                      <Tabs defaultValue="general" className="p-1">
+                          <TabsList className="grid w-full grid-cols-4">
+                              <TabsTrigger value="general">Général</TabsTrigger>
+                              <TabsTrigger value="opening">Horaires</TabsTrigger>
+                              <TabsTrigger value="taxes">Taxes</TabsTrigger>
+                              <TabsTrigger value="peripherals">Périphériques</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="general" className="space-y-6 pt-4">
+                              <div className="space-y-4">
+                                <h4 className="font-medium">Informations générales</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Nom du restaurant</Label>
@@ -292,11 +331,26 @@ export default function StoresPage() {
                                     <p className="text-xs text-muted-foreground">Recommandé pour une meilleure présentation.</p>
                                 </div>
                              </div>
-                            
-                            <Separator />
-
-                             <div className="space-y-4">
-                                <h4 className="font-medium text-lg flex items-center gap-2"><BadgeEuro/>Devise & Taxes</h4>
+                          </TabsContent>
+                          <TabsContent value="opening" className="space-y-4 pt-4">
+                              <h4 className="font-medium">Jours et horaires d’ouverture</h4>
+                              <div className="space-y-3">
+                                  {daysOfWeek.map(day => (
+                                      <div key={day} className="grid grid-cols-3 items-center gap-4">
+                                          <Label htmlFor={`hours-${day}`} className="col-span-1">{day}</Label>
+                                          <div className="col-span-2 grid grid-cols-2 gap-2">
+                                               <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" />
+                                               <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" />
+                                          </div>
+                                      </div>
+                                  ))}
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <Clock className="h-4 w-4" />
+                                      <span>Utilisé pour accepter ou refuser les commandes automatiquement.</span>
+                                  </div>
+                              </div>
+                          </TabsContent>
+                           <TabsContent value="taxes" className="space-y-6 pt-4">
                                 <div>
                                     <Label htmlFor="currency">Devise par défaut</Label>
                                     <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="mt-2 flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
@@ -335,34 +389,48 @@ export default function StoresPage() {
                                         </Button>
                                     </div>
                                 </div>
-                             </div>
+                          </TabsContent>
+                          <TabsContent value="peripherals" className="space-y-4 pt-4">
+                               <h4 className="font-medium">Gestion des imprimantes</h4>
+                               <div className="space-y-2 p-3 border rounded-md">
+                                  {editablePrinters.map((printer, index) => (
+                                      <div key={printer.id} className="grid grid-cols-3 gap-3 items-end">
+                                          <div>
+                                              <Label className="text-xs">Nom</Label>
+                                              <Input value={printer.name} onChange={(e) => handlePrinterChange(index, 'name', e.target.value)} placeholder="Imprimante Caisse"/>
+                                          </div>
+                                          <div>
+                                              <Label className="text-xs">Rôle</Label>
+                                              <select value={printer.role} onChange={(e) => handlePrinterChange(index, 'role', e.target.value)} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background">
+                                                  <option value="receipt">Ticket de caisse</option>
+                                                  <option value="kitchen">Ticket de cuisine</option>
+                                              </select>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                              <div>
+                                                  <Label className="text-xs">Largeur</Label>
+                                                  <select value={printer.width} onChange={(e) => handlePrinterChange(index, 'width', e.target.value)} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background">
+                                                      <option value="80mm">80mm</option>
+                                                      <option value="58mm">58mm</option>
+                                                  </select>
+                                              </div>
+                                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removePrinter(index)}>
+                                                  <X className="h-4 w-4"/>
+                                              </Button>
+                                          </div>
+                                      </div>
+                                  ))}
+                                  <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addPrinter}>
+                                      <Printer className="mr-2 h-4 w-4"/> Ajouter une imprimante
+                                  </Button>
+                               </div>
+                          </TabsContent>
+                      </Tabs>
 
-                            <Separator />
-
-                            <div className="space-y-4">
-                                <h4 className="font-medium">Jours et horaires d’ouverture</h4>
-                                <div className="space-y-3">
-                                    {daysOfWeek.map(day => (
-                                        <div key={day} className="grid grid-cols-3 items-center gap-4">
-                                            <Label htmlFor={`hours-${day}`} className="col-span-1">{day}</Label>
-                                            <div className="col-span-2 grid grid-cols-2 gap-2">
-                                                 <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" />
-                                                 <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" />
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Clock className="h-4 w-4" />
-                                        <span>Utilisé pour accepter ou refuser les commandes automatiquement.</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                        <DialogFooter className="mt-6">
-                            <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>Annuler</Button>
-                            <Button type="submit">Enregistrer la boutique</Button>
-                        </DialogFooter>
+                      <DialogFooter className="mt-6 pt-4 border-t">
+                          <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>Annuler</Button>
+                          <Button type="submit">Enregistrer la boutique</Button>
+                      </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>

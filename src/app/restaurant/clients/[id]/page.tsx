@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare } from 'lucide-react';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -90,11 +90,19 @@ type TaxRate = {
     isDefault: boolean;
 };
 
+type PrinterDevice = {
+    id: string;
+    name: string;
+    role: 'kitchen' | 'receipt';
+    width: '58mm' | '80mm';
+};
+
 type Store = {
     id: string;
     name: string;
     address: string;
     taxRates: TaxRate[];
+    printers?: PrinterDevice[];
 };
 
 
@@ -107,6 +115,10 @@ const mockStores: Store[] = [
             { id: 'tax-1', name: 'Réduit', rate: 5.5, isDefault: false },
             { id: 'tax-2', name: 'Intermédiaire', rate: 10, isDefault: true },
             { id: 'tax-3', name: 'Normal', rate: 20, isDefault: false },
+        ],
+        printers: [
+            { id: 'p1', name: 'Imprimante Caisse', role: 'receipt', width: '80mm' },
+            { id: 'p2', name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm' },
         ]
     },
     {
@@ -136,7 +148,7 @@ const mockOrders: DetailedOrder[] = [
             { id: "item-2", name: 'Bière Blonde', quantity: 1, basePrice: 6.00, taxRate: 20, customizations: [], finalPrice: 6.00 },
             { id: "item-3", name: 'Eau (bouteille)', quantity: 1, basePrice: 2.50, taxRate: 5.5, customizations: [], finalPrice: 2.50 },
         ],
-        total: 28.00 + 1.95 + 1.20 + 0.14,
+        total: 28.00,
     },
      { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
 ];
@@ -197,15 +209,12 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
             taxBreakdown[rate] = { base: 0, amount: 0 };
         }
         
-        taxBreakdown[rate].base += itemTotalTTC;
+        const baseTTC = itemTotalTTC;
+        const taxAmount = (baseTTC / (1 + rate / 100)) * (rate / 100);
+        
+        taxBreakdown[rate].base += baseTTC;
+        taxBreakdown[rate].amount += taxAmount;
     });
-
-    for (const rate in taxBreakdown) {
-        const numericRate = parseFloat(rate);
-        const baseTTC = taxBreakdown[rate].base;
-        const taxAmount = (baseTTC / (1 + numericRate / 100)) * (numericRate / 100);
-        taxBreakdown[rate].amount = taxAmount;
-    }
 
     const taxDetails = Object.entries(taxBreakdown).map(([rate, values]) => ({
         rate: parseFloat(rate),
@@ -252,6 +261,7 @@ export default function ClientProfilePage() {
     };
 
     const calculatedTotals = selectedOrder ? calculateOrderTotals(selectedOrder) : null;
+    const storePrinters = selectedOrder ? getStoreInfo(selectedOrder.storeId)?.printers : [];
 
     return (
         <>
@@ -459,58 +469,68 @@ export default function ClientProfilePage() {
         </div>
         {selectedOrder && calculatedTotals && (
             <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
-                <DialogContent className="sm:max-w-sm font-mono printable-ticket">
-                    <DialogHeader className="text-center space-y-2">
-                        <div className="mx-auto">
-                            <Receipt className="h-10 w-10"/>
+                <DialogContent className="sm:max-w-md">
+                   <div className={`printable-ticket width-80mm font-mono p-2 bg-white`}>
+                        <div className="text-center space-y-2 mb-4">
+                            <h2 className="text-lg font-bold">{getStoreInfo(selectedOrder.storeId)?.name}</h2>
+                            <p className="text-xs">{getStoreInfo(selectedOrder.storeId)?.address}</p>
+                            <p className="text-xs">Commande {selectedOrder.id} - {selectedOrder.date}</p>
                         </div>
-                        <DialogTitle className="font-headline text-lg">{getStoreInfo(selectedOrder.storeId)?.name}</DialogTitle>
-                        <DialogDescription className="text-xs">
-                            {getStoreInfo(selectedOrder.storeId)?.address}<br />
-                            Commande {selectedOrder.id} - {selectedOrder.date}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 my-4 text-xs">
-                        <Separator className="border-dashed" />
-                        {selectedOrder.items.map((item, index) => (
-                            <div key={item.id + index}>
-                                <div className="flex justify-between font-bold">
-                                    <span>{item.quantity}x {item.name}</span>
-                                    <span>{(item.finalPrice * item.quantity).toFixed(2)}€</span>
-                                </div>
-                                {item.customizations.length > 0 && (
-                                    <div className="pl-4 mt-1 space-y-1">
-                                        {item.customizations.map((cust, cIndex) => (
-                                            <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
-                                                <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
-                                                {cust.price && <span>{cust.price.toFixed(2)}€</span>}
-                                            </div>
-                                        ))}
+                        
+                        <Separator className="border-dashed border-black" />
+
+                        <div className="space-y-2 my-2 text-xs">
+                            {selectedOrder.items.map((item, index) => (
+                                <div key={item.id + index}>
+                                    <div className="flex justify-between">
+                                        <span className="font-bold">{item.quantity}x {item.name}</span>
+                                        <span className="font-bold">{(item.finalPrice * item.quantity).toFixed(2)}€</span>
                                     </div>
-                                )}
-                            </div>
-                        ))}
-                        <Separator className="border-dashed" />
-                        <div className="flex justify-between font-bold text-base">
+                                    {item.customizations.length > 0 && (
+                                        <div className="pl-4 mt-1 space-y-1">
+                                            {item.customizations.map((cust, cIndex) => (
+                                                <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
+                                                    <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
+                                                    {cust.price && <span>{cust.price.toFixed(2)}€</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <Separator className="border-dashed border-black" />
+
+                        <div className="flex justify-between font-bold text-base my-2">
                             <span>TOTAL TTC</span>
                             <span>{calculatedTotals.total.toFixed(2)}€</span>
                         </div>
-                        <Separator className="border-dashed" />
-                        <div className="space-y-1 text-gray-500">
+
+                        <Separator className="border-dashed border-black" />
+
+                        <div className="space-y-1 my-2 text-xs">
+                           <p className="font-bold">Détail TVA incluse :</p>
                            {calculatedTotals.taxDetails.map(tax => (
                                 <div key={tax.rate} className="flex justify-between">
-                                    <span>Dont TVA ({tax.rate.toFixed(2)}%) sur {tax.base.toFixed(2)}€</span>
+                                    <span>Total TVA ({tax.rate.toFixed(2)}%)</span>
                                     <span>{tax.amount.toFixed(2)}€</span>
                                 </div>
                             ))}
                         </div>
-                         <Separator className="border-dashed" />
-                         <div className="text-center text-gray-500 pt-2">
+
+                         <Separator className="border-dashed border-black" />
+
+                         <div className="text-center text-xs pt-2">
                             Merci de votre visite !
                          </div>
                     </div>
-                    <DialogFooter className="print-hide">
-                        <Button variant="outline" className="w-full font-sans" onClick={handlePrint}>Imprimer</Button>
+                    <DialogFooter className="print-hide mt-4">
+                        {storePrinters && storePrinters.map(printer => (
+                            <Button key={printer.id} variant="outline" className="w-full font-sans" onClick={handlePrint}>
+                                <Printer className="mr-2 h-4 w-4" /> Imprimer sur {printer.name} ({printer.width})
+                            </Button>
+                        ))}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
