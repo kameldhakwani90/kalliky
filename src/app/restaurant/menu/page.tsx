@@ -34,6 +34,17 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
@@ -393,7 +404,21 @@ const EditableCompositionDisplay: React.FC<{
               <div className="flex items-center gap-2">
                   <Badge variant={step.isRequired ? "destructive" : "secondary"} className="text-xs">{step.isRequired ? "Requis" : "Optionnel"}</Badge>
                   <Switch checked={step.isRequired} />
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveStep(stepIndex)}><Trash2 className="h-4 w-4"/></Button>
+                  <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette étape ?</AlertDialogTitle>
+                              <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRemoveStep(stepIndex)}>Supprimer</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
               </div>
             </CardHeader>
           )}
@@ -416,7 +441,21 @@ const EditableCompositionDisplay: React.FC<{
                       }}>
                         Modifier <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveOption(stepIndex, optionIndex)}><Trash2 className="h-4 w-4"/></Button>
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette option ?</AlertDialogTitle>
+                                  <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleRemoveOption(stepIndex, optionIndex)}>Supprimer</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                   {variations.length > 1 && (
@@ -522,6 +561,10 @@ export default function MenuPage() {
     setCompositionHistory([]);
     setIsPopupOpen(true);
     setIsSyncPopupOpen(false);
+  };
+  
+  const deleteMenuItem = (itemId: string) => {
+    setMenuItems(prevItems => prevItems.filter(item => item.id !== itemId));
   };
 
   const toggleItemStatus = (itemId: string, checked: boolean) => {
@@ -841,10 +884,26 @@ export default function MenuPage() {
                                         <Pencil className="mr-2 h-4 w-4" />
                                         Modifier
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Supprimer
-                                    </DropdownMenuItem>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Supprimer
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Cette action est irréversible et supprimera cet article définitivement.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => deleteMenuItem(item.id)}>Supprimer</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </TableCell>
@@ -919,14 +978,29 @@ export default function MenuPage() {
                             {editedItem.variations.map((variation, v_index) => (
                                 <div key={variation.id} className="space-y-3 p-3 border rounded-md relative">
                                     {editedItem.variations.length > 1 && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute top-1 right-1 text-destructive h-7 w-7"
-                                            onClick={() => handleRemoveVariation(variation.id)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="absolute top-1 right-1 text-destructive h-7 w-7"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette variation ?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Toutes les données de prix et de disponibilité pour cette taille seront perdues.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleRemoveVariation(variation.id)}>Supprimer</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     )}
                                     <Input
                                         placeholder="Nom de la taille (ex: Large)"
