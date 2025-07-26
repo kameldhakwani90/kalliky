@@ -78,7 +78,7 @@ type VariationVisibility = {
 type CompositionOption = {
   id: string;
   name: string;
-  prices?: VariationPrice; 
+  prices?: VariationPrice;
   composition?: CompositionStep[];
   visibility?: VariationVisibility;
 };
@@ -87,7 +87,7 @@ type CompositionStep = {
   id: string;
   title: string;
   options: CompositionOption[];
-  selectionType: 'single' | 'multiple'; 
+  selectionType: 'single' | 'multiple';
   isRequired: boolean;
 };
 
@@ -98,10 +98,10 @@ type Variation = {
 };
 
 type MenuItem = {
-  id: number;
-  category: string;
+  id: string;
+  categoryId: string;
   name:string;
-  price: string; // "à partir de X €" or single price
+  price: string;
   description: string;
   image: string;
   imageHint: string;
@@ -111,6 +111,11 @@ type MenuItem = {
   storeIds: number[];
   status: 'active' | 'out-of-stock' | 'inactive';
   availability: Availability;
+};
+
+type Category = {
+  id: string;
+  name: string;
 };
 
 const availableStores = [
@@ -132,13 +137,20 @@ const defaultAvailability: Availability = {
   }
 };
 
+const initialCategories: Category[] = [
+  { id: 'cat-1', name: 'Plats' },
+  { id: 'cat-2', name: 'Entrées' },
+  { id: 'cat-3', name: 'Menus' },
+  { id: 'cat-4', name: 'Desserts' },
+  { id: 'cat-5', name: 'Boissons' },
+];
 
 const initialMenuItems: MenuItem[] = [
-    { 
-        id: 1,
-        category: 'Plats', 
-        name: 'Burger "Le Personnalisé"', 
-        price: 'à partir de 16.50€', 
+    {
+        id: 'item-1',
+        categoryId: 'cat-1',
+        name: 'Burger "Le Personnalisé"',
+        price: 'à partir de 16.50€',
         description: 'Composez le burger de vos rêves ! Choisissez votre pain, votre protéine, vos fromages et tous les suppléments que vous aimez.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'custom burger',
@@ -146,125 +158,125 @@ const initialMenuItems: MenuItem[] = [
         storeIds: [1, 2],
         status: 'active',
         availability: defaultAvailability,
-        variations: [{ id: 'default', name: 'Taille unique', price: 16.50 }],
+        variations: [{ id: 'var-1-1', name: 'Taille unique', price: 16.50 }],
         composition: [
             {
-                id: 'step1',
+                id: 'step-1-1',
                 title: 'Étape 1 : Le Pain (1 au choix)',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { id: 'opt1.1', name: 'Pain Brioché' },
-                    { id: 'opt1.2', name: 'Pain Sésame' },
+                    { id: 'opt-1-1-1', name: 'Pain Brioché' },
+                    { id: 'opt-1-1-2', name: 'Pain Sésame' },
                 ]
             },
             {
-                id: 'step2',
+                id: 'step-1-2',
                 title: 'Étape 2 : La Protéine (1 au choix)',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { 
-                        id: 'opt2.1',
-                        name: 'Steak de Boeuf (150g)', 
+                    {
+                        id: 'opt-1-2-1',
+                        name: 'Steak de Boeuf (150g)',
                         composition: [
                             {
-                                id: 'substep1',
+                                id: 'substep-1-2-1-1',
                                 title: 'Choix de la cuisson',
                                 selectionType: 'single',
                                 isRequired: true,
                                 options: [
-                                    { id: 'subopt1.1', name: 'À point' },
-                                    { id: 'subopt1.2', name: 'Saignant' },
-                                    { id: 'subopt1.3', name: 'Bien cuit' },
+                                    { id: 'subopt-1-2-1-1-1', name: 'À point' },
+                                    { id: 'subopt-1-2-1-1-2', name: 'Saignant' },
+                                    { id: 'subopt-1-2-1-1-3', name: 'Bien cuit' },
                                 ]
                             }
                         ]
                     },
-                    { id: 'opt2.2', name: 'Poulet Pané Croustillant' },
-                    { id: 'opt2.3', name: 'Galette Végétarienne' },
+                    { id: 'opt-1-2-2', name: 'Poulet Pané Croustillant' },
+                    { id: 'opt-1-2-3', name: 'Galette Végétarienne' },
                 ]
             },
              {
-                id: 'step3',
+                id: 'step-1-3',
                 title: 'Étape 3 : Les Fromages (2 max)',
                 selectionType: 'multiple',
                 isRequired: false,
                 options: [
-                    { id: 'opt3.1', name: 'Cheddar' },
-                    { id: 'opt3.2', name: 'Chèvre', prices: { default: 1.50 } },
-                    { id: 'opt3.3', name: 'Reblochon', prices: { default: 1.50 } },
+                    { id: 'opt-1-3-1', name: 'Cheddar' },
+                    { id: 'opt-1-3-2', name: 'Chèvre', prices: { 'var-1-1': 1.50 } },
+                    { id: 'opt-1-3-3', name: 'Reblochon', prices: { 'var-1-1': 1.50 } },
                 ]
             },
             {
-                id: 'step4',
+                id: 'step-1-4',
                 title: 'Étape 4 : Les Suppléments',
                 selectionType: 'multiple',
                 isRequired: false,
                 options: [
-                    { id: 'opt4.1', name: 'Salade' },
-                    { id: 'opt4.2', name: 'Tomate' },
-                    { id: 'opt4.3', name: 'Oignons' },
-                    { id: 'opt4.4', name: 'Bacon grillé', prices: { default: 2.00 } },
-                    { id: 'opt4.5', name: 'Oeuf au plat', prices: { default: 1.00 } },
+                    { id: 'opt-1-4-1', name: 'Salade' },
+                    { id: 'opt-1-4-2', name: 'Tomate' },
+                    { id: 'opt-1-4-3', name: 'Oignons' },
+                    { id: 'opt-1-4-4', name: 'Bacon grillé', prices: { 'var-1-1': 2.00 } },
+                    { id: 'opt-1-4-5', name: 'Oeuf au plat', prices: { 'var-1-1': 1.00 } },
                 ]
             }
         ]
     },
-    { 
-        id: 2,
-        category: 'Entrées', 
-        name: 'Salade César', 
-        price: '12.50€', 
+    {
+        id: 'item-2',
+        categoryId: 'cat-2',
+        name: 'Salade César',
+        price: '12.50€',
         description: 'Laitue romaine croquante, poulet grillé, croûtons à l\'ail, copeaux de parmesan et notre sauce César maison.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'caesar salad',
         tags: ['Léger', 'Midi', 'Froid'],
         storeIds: [1, 3],
         status: 'active',
-        variations: [{ id: 'default', name: 'Taille unique', price: 12.50 }],
+        variations: [{ id: 'var-2-1', name: 'Taille unique', price: 12.50 }],
         availability: {...defaultAvailability, type: 'scheduled' },
     },
-    { 
-        id: 3,
-        category: 'Menus', 
-        name: 'Formule Regina', 
-        price: '18.00€', 
+    {
+        id: 'item-3',
+        categoryId: 'cat-3',
+        name: 'Formule Regina',
+        price: '18.00€',
         description: 'Le classique italien en formule complète, avec une boisson au choix.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'pizza deal',
         storeIds: [3],
         status: 'out-of-stock',
         availability: defaultAvailability,
-        variations: [{ id: 'default', name: 'Taille unique', price: 18.00 }],
+        variations: [{ id: 'var-3-1', name: 'Taille unique', price: 18.00 }],
         composition: [
              {
-                id: 'step_menu1',
+                id: 'step-3-1',
                 title: 'Plat Principal',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { id: 'opt_menu1.1', name: 'Pizza Regina' },
+                    { id: 'opt-3-1-1', name: 'Pizza Regina' },
                 ]
             },
             {
-                id: 'step_menu2',
+                id: 'step-3-2',
                 title: 'Boisson (1 au choix)',
                 selectionType: 'single',
                 isRequired: true,
                 options: [
-                    { id: 'opt_menu2.1', name: 'Coca-Cola (33cl)' },
-                    { id: 'opt_menu2.2', name: 'Eau Plate (50cl)' },
-                    { id: 'opt_menu2.3', name: 'Jus d\'orange (25cl)' },
+                    { id: 'opt-3-2-1', name: 'Coca-Cola (33cl)' },
+                    { id: 'opt-3-2-2', name: 'Eau Plate (50cl)' },
+                    { id: 'opt-3-2-3', name: 'Jus d\'orange (25cl)' },
                 ]
             }
         ]
     },
-    { 
-        id: 4,
-        category: 'Desserts', 
-        name: 'Tiramisu au café', 
-        price: '8.50€', 
+    {
+        id: 'item-4',
+        categoryId: 'cat-4',
+        name: 'Tiramisu au café',
+        price: '8.50€',
         description: 'Biscuit cuillère imbibé de café, crème mascarpone onctueuse et cacao en poudre.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'tiramisu',
@@ -272,11 +284,10 @@ const initialMenuItems: MenuItem[] = [
         storeIds: [1, 2, 3],
         status: 'inactive',
         availability: defaultAvailability,
-        variations: [{ id: 'default', name: 'Taille unique', price: 8.50 }],
+        variations: [{ id: 'var-4-1', name: 'Taille unique', price: 8.50 }],
     },
 ];
 
-const categoriesData = ['Plats', 'Entrées', 'Menus', 'Desserts', 'Boissons'];
 const daysOfWeek = [
     { id: 'monday', label: 'Lundi' },
     { id: 'tuesday', label: 'Mardi' },
@@ -287,7 +298,7 @@ const daysOfWeek = [
     { id: 'sunday', label: 'Dimanche' },
 ];
 
-const currentUserPlan = 'pro'; 
+const currentUserPlan = 'pro';
 
 type CompositionView = {
     title: string;
@@ -317,7 +328,7 @@ const EditableCompositionDisplay: React.FC<{
     const newSteps = view.steps.filter((_, i) => i !== stepIndex);
     onUpdate(newSteps);
   };
-  
+
   const handleAddOption = (stepIndex: number) => {
     const newSteps = [...view.steps];
     const newOption: CompositionOption = {
@@ -361,8 +372,8 @@ const EditableCompositionDisplay: React.FC<{
               {step.options.map((option, optionIndex) => (
                 <li key={option.id} className="text-sm border-t border-border pt-3">
                   <div className="flex justify-between items-center gap-2">
-                    <Input 
-                      value={option.name} 
+                    <Input
+                      value={option.name}
                       onChange={(e) => handleOptionChange(stepIndex, optionIndex, 'name', e.target.value)}
                       className="font-medium h-8" />
                     <div className="flex items-center gap-2">
@@ -383,14 +394,14 @@ const EditableCompositionDisplay: React.FC<{
                       {variations.map(variation => (
                         <div key={variation.id} className="grid grid-cols-3 gap-2 items-center">
                           <Label className="text-xs text-muted-foreground">{variation.name}</Label>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             value={option.prices?.[variation.id] ?? ''}
                             onChange={(e) => handleOptionChange(stepIndex, optionIndex, 'prices', {...option.prices, [variation.id]: parseFloat(e.target.value)})}
-                            className="w-full h-7 text-xs" 
+                            className="w-full h-7 text-xs"
                             placeholder="Prix" />
                           <div className="flex items-center gap-2">
-                            <Switch 
+                            <Switch
                                 checked={option.visibility?.[variation.id] ?? true}
                                 onCheckedChange={(checked) => handleOptionChange(stepIndex, optionIndex, 'visibility', {...option.visibility, [variation.id]: checked})}
                             />
@@ -415,7 +426,7 @@ const EditableCompositionDisplay: React.FC<{
 
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [categories, setCategories] = useState<string[]>(categoriesData);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [editedItem, setEditedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
@@ -426,11 +437,12 @@ export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  
+
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   const [tagInput, setTagInput] = useState('');
-  
-  const [newItemStoreIds, setNewItemStoreIds] = useState<number[]>(availableStores.map(s => s.id));
+
+  const [dialogSelectedStore, setDialogSelectedStore] = useState<string>(availableStores[0]?.id.toString() || 'all');
+
 
   const currentView = useMemo(() => {
     if (compositionHistory.length > 0) {
@@ -445,7 +457,7 @@ export default function MenuPage() {
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter(item => {
       const storeMatch = selectedStore === 'all' || item.storeIds.includes(parseInt(selectedStore));
-      const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
+      const categoryMatch = selectedCategory === 'all' || item.categoryId === selectedCategory;
       const statusMatch = selectedStatus === 'all' || item.status === statusMatch;
       const searchMatch = searchTerm === '' || item.name.toLowerCase().includes(searchTerm.toLowerCase());
       return storeMatch && categoryMatch && statusMatch && searchMatch;
@@ -455,32 +467,32 @@ export default function MenuPage() {
 
   const handleItemClick = (item: MenuItem) => {
     setEditedItem(JSON.parse(JSON.stringify(item))); // Deep copy for editing
-    setCompositionHistory([]); 
+    setCompositionHistory([]);
     setIsPopupOpen(true);
   };
 
   const handleCreateNewItem = () => {
     const newItem: MenuItem = {
-      id: Date.now(),
+      id: `item-${Date.now()}`,
       name: "Nouvel Article",
-      category: categories.length > 0 ? categories[0] : "Plats",
+      categoryId: categories.length > 0 ? categories[0].id : "cat-1",
       price: '0.00€',
       description: 'Description du nouvel article',
       image: 'https://placehold.co/600x400.png',
       imageHint: 'new item',
       tags: [],
       variations: [{ id: 'default', name: 'Taille unique', price: 0 }],
-      storeIds: newItemStoreIds,
+      storeIds: [parseInt(dialogSelectedStore)],
       status: 'inactive',
       availability: defaultAvailability,
     };
     setEditedItem(newItem);
-    setCompositionHistory([]); 
+    setCompositionHistory([]);
     setIsPopupOpen(true);
     setIsSyncPopupOpen(false);
   };
-  
-  const toggleItemStatus = (itemId: number, checked: boolean) => {
+
+  const toggleItemStatus = (itemId: string, checked: boolean) => {
     setMenuItems(prevItems => prevItems.map(item => {
         if (item.id === itemId) {
             return { ...item, status: checked ? 'out-of-stock' : 'active' };
@@ -496,12 +508,12 @@ export default function MenuPage() {
   const handleBackComposition = () => {
     setCompositionHistory(prev => prev.slice(0, -1));
   };
-  
+
   const updateComposition = (steps: CompositionStep[]) => {
       if (!editedItem) return;
-      
+
       const newEditedItem = { ...editedItem, composition: steps };
-      
+
       setEditedItem(newEditedItem);
 
       if (compositionHistory.length > 0) {
@@ -515,7 +527,7 @@ export default function MenuPage() {
     if (!editedItem) return;
     const firstStep: CompositionStep = {
       id: `step_${Date.now()}`,
-      title: isStepped ? 'Étape 1' : '', 
+      title: isStepped ? 'Étape 1' : '',
       selectionType: 'single',
       isRequired: false,
       options: [],
@@ -533,7 +545,7 @@ export default function MenuPage() {
         handleNavigateComposition(optionToUpdate.composition, `Composition de : ${optionToUpdate.name}`);
     }
   };
-  
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && editedItem) {
         const file = e.target.files[0];
@@ -561,7 +573,7 @@ export default function MenuPage() {
        tags: prev!.tags?.filter(tag => tag !== tagToRemove) || []
      }));
   }
-  
+
   const closePopup = () => {
     setIsPopupOpen(false);
     setTimeout(() => {
@@ -600,6 +612,10 @@ export default function MenuPage() {
     });
   };
 
+  const getCategoryName = (categoryId: string) => {
+    return categories.find(c => c.id === categoryId)?.name || 'N/A';
+  }
+
 
   return (
     <div className="space-y-8">
@@ -628,7 +644,16 @@ export default function MenuPage() {
                         Utilisez nos outils pour créer ou mettre à jour votre menu rapidement.
                     </DialogDescription>
                 </DialogHeader>
-                 <Tabs defaultValue="import" className="pt-4">
+                <div className="space-y-4 py-2">
+                    <Label>Appliquer à la boutique</Label>
+                    <Select value={dialogSelectedStore} onValueChange={setDialogSelectedStore}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {availableStores.map(store => <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <Tabs defaultValue="article" className="pt-2">
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="article">Article</TabsTrigger>
                         <TabsTrigger value="category">Catégorie</TabsTrigger>
@@ -638,27 +663,6 @@ export default function MenuPage() {
                        <p className="text-sm text-muted-foreground">
                         Créez un nouvel article manuellement et configurez toutes ses options en détail.
                        </p>
-                       <div className="space-y-2">
-                            <Label>Disponible dans les boutiques :</Label>
-                            <div className="space-y-2 rounded-md border p-4">
-                                {availableStores.map(store => (
-                                    <div key={store.id} className="flex items-center gap-2">
-                                        <Checkbox
-                                            id={`new-item-store-${store.id}`}
-                                            checked={newItemStoreIds.includes(store.id)}
-                                            onCheckedChange={(checked) => {
-                                                if (checked) {
-                                                    setNewItemStoreIds(prev => [...prev, store.id]);
-                                                } else {
-                                                    setNewItemStoreIds(prev => prev.filter(id => id !== store.id));
-                                                }
-                                            }}
-                                        />
-                                        <Label htmlFor={`new-item-store-${store.id}`} className="font-normal">{store.name}</Label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
                        <Button className="w-full" onClick={handleCreateNewItem}><PlusCircle className="mr-2 h-4 w-4"/>Créer un nouvel article</Button>
                     </TabsContent>
                     <TabsContent value="category" className="pt-4 space-y-4">
@@ -689,7 +693,7 @@ export default function MenuPage() {
                         <SelectTrigger className="md:w-48 w-full"><SelectValue placeholder="Catégorie" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Toutes les catégories</SelectItem>
-                            {categoriesData.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Select value={selectedStore} onValueChange={setSelectedStore}>
@@ -710,7 +714,7 @@ export default function MenuPage() {
                     </Select>
                 </div>
             </div>
-          
+
             <div className="border rounded-md">
             <Table>
                 <TableHeader>
@@ -739,7 +743,7 @@ export default function MenuPage() {
                         </TableCell>
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell>
-                            <Badge variant="outline">{item.category}</Badge>
+                            <Badge variant="outline">{getCategoryName(item.categoryId)}</Badge>
                         </TableCell>
                         <TableCell>{item.price}</TableCell>
                          <TableCell>
@@ -806,9 +810,9 @@ export default function MenuPage() {
                  )}
                </div>
             </DialogHeader>
-            
+
             <div className="flex-1 overflow-y-auto -mx-6 px-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              
+
               {compositionHistory.length === 0 && (
                 <div className="space-y-4 md:col-span-1">
                     <Card>
@@ -856,20 +860,20 @@ export default function MenuPage() {
                         <CardContent className="space-y-3">
                             {editedItem.variations.map((variation) => (
                                 <div key={variation.id} className="grid grid-cols-3 gap-2 items-center">
-                                    <Input 
-                                        placeholder="Nom (ex: Large)" 
+                                    <Input
+                                        placeholder="Nom (ex: Large)"
                                         value={variation.name}
                                         onChange={(e) => handleVariationChange(variation.id, 'name', e.target.value)}
                                     />
-                                    <Input 
-                                        type="number" 
-                                        placeholder="Prix de base" 
+                                    <Input
+                                        type="number"
+                                        placeholder="Prix de base"
                                         value={variation.price}
                                         onChange={(e) => handleVariationChange(variation.id, 'price', parseFloat(e.target.value) || 0)}
                                     />
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         className="text-destructive h-8 w-8"
                                         onClick={() => handleRemoveVariation(variation.id)}
                                         disabled={editedItem.variations.length <= 1}
@@ -886,7 +890,7 @@ export default function MenuPage() {
                         <CardHeader>
                             <CardTitle className="text-base font-headline flex items-center justify-between">
                                 <span>Disponibilité</span>
-                                <Switch 
+                                <Switch
                                     checked={editedItem.availability.type === 'scheduled'}
                                     onCheckedChange={(checked) => setEditedItem(prev => prev ? {...prev, availability: {...prev.availability, type: checked ? 'scheduled' : 'always'}} : null)}
                                 />
@@ -908,13 +912,13 @@ export default function MenuPage() {
                                             <Label htmlFor={day.id}>{day.label}</Label>
                                         </div>
                                         <div className={cn("col-span-2 grid grid-cols-2 gap-2", !editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].enabled && "opacity-50 pointer-events-none")}>
-                                            <Input 
-                                                type="time" 
+                                            <Input
+                                                type="time"
                                                 value={editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].from}
                                                 onChange={(e) => handleDayAvailabilityChange(day.id as keyof Availability['schedule'], 'from', e.target.value)}
                                             />
-                                            <Input 
-                                                type="time" 
+                                            <Input
+                                                type="time"
                                                 value={editedItem.availability.schedule[day.id as keyof typeof editedItem.availability.schedule].to}
                                                 onChange={(e) => handleDayAvailabilityChange(day.id as keyof Availability['schedule'], 'to', e.target.value)}
                                             />
@@ -947,8 +951,8 @@ export default function MenuPage() {
                                     ))}
                                 </div>
                                 <div className="flex gap-2 mt-4">
-                                    <Input 
-                                      placeholder="Ajouter un tag..." 
+                                    <Input
+                                      placeholder="Ajouter un tag..."
                                       value={tagInput}
                                       onChange={(e) => setTagInput(e.target.value)}
                                       onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
@@ -963,11 +967,11 @@ export default function MenuPage() {
 
               <div className={compositionHistory.length > 0 ? "md:col-span-2" : "md:col-span-1"}>
                 {currentView ? (
-                    <EditableCompositionDisplay 
+                    <EditableCompositionDisplay
                       view={currentView}
                       variations={editedItem.variations}
                       onNavigate={handleNavigateComposition}
-                      onOptionCompositionCreate={handleCreateSubComposition} 
+                      onOptionCompositionCreate={handleCreateSubComposition}
                       onUpdate={updateComposition}
                     />
                 ) : (
