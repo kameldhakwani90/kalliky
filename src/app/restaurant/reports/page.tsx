@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 type ReportStatus = 'Ouvert' | 'En cours' | 'Résolu';
 
@@ -215,8 +216,10 @@ export default function ReportsPage() {
                                      <CardContent>
                                         <p className="font-medium">{selectedReport.customer.name}</p>
                                         <p className="text-sm text-muted-foreground">{selectedReport.customer.phone}</p>
-                                        <Button variant="link" size="sm" className="p-0 h-auto mt-1" onClick={() => router.push(`/restaurant/clients/${selectedReport.customer.id}`)}>
-                                            Voir la fiche client
+                                        <Button variant="link" size="sm" className="p-0 h-auto mt-1" asChild>
+                                            <Link href={`/restaurant/clients/${selectedReport.customer.id}`}>
+                                                Voir la fiche client
+                                            </Link>
                                         </Button>
                                     </CardContent>
                                 </Card>
