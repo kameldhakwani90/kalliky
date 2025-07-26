@@ -426,8 +426,7 @@ export default function MenuPage() {
   const toggleItemStatus = (itemId: number, checked: boolean) => {
     setMenuItems(prevItems => prevItems.map(item => {
         if (item.id === itemId) {
-            const newStatus = checked ? 'out-of-stock' : 'active';
-            return { ...item, status: newStatus };
+            return { ...item, status: checked ? 'out-of-stock' : 'active' };
         }
         return item;
     }));
@@ -646,6 +645,7 @@ export default function MenuPage() {
                         </TableCell>
                         <TableCell>
                             <Switch
+                                className="data-[state=checked]:bg-red-500"
                                 checked={item.status === 'out-of-stock'}
                                 onCheckedChange={(checked) => toggleItemStatus(item.id, checked)}
                                 disabled={item.status === 'inactive'}
