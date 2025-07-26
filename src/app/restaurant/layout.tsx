@@ -83,6 +83,30 @@ const notifications = [
       time: 'il y a 3 heures',
       link: '/restaurant/clients/cust-2'
     },
+    {
+      id: 'notif-4',
+      type: 'order',
+      title: 'Nouvelle commande #1023',
+      description: 'Client anonyme - 4 articles - 55,20€',
+      time: 'il y a 5 heures',
+      link: '/restaurant/dashboard'
+    },
+    {
+      id: 'notif-5',
+      type: 'report',
+      title: 'Nouveau signalement',
+      description: 'Alice Martin - Retard de livraison',
+      time: 'hier',
+      link: '/restaurant/reports#rep-1'
+    },
+    {
+      id: 'notif-6',
+      type: 'order',
+      title: 'Nouvelle commande #1022',
+      description: 'Client anonyme - 1 article - 9,50€',
+      time: 'hier',
+      link: '/restaurant/dashboard'
+    },
 ]
 
 export default function RestaurantLayout({
@@ -194,7 +218,7 @@ export default function RestaurantLayout({
                 <DropdownMenuContent className="w-80" align="end">
                     <DropdownMenuLabel>{t({fr: "Notifications", en: "Notifications"})}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {notifications.map((notif) => (
+                    {notifications.slice(0, 3).map((notif) => (
                          <DropdownMenuItem key={notif.id} asChild>
                           <Link href={notif.link} className="flex items-start gap-3 p-3 cursor-pointer">
                             <Avatar className="h-8 w-8 mt-1">
