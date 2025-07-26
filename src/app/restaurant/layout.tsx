@@ -67,7 +67,7 @@ export default function RestaurantLayout({
     { href: "/restaurant/stores", label: "Boutiques", icon: Store },
     { href: "/restaurant/users", label: "Utilisateurs", icon: Users },
     { href: "/restaurant/clients", label: "Clients", icon: User },
-    { href: "#", label: "Signalements", icon: Flag },
+    { href: "/restaurant/reports", label: "Signalements", icon: Flag },
   ];
   
   const helpItems = [
