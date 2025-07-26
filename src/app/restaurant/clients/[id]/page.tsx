@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,6 +16,19 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 
 type OrderItemCustomization = {
     type: 'add' | 'remove';
@@ -237,6 +250,7 @@ export default function ClientProfilePage() {
     const [editedCustomer, setEditedCustomer] = useState<Customer | null>(customer ? { ...customer } : null);
     const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
     const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
+    const ticketRef = useRef<HTMLDivElement>(null);
 
     if (!customer || !editedCustomer) {
         return notFound();
@@ -256,9 +270,20 @@ export default function ClientProfilePage() {
         setOrderTicketOpen(true);
     }
     
-    const handlePrint = () => {
-      window.print();
+    const handlePrint = (width: '58mm' | '80mm') => {
+        const ticketElement = ticketRef.current;
+        if (!ticketElement) return;
+
+        // Remove any existing width classes
+        ticketElement.classList.remove('width-58mm', 'width-80mm');
+        
+        // Add the desired width class
+        ticketElement.classList.add(`width-${width}`);
+
+        // Trigger print
+        window.print();
     };
+
 
     const calculatedTotals = selectedOrder ? calculateOrderTotals(selectedOrder) : null;
     const storePrinters = selectedOrder ? getStoreInfo(selectedOrder.storeId)?.printers : [];
@@ -282,7 +307,22 @@ export default function ClientProfilePage() {
                     {isEditing ? (
                         <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/>Enregistrer</Button>
                     ) : (
-                        <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/>Modifier</Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button><Edit className="mr-2 h-4 w-4"/>Modifier</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Fonctionnalité en cours de développement</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                La modification des fiches clients sera bientôt disponible.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Compris</AlertDialogCancel>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     )}
                 </div>
             </header>
@@ -470,7 +510,7 @@ export default function ClientProfilePage() {
         {selectedOrder && calculatedTotals && (
             <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
                 <DialogContent className="sm:max-w-md">
-                   <div className={`printable-ticket width-80mm font-mono p-2 bg-white`}>
+                   <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white">
                         <div className="text-center space-y-2 mb-4">
                             <h2 className="text-lg font-bold">{getStoreInfo(selectedOrder.storeId)?.name}</h2>
                             <p className="text-xs">{getStoreInfo(selectedOrder.storeId)?.address}</p>
@@ -513,7 +553,7 @@ export default function ClientProfilePage() {
                            <p className="font-bold">Détail TVA incluse :</p>
                            {calculatedTotals.taxDetails.map(tax => (
                                 <div key={tax.rate} className="flex justify-between">
-                                    <span>Total TVA ({tax.rate.toFixed(2)}%)</span>
+                                    <span>TVA ({tax.rate.toFixed(2)}%)</span>
                                     <span>{tax.amount.toFixed(2)}€</span>
                                 </div>
                             ))}
@@ -527,7 +567,7 @@ export default function ClientProfilePage() {
                     </div>
                     <DialogFooter className="print-hide mt-4">
                         {storePrinters && storePrinters.map(printer => (
-                            <Button key={printer.id} variant="outline" className="w-full font-sans" onClick={handlePrint}>
+                            <Button key={printer.id} variant="outline" className="w-full font-sans" onClick={() => handlePrint(printer.width)}>
                                 <Printer className="mr-2 h-4 w-4" /> Imprimer sur {printer.name} ({printer.width})
                             </Button>
                         ))}
