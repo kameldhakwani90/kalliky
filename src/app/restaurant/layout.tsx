@@ -45,6 +45,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
@@ -91,6 +92,7 @@ export default function RestaurantLayout({
 }) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const [hasUnreadNotifications, setHasUnreadNotifications] = React.useState(true);
 
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
@@ -178,14 +180,14 @@ export default function RestaurantLayout({
             <div className="flex-1">
                 {/* Optional Header Content */}
             </div>
-             <DropdownMenu>
+             <DropdownMenu onOpenChange={(open) => {if(open) setHasUnreadNotifications(false)}}>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative">
                         <Bell className="h-5 w-5" />
-                         <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                         {hasUnreadNotifications && <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                        </span>
+                        </span>}
                         <span className="sr-only">Notifications</span>
                     </Button>
                 </DropdownMenuTrigger>
@@ -208,6 +210,35 @@ export default function RestaurantLayout({
                           </Link>
                         </DropdownMenuItem>
                     ))}
+                    <DropdownMenuSeparator />
+                    <Dialog>
+                        <DialogTrigger asChild>
+                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="justify-center">
+                                {t({fr: "Voir toutes les notifications", en: "See all notifications"})}
+                             </DropdownMenuItem>
+                        </DialogTrigger>
+                        <DialogContent>
+                             <DialogHeader>
+                                <DialogTitle>{t({fr: "Toutes les notifications", en: "All Notifications"})}</DialogTitle>
+                             </DialogHeader>
+                             <div className="max-h-[60vh] overflow-y-auto -mx-6 px-6">
+                                {notifications.map((notif, index) => (
+                                     <Link key={notif.id} href={notif.link} className={cn("flex items-start gap-3 p-3 cursor-pointer -mx-3", index > 0 && "border-t")}>
+                                        <Avatar className="h-8 w-8 mt-1">
+                                            <AvatarFallback className={notif.type === 'order' ? 'bg-blue-100' : 'bg-red-100'}>
+                                                {notif.type === 'order' ? <Receipt className="h-4 w-4 text-blue-600"/> : <Flag className="h-4 w-4 text-red-600"/>}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-semibold text-sm">{notif.title}</p>
+                                            <p className="text-xs text-muted-foreground">{notif.description}</p>
+                                            <p className="text-xs text-muted-foreground/70 mt-1">{notif.time}</p>
+                                        </div>
+                                      </Link>
+                                ))}
+                             </div>
+                        </DialogContent>
+                    </Dialog>
                 </DropdownMenuContent>
              </DropdownMenu>
              <DropdownMenu>
@@ -241,3 +272,5 @@ export default function RestaurantLayout({
     </SidebarProvider>
   )
 }
+
+    
