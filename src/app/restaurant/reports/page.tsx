@@ -2,18 +2,21 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit, Phone, PlayCircle } from 'lucide-react';
+import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit, Phone, PlayCircle, Printer, Receipt } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+
 
 type ReportStatus = 'Ouvert' | 'En cours' | 'Résolu';
 
@@ -24,6 +27,37 @@ type Call = {
     type: 'Commande' | 'Info' | 'Signalement';
     transcript: string;
     audioUrl?: string;
+};
+
+// Data structures copied from client page for ticket display
+type OrderItemCustomization = {
+    type: 'add' | 'remove';
+    name: string;
+    price?: number;
+};
+
+type DetailedOrderItem = {
+    id: string;
+    name: string;
+    quantity: number;
+    basePrice: number;
+    customizations: OrderItemCustomization[];
+    finalPrice: number;
+    taxRate: number; 
+};
+
+type OrderTotals = {
+    totalTTC: number;
+    taxDetails: { rate: number; amount: number }[];
+};
+
+
+type DetailedOrder = {
+    id: string;
+    date: string;
+    items: DetailedOrderItem[];
+    total: number;
+    storeId: string;
 };
 
 type Report = {
@@ -38,8 +72,99 @@ type Report = {
         phone: string;
     };
     storeId: string;
+    orderId: string;
     call?: Call;
 };
+
+type TaxRate = {
+    id: string;
+    name: string;
+    rate: number;
+    isDefault: boolean;
+};
+
+type PrinterDevice = {
+    id: string;
+    name: string;
+    role: 'kitchen' | 'receipt';
+    width: '58mm' | '80mm';
+};
+
+type StoreInfo = {
+    id: string;
+    name: string;
+    address: string;
+    taxRates: TaxRate[];
+    printers?: PrinterDevice[];
+};
+
+const mockStores: StoreInfo[] = [
+    {
+        id: "store-1",
+        name: "Le Gourmet Parisien",
+        address: "12 Rue de la Paix, 75002 Paris",
+        taxRates: [
+            { id: 'tax-1', name: 'Réduit', rate: 5.5, isDefault: false },
+            { id: 'tax-2', name: 'Intermédiaire', rate: 10, isDefault: true },
+            { id: 'tax-3', name: 'Normal', rate: 20, isDefault: false },
+        ],
+        printers: [
+            { id: 'p1', name: 'Imprimante Caisse', role: 'receipt', width: '80mm' },
+            { id: 'p2', name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm' },
+        ]
+    },
+    {
+        id: "store-2",
+        name: "Pizzeria Bella",
+        address: "3 Rue de la Roquette, 75011 Paris",
+        taxRates: [
+             { id: 'tax-1', name: 'À emporter', rate: 5.5, isDefault: true },
+             { id: 'tax-2', name: 'Sur place', rate: 10, isDefault: false },
+        ]
+    },
+    {
+        id: "store-3",
+        name: "Pizzeria Bella - Bastille",
+        address: "3 Rue de la Roquette, 75011 Paris",
+        taxRates: [
+             { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
+             { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
+        ],
+        printers: []
+    },
+];
+
+const mockOrders: DetailedOrder[] = [
+    {
+        id: "#987",
+        date: "16/05/2024",
+        storeId: "store-1",
+        items: [
+             { id: "item-x", name: 'Plat exemple 1', quantity: 2, basePrice: 25.00, taxRate: 10, customizations: [], finalPrice: 25.00 },
+             { id: "item-y", name: 'Boisson exemple 2', quantity: 2, basePrice: 5.00, taxRate: 5.5, customizations: [], finalPrice: 5.00 },
+        ],
+        total: 60.00
+    },
+    {
+        id: "#1028",
+        date: "29/05/2024",
+        storeId: "store-3",
+        items: [
+            { id: "item-pza-4f", name: 'Pizza 4 Fromages', quantity: 1, basePrice: 15.00, taxRate: 10, customizations: [], finalPrice: 15.00 },
+            { id: "item-coke", name: 'Coca-cola', quantity: 2, basePrice: 5.00, taxRate: 5.5, customizations: [], finalPrice: 5.00 },
+        ],
+        total: 25.00,
+    },
+    {
+        id: "#1031",
+        date: "30/05/2024",
+        storeId: "store-2",
+        items: [
+             { id: "item-z", name: 'Burger', quantity: 1, basePrice: 18.00, taxRate: 10, customizations: [], finalPrice: 18.00 },
+        ],
+        total: 18.00
+    },
+];
 
 const initialReports: Report[] = [
     {
@@ -47,9 +172,10 @@ const initialReports: Report[] = [
         date: '16/05/2024',
         reason: 'Retard de livraison',
         status: 'Résolu',
-        details: 'La commande #987 a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.',
+        details: 'La commande a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.',
         customer: { id: 'cust-1', name: 'Alice Martin', phone: '0612345678' },
         storeId: 'store-1',
+        orderId: "#987",
         call: { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "Bonjour, je voudrais passer la commande #987...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
     },
     {
@@ -57,28 +183,32 @@ const initialReports: Report[] = [
         date: '29/05/2024',
         reason: 'Erreur dans la commande',
         status: 'Ouvert',
-        details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages. Commande #1028.',
+        details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages.',
         customer: { id: 'cust-3', name: 'Carole Leblanc', phone: '0611223344' },
         storeId: 'store-3',
+        orderId: "#1028",
+        call: { id: 'call-4', date: "29/05/2024 - 19:10", duration: "3m 15s", type: 'Commande', transcript: "Bonjour, je voudrais une pizza 4 fromages et deux coca...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
     },
     {
         id: 'rep-3',
         date: '30/05/2024',
         reason: 'Problème de paiement',
         status: 'En cours',
-        details: 'Le paiement par lien n\'a pas fonctionné pour la commande #1031. Le client a dû payer en espèces à la livraison.',
+        details: 'Le paiement par lien n\'a pas fonctionné. Le client a dû payer en espèces à la livraison.',
         customer: { id: 'cust-2', name: 'Bob Dupont', phone: '0787654321' },
         storeId: 'store-2',
+        orderId: "#1031",
+        call: { id: 'call-5', date: "30/05/2024 - 11:45", duration: "2m 50s", type: 'Commande', transcript: "Bonjour, je voudrais commander pour la commande #1031...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
     }
 ];
 
-const availableStores = [
+const availableStoresSummary = [
     { id: "store-1", name: "Le Gourmet Parisien - Centre" },
     { id: "store-2", name: "Le Gourmet Parisien - Montmartre"},
     { id: "store-3", name: "Pizzeria Bella - Bastille" },
 ];
 
-const getStoreName = (id: string) => availableStores.find(s => s.id === id)?.name || 'N/A';
+const getStoreName = (id: string) => availableStoresSummary.find(s => s.id === id)?.name || 'N/A';
 
 const statusStyles: Record<ReportStatus, string> = {
     'Ouvert': 'bg-red-100 text-red-800',
@@ -86,15 +216,48 @@ const statusStyles: Record<ReportStatus, string> = {
     'Résolu': 'bg-green-100 text-green-800',
 };
 
+const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
+
+const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
+    const taxBreakdown: Record<number, { baseTTC: number }> = {};
+    let totalTTC = 0;
+
+    order.items.forEach(item => {
+        const itemTTC = item.finalPrice * item.quantity;
+        totalTTC += itemTTC;
+        
+        const rate = item.taxRate;
+        
+        if (!taxBreakdown[rate]) {
+            taxBreakdown[rate] = { baseTTC: 0 };
+        }
+        taxBreakdown[rate].baseTTC += itemTTC;
+    });
+
+    const taxDetails = Object.entries(taxBreakdown).map(([rateStr, { baseTTC }]) => {
+        const rate = parseFloat(rateStr);
+        const amount = baseTTC - (baseTTC / (1 + rate / 100));
+        return {
+            rate: rate,
+            amount: amount,
+        };
+    });
+
+    return { totalTTC, taxDetails };
+};
+
 
 export default function ReportsPage() {
     const [reports, setReports] = useState<Report[]>(initialReports);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+    const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+    
+    const ticketRef = useRef<HTMLDivElement>(null);
 
     const handleViewReport = (report: Report) => {
         setSelectedReport(report);
-        setIsDialogOpen(true);
+        setIsReportDialogOpen(true);
     };
     
     const handleStatusChange = (newStatus: ReportStatus) => {
@@ -103,6 +266,31 @@ export default function ReportsPage() {
         setSelectedReport(updatedReport);
         setReports(prev => prev.map(r => r.id === selectedReport.id ? updatedReport : r));
     }
+    
+    const handlePrint = () => {
+        const order = selectedReport ? mockOrders.find(o => o.id === selectedReport.orderId) : null;
+        if (!order) return;
+
+        const ticketElement = ticketRef.current;
+        const storeInfo = getStoreInfo(order.storeId);
+        if (!ticketElement || !storeInfo) return;
+
+        const receiptPrinter = storeInfo.printers?.find(p => p.role === 'receipt');
+        const printerToUse = receiptPrinter || storeInfo.printers?.[0];
+
+        if (!printerToUse) {
+            console.error("No printer configured for this store.");
+            return;
+        }
+
+        ticketElement.classList.remove('width-58mm', 'width-80mm');
+        ticketElement.classList.add(`width-${printerToUse.width}`);
+        window.print();
+    };
+
+    const currentOrderForTicket = selectedReport ? mockOrders.find(o => o.id === selectedReport.orderId) : null;
+    const currentStoreForTicket = currentOrderForTicket ? getStoreInfo(currentOrderForTicket.storeId) : null;
+    const currentCalculatedTotals = currentOrderForTicket ? calculateOrderTotals(currentOrderForTicket) : null;
 
 
     return (
@@ -121,7 +309,7 @@ export default function ReportsPage() {
                         <SelectTrigger className="w-48"><SelectValue placeholder="Toutes les boutiques" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Toutes les boutiques</SelectItem>
-                            {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
+                            {availableStoresSummary.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Select>
@@ -178,7 +366,7 @@ export default function ReportsPage() {
             </Card>
             
             {selectedReport && (
-                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                 <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
                     <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
                             <DialogTitle>Détail du Signalement</DialogTitle>
@@ -194,6 +382,9 @@ export default function ReportsPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <p className="text-sm">{selectedReport.details}</p>
+                                        <Button variant="link" size="sm" className="p-0 h-auto mt-2" onClick={() => setIsTicketDialogOpen(true)}>
+                                            <Receipt className="mr-2 h-4 w-4"/> Voir le ticket (Commande {selectedReport.orderId})
+                                        </Button>
                                     </CardContent>
                                 </Card>
 
@@ -267,12 +458,92 @@ export default function ReportsPage() {
                            </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Fermer</Button>
+                            <Button variant="outline" onClick={() => setIsReportDialogOpen(false)}>Fermer</Button>
                             <Button>Enregistrer les modifications</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
             )}
+
+            {isTicketDialogOpen && currentOrderForTicket && currentStoreForTicket && currentCalculatedTotals && (
+                <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="sr-only">Ticket de commande {currentOrderForTicket.id}</DialogTitle>
+                            <DialogDescription className="sr-only">
+                                Détail de la commande {currentOrderForTicket.id} pour {currentStoreForTicket.name}.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
+                            <div className="text-center space-y-2 mb-4">
+                                <h2 className="text-lg font-bold">{currentStoreForTicket.name}</h2>
+                                <p className="text-xs">{currentStoreForTicket.address}</p>
+                                <p className="text-xs">Commande {currentOrderForTicket.id} - {currentOrderForTicket.date}</p>
+                            </div>
+                            
+                            <Separator className="border-dashed border-black" />
+
+                            <div className="space-y-2 my-2 text-xs">
+                                {currentOrderForTicket.items.map((item, index) => (
+                                    <div key={item.id + index}>
+                                        <div className="flex justify-between">
+                                            <span className="font-bold">{item.quantity}x {item.name}</span>
+                                            <span className="font-bold">{(item.finalPrice * item.quantity).toFixed(2)}€</span>
+                                        </div>
+                                        {item.customizations.length > 0 && (
+                                            <div className="pl-4 mt-1 space-y-1">
+                                                {item.customizations.map((cust, cIndex) => (
+                                                    <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
+                                                        <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
+                                                        {cust.price && <span>{cust.price.toFixed(2)}€</span>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <Separator className="border-dashed border-black" />
+
+                            <div className="flex justify-between font-bold text-base my-2">
+                                <span>TOTAL TTC</span>
+                                <span>{currentCalculatedTotals.totalTTC.toFixed(2)}€</span>
+                            </div>
+
+                            <Separator className="border-dashed border-black" />
+
+                            <div className="space-y-1 my-2 text-xs">
+                            <p className="font-bold">Détail TVA incluse :</p>
+                            {currentCalculatedTotals.taxDetails.map(tax => (
+                                    <div key={tax.rate} className="flex justify-between">
+                                        <span>TVA ({tax.rate.toFixed(2)}%)</span>
+                                        <span>{tax.amount.toFixed(2)}€</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <Separator className="border-dashed border-black" />
+
+                            <div className="text-center text-xs pt-2">
+                                Merci de votre visite !
+                            </div>
+                        </div>
+                        <DialogFooter className="print-hide mt-4">
+                             {(currentStoreForTicket.printers && currentStoreForTicket.printers.length > 0) ? (
+                                <Button className="w-full font-sans" onClick={handlePrint}>
+                                    <Printer className="mr-2 h-4 w-4" /> Imprimer
+                                </Button>
+                            ) : (
+                                <Button className="w-full font-sans" disabled>
+                                    <Printer className="mr-2 h-4 w-4" /> Aucune imprimante configurée
+                                </Button>
+                            )}
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
+
         </div>
     );
 }
