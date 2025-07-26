@@ -63,18 +63,21 @@ const notifications = [
       title: 'Nouvelle commande #1025',
       description: 'Alice Martin - 2 articles - 24,50€',
       time: 'il y a 2 minutes',
+      link: '/restaurant/dashboard'
     },
     {
       type: 'report',
       title: 'Nouveau signalement',
       description: 'Carole Leblanc - Erreur dans la commande #1028',
       time: 'il y a 1 heure',
+      link: '/restaurant/reports'
     },
      {
       type: 'order',
       title: 'Nouvelle commande #1024',
       description: 'Bob Dupont - 1 article - 18,00€',
       time: 'il y a 3 heures',
+      link: '/restaurant/dashboard'
     },
 ]
 
@@ -174,8 +177,12 @@ export default function RestaurantLayout({
             </div>
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="relative">
                         <Bell className="h-5 w-5" />
+                         <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        </span>
                         <span className="sr-only">Notifications</span>
                     </Button>
                 </DropdownMenuTrigger>
@@ -183,7 +190,8 @@ export default function RestaurantLayout({
                     <DropdownMenuLabel>{t({fr: "Notifications", en: "Notifications"})}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {notifications.map((notif, index) => (
-                         <DropdownMenuItem key={index} className="flex items-start gap-3 p-3 cursor-pointer">
+                         <DropdownMenuItem key={index} asChild>
+                          <Link href={notif.link} className="flex items-start gap-3 p-3 cursor-pointer">
                             <Avatar className="h-8 w-8 mt-1">
                                 <AvatarFallback className={notif.type === 'order' ? 'bg-blue-100' : 'bg-red-100'}>
                                     {notif.type === 'order' ? <Receipt className="h-4 w-4 text-blue-600"/> : <Flag className="h-4 w-4 text-red-600"/>}
@@ -194,6 +202,7 @@ export default function RestaurantLayout({
                                 <p className="text-xs text-muted-foreground">{notif.description}</p>
                                 <p className="text-xs text-muted-foreground/70 mt-1">{notif.time}</p>
                             </div>
+                          </Link>
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
