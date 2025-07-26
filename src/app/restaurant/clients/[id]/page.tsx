@@ -30,20 +30,20 @@ type DetailedOrderItem = {
     basePrice: number;
     customizations: OrderItemCustomization[];
     finalPrice: number;
-    taxRate: number; // The specific tax rate for this item
+    taxRate: number; 
 };
 
-type OrderTotal = {
-    subtotal: number;
-    taxDetails: { rate: number; amount: number }[];
+type OrderTotals = {
     total: number;
+    taxDetails: { rate: number; amount: number; base: number }[];
 };
+
 
 type DetailedOrder = {
     id: string;
     date: string;
     items: DetailedOrderItem[];
-    total: number; // This is now TTC for list display, will be recalculated for ticket.
+    total: number;
     storeId: string;
 };
 
@@ -136,7 +136,7 @@ const mockOrders: DetailedOrder[] = [
             { id: "item-2", name: 'Bière Blonde', quantity: 1, basePrice: 6.00, taxRate: 20, customizations: [], finalPrice: 6.00 },
             { id: "item-3", name: 'Eau (bouteille)', quantity: 1, basePrice: 2.50, taxRate: 5.5, customizations: [], finalPrice: 2.50 },
         ],
-        total: 31.29,
+        total: 28.00 + 1.95 + 1.20 + 0.14,
     },
      { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
 ];
@@ -186,31 +186,42 @@ const mockCustomers: Customer[] = [
 
 const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
-const calculateOrderTotals = (order: DetailedOrder): OrderTotal => {
-    let subtotal = 0;
-    const taxBreakdown: Record<number, number> = {};
+const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
+    const taxBreakdown: Record<number, { base: number; amount: number }> = {};
+    let total = 0;
 
     order.items.forEach(item => {
-        const itemTotalHT = item.finalPrice * item.quantity;
-        subtotal += itemTotalHT;
-
-        const taxAmount = itemTotalHT * (item.taxRate / 100);
+        const itemTotalTTC = item.finalPrice * item.quantity;
+        total += itemTotalTTC;
         
-        if (!taxBreakdown[item.taxRate]) {
-            taxBreakdown[item.taxRate] = 0;
+        const rate = item.taxRate;
+        
+        if (!taxBreakdown[rate]) {
+            taxBreakdown[rate] = { base: 0, amount: 0 };
         }
-        taxBreakdown[item.taxRate] += taxAmount;
+        
+        // Add the item's total TTC to the base for this tax rate
+        taxBreakdown[rate].base += itemTotalTTC;
     });
 
-    const taxDetails = Object.entries(taxBreakdown).map(([rate, amount]) => ({
+    // Calculate the included VAT for each rate
+    for (const rate in taxBreakdown) {
+        const numericRate = parseFloat(rate);
+        const baseTTC = taxBreakdown[rate].base;
+        const taxAmount = (baseTTC / (1 + numericRate / 100)) * (numericRate / 100);
+        taxBreakdown[rate].amount = taxAmount;
+    }
+
+    const taxDetails = Object.entries(taxBreakdown).map(([rate, values]) => ({
         rate: parseFloat(rate),
-        amount,
+        amount: values.amount,
+        base: values.base,
     }));
+    
+    // Recalculate total from items to ensure accuracy
+    const finalTotal = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
 
-    const totalTaxAmount = taxDetails.reduce((acc, detail) => acc + detail.amount, 0);
-    const total = subtotal + totalTaxAmount;
-
-    return { subtotal, taxDetails, total };
+    return { total: finalTotal, taxDetails };
 };
 
 
@@ -482,22 +493,18 @@ export default function ClientProfilePage() {
                             </div>
                         ))}
                         <Separator className="border-dashed" />
-                        <div className="space-y-1">
-                            <div className="flex justify-between">
-                                <span>TOTAL HT</span>
-                                <span>{calculatedTotals.subtotal.toFixed(2)}€</span>
-                            </div>
-                            {calculatedTotals.taxDetails.map(tax => (
-                                <div key={tax.rate} className="flex justify-between">
-                                    <span>TVA ({tax.rate.toFixed(2)}%)</span>
-                                    <span>{tax.amount.toFixed(2)}€</span>
-                                </div>
-                            ))}
-                        </div>
-                        <Separator className="border-dashed" />
                         <div className="flex justify-between font-bold text-base">
                             <span>TOTAL TTC</span>
                             <span>{calculatedTotals.total.toFixed(2)}€</span>
+                        </div>
+                        <Separator className="border-dashed" />
+                        <div className="space-y-1 text-gray-500">
+                           {calculatedTotals.taxDetails.map(tax => (
+                                <div key={tax.rate} className="flex justify-between">
+                                    <span>Dont TVA ({tax.rate.toFixed(2)}%) sur {tax.base.toFixed(2)}€</span>
+                                    <span>{tax.amount.toFixed(2)}€</span>
+                                </div>
+                            ))}
                         </div>
                          <Separator className="border-dashed" />
                          <div className="text-center text-gray-500 pt-2">
