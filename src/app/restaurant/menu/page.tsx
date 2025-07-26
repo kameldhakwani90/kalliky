@@ -694,9 +694,7 @@ export default function MenuPage() {
                  {compositionHistory.length > 0 ? (
                     <DialogTitle className="text-2xl font-headline">{currentView?.title}</DialogTitle>
                  ) : (
-                    <>
                     <DialogTitle className="text-2xl font-headline">{editedItem.name}</DialogTitle>
-                    </>
                  )}
                </div>
             </DialogHeader>
@@ -846,4 +844,3 @@ export default function MenuPage() {
     </div>
   );
 }
-
