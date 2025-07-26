@@ -2,8 +2,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -116,10 +116,10 @@ const daysOfWeekFr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi
 
 const WIZARD_STEPS = [
     { id: 'welcome', title: { fr: 'Bienvenue', en: 'Welcome' } },
-    { id: 'general', title: { fr: 'Infos Générales', en: 'General Info' } },
-    { id: 'opening', title: { fr: 'Horaires', en: 'Opening Hours' } },
-    { id: 'taxes', title: { fr: 'Taxes & Connexions', en: 'Taxes & Connections' } },
-    { id: 'peripherals', title: { fr: 'Périphériques', en: 'Peripherals' } },
+    { id: 'general', title: { fr: 'Infos Générales', en: 'General Info' }, description: { fr: 'Donnez un nom et une adresse à votre boutique.', en: 'Give your store a name and address.' } },
+    { id: 'opening', title: { fr: 'Horaires', en: 'Opening Hours' }, description: { fr: 'Définissez vos heures d\'ouverture.', en: 'Set your opening hours.' } },
+    { id: 'taxes', title: { fr: 'Taxes & Connexions', en: 'Taxes & Connections' }, description: { fr: 'Configurez la TVA et les services externes.', en: 'Configure VAT and external services.' } },
+    { id: 'peripherals', title: { fr: 'Périphériques', en: 'Peripherals' }, description: { fr: 'Connectez imprimantes et tablettes de cuisine.', en: 'Connect printers and kitchen tablets.' } },
     { id: 'finish', title: { fr: 'Finalisation', en: 'Finalization' } },
 ];
 
@@ -128,6 +128,7 @@ const currentUserPlan = 'pro'; // Should be dynamic in a real app
 export default function StoresPage() {
     const { toast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { t, language } = useLanguage();
     const [stores, setStores] = useState<Store[]>(initialStores);
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -137,11 +138,17 @@ export default function StoresPage() {
     const [editableKDS, setEditableKDS] = useState<KDSConnection[]>([]);
     const [wizardStep, setWizardStep] = useState(0);
 
+    useEffect(() => {
+        if (searchParams.get('action') === 'new') {
+            handleOpenFormDialog();
+        }
+    }, [searchParams]);
+
     const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
 
     const handleOpenFormDialog = (store: Store | null = null) => {
         setSelectedStore(store);
-        setWizardStep(0);
+        setWizardStep(store ? 1 : 0); // Skip welcome if editing
         setEditableTaxRates(store ? [...store.taxRates] : [{ id: `tax_${Date.now()}`, name: t({fr: 'TVA par défaut', en: 'Default VAT'}), rate: 0, isDefault: true }]);
         setEditablePrinters(store ? [...(store.printers || [])] : []);
         setEditableKDS(store ? [...(store.kdsConnections || [])] : []);
@@ -431,23 +438,26 @@ export default function StoresPage() {
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
                 <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
-                        <DialogTitle>{t(WIZARD_STEPS[wizardStep].title)}</DialogTitle>
+                        <DialogTitle className="text-center font-headline text-2xl">{selectedStore ? t(translations.editStore) : t(translations.addNewStore)}</DialogTitle>
                          {WIZARD_STEPS[wizardStep].id !== 'welcome' && WIZARD_STEPS[wizardStep].id !== 'finish' && (
-                             <DialogDescription>
-                                {t({fr: `Étape ${wizardStep} sur ${WIZARD_STEPS.length - 2}`, en: `Step ${wizardStep} of ${WIZARD_STEPS.length - 2}`})} - {t(WIZARD_STEPS[wizardStep].description!)}
+                             <DialogDescription className="text-center">
+                                {t({fr: `Étape ${wizardStep} sur ${WIZARD_STEPS.length - 2}`, en: `Step ${wizardStep} of ${WIZARD_STEPS.length - 2}`})} - {t(WIZARD_STEPS[wizardStep].title)}
                              </DialogDescription>
                          )}
                     </DialogHeader>
                     
-                    <div className="px-1 py-2">
-                      <Progress value={(wizardStep / (WIZARD_STEPS.length - 1)) * 100} className="h-2" />
-                    </div>
+                    {WIZARD_STEPS[wizardStep].id !== 'welcome' && WIZARD_STEPS[wizardStep].id !== 'finish' &&
+                      <div className="px-1 py-2">
+                        <Progress value={(wizardStep / (WIZARD_STEPS.length - 2)) * 100} className="h-2" />
+                      </div>
+                    }
+
 
                     <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6 p-1 -mx-2 px-2">
                        {wizardStep === 0 && (
-                            <div className="grid md:grid-cols-2 gap-8 items-center">
+                            <div className="grid md:grid-cols-2 gap-8 items-center py-8">
                                 <div className="space-y-4">
-                                    <h2 className="text-2xl font-bold font-headline">{t(translations.welcomeTitle)}</h2>
+                                    <h2 className="text-3xl font-bold font-headline">{t(translations.welcomeTitle)}</h2>
                                     <p className="text-muted-foreground">{t(translations.welcomeDescription)}</p>
                                     <p className="text-sm font-semibold">{t(translations.welcomeVideoSub)}</p>
                                 </div>
@@ -727,7 +737,7 @@ export default function StoresPage() {
                             </div>
                         )}
 
-                      <DialogFooter className="pt-4 border-t sticky bottom-0 bg-background pb-0 -mb-6">
+                      <DialogFooter className="pt-4 border-t sticky bottom-0 bg-background pb-0 -mx-2 -mb-6 px-6">
                           <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>{t(translations.cancel)}</Button>
                           <div className="flex-grow" />
                           {wizardStep > 0 && (
