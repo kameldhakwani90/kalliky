@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer } from 'lucide-react';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/contexts/language-context';
+import { translateText } from '@/ai/flows/translate-flow';
 
 
 type OrderItemCustomization = {
@@ -209,7 +210,7 @@ const mockCustomers: Customer[] = [
         lastSeen: "28/05/2024",
         orderHistory: mockOrders.filter(o => ['#1024', '#987'].includes(o.id)),
         callHistory: [
-            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Bonjour, je voudrais commander un burger personnalisé avec bacon et oeuf, sans oignons. Et aussi une salade César s'il vous plaît. Ce sera pour une livraison au 123 Rue de la Paix. Merci.", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Hello, I would like to order a custom burger with bacon and egg, no onions. And also a Caesar salad please. It will be for a delivery to 123 Rue de la Paix. Thank you.", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
             { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
         ],
         reportHistory: [
@@ -283,7 +284,7 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
 
 
 export default function ClientProfilePage() {
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
     const params = useParams();
     const customerId = params.id as string;
     const customer = mockCustomers.find(c => c.id === customerId);
@@ -293,6 +294,41 @@ export default function ClientProfilePage() {
     const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
     const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
     const ticketRef = useRef<HTMLDivElement>(null);
+
+    const [activeCall, setActiveCall] = useState<Call | null>(null);
+    const [translatedTranscript, setTranslatedTranscript] = useState<string | null>(null);
+    const [isTranslating, setIsTranslating] = useState(false);
+
+    const handleTranslate = async () => {
+        if (!activeCall) return;
+
+        if (translatedTranscript) {
+            setTranslatedTranscript(null); // Toggle back to original
+            return;
+        }
+
+        setIsTranslating(true);
+        try {
+            const targetLanguage = language === 'fr' ? 'English' : 'French';
+            const response = await translateText({ text: activeCall.transcript, targetLanguage });
+            setTranslatedTranscript(response.translatedText);
+        } catch (error) {
+            console.error("Translation failed", error);
+            // Optionally, show a toast notification
+        } finally {
+            setIsTranslating(false);
+        }
+    };
+    
+    const handleOpenCallDialog = (call: Call) => {
+        setActiveCall(call);
+        setTranslatedTranscript(null);
+    };
+
+    const handleCloseCallDialog = () => {
+        setActiveCall(null);
+        setTranslatedTranscript(null);
+    };
 
     const translations = {
         edit: { fr: "Modifier", en: "Edit" },
@@ -331,19 +367,20 @@ export default function ClientProfilePage() {
         transcript: { fr: "Transcription :", en: "Transcript:" },
         close: { fr: "Fermer", en: "Close" },
         reason: { fr: "Raison", en: "Reason" },
-        status: { fr: "Statut", en: "Status" },
+        statusLabel: { fr: "Statut", en: "Status" },
         resolved: { fr: "Résolu", en: "Resolved" },
         open: { fr: "Ouvert", en: "Open" },
         inProgress: { fr: "En cours", en: "In Progress" },
         reportDetails: { fr: "Détails du Signalement", en: "Report Details" },
         orderTicket: { fr: "Ticket de commande", en: "Order Ticket" },
         orderFor: { fr: "Détail de la commande {orderId} pour {storeName}.", en: "Details for order {orderId} for {storeName}." },
-        order: { fr: "Commande", en: "Order" },
         taxDetails: { fr: "Détail TVA incluse :", en: "Included tax details:" },
         tax: { fr: "TVA", en: "VAT" },
         thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
         print: { fr: "Imprimer", en: "Print" },
         noPrinter: { fr: "Aucune imprimante configurée", en: "No printer configured" },
+        translate: { fr: "Traduire", en: "Translate" },
+        showOriginal: { fr: "Voir l'original", en: "Show Original" },
     };
 
     if (!customer || !editedCustomer) {
@@ -543,33 +580,39 @@ export default function ClientProfilePage() {
                                                 <div className="flex items-center gap-2">
                                                     <Badge variant="secondary">{call.type}</Badge>
                                                     <p className="text-xs text-muted-foreground">{call.duration}</p>
-                                                    <Dialog>
+                                                    <Dialog onOpenChange={(open) => !open && handleCloseCallDialog()}>
                                                         <DialogTrigger asChild>
-                                                            <Button variant="outline" size="sm" className="h-8">
+                                                            <Button variant="outline" size="sm" className="h-8" onClick={() => handleOpenCallDialog(call)}>
                                                                 <PlayCircle className="mr-2 h-4 w-4"/> {t(translations.readCall)}
                                                             </Button>
                                                         </DialogTrigger>
                                                         <DialogContent>
                                                             <DialogHeader>
                                                                 <DialogTitle>{t(translations.callDetails)}</DialogTitle>
-                                                                <DialogDescription>{call.date} - {call.duration}</DialogDescription>
+                                                                <DialogDescription>{activeCall?.date} - {activeCall?.duration}</DialogDescription>
                                                             </DialogHeader>
-                                                            {call.audioUrl && (
+                                                            {activeCall?.audioUrl && (
                                                                 <div className="my-4">
                                                                     <audio controls className="w-full">
-                                                                        <source src={call.audioUrl} type="audio/mpeg" />
+                                                                        <source src={activeCall.audioUrl} type="audio/mpeg" />
                                                                         Your browser does not support the audio element.
                                                                     </audio>
                                                                 </div>
                                                             )}
                                                             <div className="my-4 p-4 bg-muted rounded-md text-sm max-h-64 overflow-y-auto">
-                                                                <p className="font-semibold mb-2">{t(translations.transcript)}</p>
+                                                                <div className="flex justify-between items-center mb-2">
+                                                                    <p className="font-semibold">{t(translations.transcript)}</p>
+                                                                    <Button variant="ghost" size="sm" onClick={handleTranslate} disabled={isTranslating}>
+                                                                        {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
+                                                                        {translatedTranscript ? t(translations.showOriginal) : t(translations.translate)}
+                                                                    </Button>
+                                                                </div>
                                                                 <p className="whitespace-pre-wrap leading-relaxed">
-                                                                    {call.transcript}
+                                                                    {translatedTranscript || activeCall?.transcript}
                                                                 </p>
                                                             </div>
                                                             <DialogFooter>
-                                                                <Button variant="outline">{t(translations.close)}</Button>
+                                                                <Button variant="outline" onClick={handleCloseCallDialog}>{t(translations.close)}</Button>
                                                             </DialogFooter>
                                                         </DialogContent>
                                                     </Dialog>
@@ -588,7 +631,7 @@ export default function ClientProfilePage() {
                                             <TableRow>
                                                 <TableHead>{t(translations.date)}</TableHead>
                                                 <TableHead>{t(translations.reason)}</TableHead>
-                                                <TableHead>{t(translations.status)}</TableHead>
+                                                <TableHead>{t(translations.statusLabel)}</TableHead>
                                                 <TableHead className="text-right">{t(translations.action)}</TableHead>
                                             </TableRow>
                                         </TableHeader>
