@@ -143,6 +143,16 @@ const mockStores: Store[] = [
              { id: 'tax-2', name: 'Sur place', rate: 10, isDefault: false },
         ]
     },
+    {
+        id: "store-3",
+        name: "Pizzeria Bella - Bastille",
+        address: "3 Rue de la Roquette, 75011 Paris",
+        taxRates: [
+             { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
+             { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
+        ],
+        printers: []
+    },
 ];
 
 const mockOrders: DetailedOrder[] = [
@@ -164,6 +174,16 @@ const mockOrders: DetailedOrder[] = [
         total: 28.00,
     },
      { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
+     {
+        id: "#1028",
+        date: "29/05/2024",
+        storeId: "store-3",
+        items: [
+            { id: "item-pza-4f", name: 'Pizza 4 Fromages', quantity: 1, basePrice: 15.00, taxRate: 10, customizations: [], finalPrice: 15.00 },
+            { id: "item-coke", name: 'Coca-cola', quantity: 2, basePrice: 5.00, taxRate: 5.5, customizations: [], finalPrice: 5.00 },
+        ],
+        total: 25.00,
+    },
 ];
 
 
@@ -182,7 +202,7 @@ const mockCustomers: Customer[] = [
         totalSpent: "870.00€",
         firstSeen: "12/01/2024",
         lastSeen: "28/05/2024",
-        orderHistory: mockOrders,
+        orderHistory: mockOrders.filter(o => ['#1024', '#987'].includes(o.id)),
         callHistory: [
             { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Bonjour, je voudrais commander un burger personnalisé avec bacon et oeuf, sans oignons. Et aussi une salade César s'il vous plaît. Ce sera pour une livraison au 123 Rue de la Paix. Merci." },
             { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "..." },
@@ -217,7 +237,7 @@ const mockCustomers: Customer[] = [
         totalSpent: "25.00€",
         firstSeen: "29/05/2024",
         lastSeen: "29/05/2024",
-        orderHistory: [],
+        orderHistory: mockOrders.filter(o => o.id === '#1028'),
         callHistory: [],
         reportHistory: [
             {id: 'rep-2', date: '29/05/2024', reason: 'Erreur dans la commande', status: 'Ouvert', details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages. Commande #1028.'}
@@ -234,6 +254,7 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
     order.items.forEach(item => {
         const itemTTC = item.finalPrice * item.quantity;
         totalTTC += itemTTC;
+        
         const rate = item.taxRate;
         const taxAmount = itemTTC - (itemTTC / (1 + rate / 100));
         
@@ -534,7 +555,7 @@ export default function ClientProfilePage() {
                    <DialogHeader>
                         <DialogTitle className="sr-only">Ticket de commande {selectedOrder.id}</DialogTitle>
                         <DialogDescription className="sr-only">
-                            Détail de la commande {selectedOrder.id} pour {getStoreInfo(selectedOrder.storeId)?.name}.
+                            Détail de la commande {selectedOrder.id} for {getStoreInfo(selectedOrder.storeId)?.name}.
                         </DialogDescription>
                     </DialogHeader>
                    <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
