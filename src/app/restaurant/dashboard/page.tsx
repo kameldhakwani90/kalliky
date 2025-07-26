@@ -12,20 +12,13 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import {
-    Activity,
     ArrowUp,
     Calendar as CalendarIcon,
-    ChevronDown,
-    CreditCard,
-    DollarSign,
-    Users,
     Eye,
     Filter,
-    MoreHorizontal,
     Phone,
-    MessageSquare,
-    Star,
-    Receipt
+    Receipt,
+    Star
 } from 'lucide-react';
 import {
     Table,
@@ -35,8 +28,8 @@ import {
     TableHeader,
     TableRow,
   } from "@/components/ui/table"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -53,8 +46,31 @@ const chartData = [
   { name: "Jui", revenue: 5200 },
 ]
 
-type OrderItem = { name: string; quantity: number; price: string };
-type Order = { id: string; date: string; amount: string; items: OrderItem[] };
+type OrderItemCustomization = {
+    type: 'add' | 'remove';
+    name: string;
+    price?: number;
+};
+
+type DetailedOrderItem = {
+    id: string;
+    name: string;
+    quantity: number;
+    basePrice: number;
+    customizations: OrderItemCustomization[];
+    finalPrice: number; // basePrice + sum of customization prices
+};
+
+type DetailedOrder = {
+    id: string;
+    date: string;
+    customerPhone: string;
+    items: DetailedOrderItem[];
+    subtotal: number;
+    tax: number;
+    total: number;
+};
+
 
 type Customer = {
     phone: string;
@@ -64,7 +80,7 @@ type Customer = {
     totalSpent: string;
     firstSeen: string;
     lastSeen: string;
-    orderHistory: Order[];
+    orderHistory: DetailedOrder[];
     callHistory: { date: string; duration: string; type: 'Commande' | 'Info' }[];
 };
 
@@ -77,15 +93,8 @@ const customersData: Record<string, Customer> = {
         totalSpent: "870.00€",
         firstSeen: "12/01/2024",
         lastSeen: "28/05/2024",
-        orderHistory: [
-            { id: "#1024", date: "28/05/2024", amount: "67.00€", items: [{name: 'Pizza Regina', quantity: 2, price: '14.00€'}, {name: 'Salade César', quantity: 1, price: '12.50€'}] },
-            { id: "#987", date: "15/05/2024", amount: "82.50€", items: [] },
-            { id: "#955", date: "02/05/2024", amount: "65.00€", items: [] },
-        ],
-        callHistory: [
-            { date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande' },
-            { date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande' },
-        ]
+        orderHistory: [],
+        callHistory: []
     },
      "0787654321": {
         phone: "07 87 65 43 21",
@@ -95,41 +104,46 @@ const customersData: Record<string, Customer> = {
         totalSpent: "57.90€",
         firstSeen: "27/05/2024",
         lastSeen: "27/05/2024",
-        orderHistory: [
-            { id: "#1023", date: "27/05/2024", amount: "57.90€", items: [{name: 'Burger "Le Personnalisé"', quantity: 2, price: '18.50€'}] },
-        ],
-        callHistory: [
-            { date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande' },
-        ]
+        orderHistory: [],
+        callHistory: []
     },
 };
 
-const recentOrders = [
-    { 
-      id: "#1024", 
-      customerPhone: "0612345678",
-      amount: "67.00€", 
-      items: 3 
+const recentOrders: DetailedOrder[] = [
+    {
+        id: "#1024",
+        date: "28/05/2024 - 19:30",
+        customerPhone: "0612345678",
+        items: [
+            { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, customizations: [
+                { type: 'add', name: 'Bacon grillé', price: 2.00 },
+                { type: 'add', name: 'Oeuf au plat', price: 1.00 },
+                { type: 'remove', name: 'Oignons' }
+            ], finalPrice: 19.50 },
+            { id: "item-2", name: 'Salade César', quantity: 1, basePrice: 12.50, customizations: [], finalPrice: 12.50 },
+            { id: "item-5", name: 'Coca-Cola', quantity: 1, basePrice: 3.50, customizations: [], finalPrice: 3.50 },
+        ],
+        subtotal: 35.50,
+        tax: 3.55,
+        total: 39.05,
     },
-    { 
-      id: "#1023", 
-      customerPhone: "0787654321",
-      amount: "57.90€", 
-      items: 2 
+    {
+        id: "#1023",
+        date: "27/05/2024 - 20:15",
+        customerPhone: "0787654321",
+        items: [
+            { id: "item-3", name: "Pizza Regina", quantity: 2, basePrice: 14.00, customizations: [
+                { type: 'add', name: 'Extra Mozzarella', price: 2.00 },
+            ], finalPrice: 16.00 }
+        ],
+        subtotal: 32.00,
+        tax: 3.20,
+        total: 35.20,
     },
-    { 
-      id: "#1022", 
-      customerPhone: "0601020304",
-      amount: "22.50€", 
-      items: 1 
-    },
-    { 
-      id: "#1021", 
-      customerPhone: "0655443322",
-      amount: "89.00€", 
-      items: 5 
-    },
-]
+    { id: "#1022", date: "27/05/2024 - 12:10", customerPhone: "0601020304", items: [], subtotal: 22.50, tax: 2.25, total: 24.75 },
+    { id: "#1021", date: "26/05/2024 - 19:50", customerPhone: "0655443322", items: [], subtotal: 89.00, tax: 8.90, total: 97.90 },
+];
+
 
 // Default customer for phones not in customersData
 const defaultCustomer = (phone: string): Customer => ({
@@ -147,7 +161,7 @@ const defaultCustomer = (phone: string): Customer => ({
 export default function RestaurantDashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isClientFileOpen, setClientFileOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
   const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined)
 
@@ -158,7 +172,7 @@ export default function RestaurantDashboard() {
     setClientFileOpen(true);
   };
 
-  const handleViewOrderTicket = (order: Order) => {
+  const handleViewOrderTicket = (order: DetailedOrder) => {
     setSelectedOrder(order);
     setOrderTicketOpen(true);
   }
@@ -286,15 +300,15 @@ export default function RestaurantDashboard() {
                         <div key={order.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Avatar className="hidden h-9 w-9 sm:flex">
-                                <AvatarFallback>{customer.name ? customer.name.charAt(0) : customer.phone.slice(-2)}</AvatarFallback>
+                                <AvatarFallback>{customer.name ? customer.name.slice(0,2) : customer.phone.slice(-2)}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">
                                 <p className="text-sm font-medium leading-none">
-                                {customer.phone}
-                                {customer.name && <span className="text-xs text-muted-foreground"> ({customer.name})</span>}
+                                    {customer.phone}
+                                    {customer.name && <span className="text-xs text-muted-foreground"> ({customer.name})</span>}
                                 </p>
                                 <div className="text-xs text-muted-foreground flex items-center">
-                                  <span>{order.items} article(s)</span>
+                                  <span>{order.items.length} article(s)</span>
                                   {customer.status && 
                                       <Badge variant="outline" className={`ml-2 ${customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
                                       {customer.status}
@@ -302,10 +316,10 @@ export default function RestaurantDashboard() {
                                 </div>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm font-bold">{order.amount}</p>
-                            <Button variant="link" size="sm" className="h-auto p-0 text-muted-foreground" onClick={() => handleViewClientFile(order.customerPhone)}>
-                                Voir la fiche
+                        <div className="text-right flex items-center gap-2">
+                             <p className="text-sm font-bold">{order.total.toFixed(2)}€</p>
+                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
+                                <Eye className="h-4 w-4"/>
                             </Button>
                         </div>
                         </div>
@@ -406,7 +420,7 @@ export default function RestaurantDashboard() {
                                                 <TableRow key={order.id}>
                                                     <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
                                                     <TableCell>{order.date}</TableCell>
-                                                    <TableCell>{order.amount}</TableCell>
+                                                    <TableCell>{order.total.toFixed(2)}€</TableCell>
                                                     <TableCell className="text-right">
                                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
                                                             <Eye className="h-4 w-4"/>
@@ -457,38 +471,60 @@ export default function RestaurantDashboard() {
     )}
     {selectedOrder && (
         <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
-            <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                    <DialogTitle className="flex flex-col items-center text-center gap-2">
-                        <Receipt className="h-8 w-8" />
-                        Ticket de Caisse
-                    </DialogTitle>
-                    <DialogDescription className="text-center">
+            <DialogContent className="sm:max-w-sm font-mono">
+                <DialogHeader className="text-center space-y-2">
+                    <div className="mx-auto">
+                        <Receipt className="h-10 w-10"/>
+                    </div>
+                    <DialogTitle className="font-headline text-lg">Le Gourmet Parisien</DialogTitle>
+                    <DialogDescription className="text-xs">
+                        12 Rue de la Paix, 75002 Paris<br />
                         Commande {selectedOrder.id} - {selectedOrder.date}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 my-4">
-                    <Separator />
-                    <div className="space-y-2">
-                        {selectedOrder.items.map((item, index) => (
-                            <div key={index} className="flex justify-between items-center text-sm">
-                                <div>
-                                    <p className="font-medium">{item.name}</p>
-                                    <p className="text-xs text-muted-foreground">Qté: {item.quantity}</p>
-                                </div>
-                                <p className="font-mono">{item.price}</p>
+                <div className="space-y-4 my-4 text-xs">
+                    <Separator className="border-dashed" />
+                    {selectedOrder.items.map((item, index) => (
+                        <div key={item.id + index}>
+                            <div className="flex justify-between font-bold">
+                                <span>{item.quantity}x {item.name}</span>
+                                <span>{item.finalPrice.toFixed(2)}€</span>
                             </div>
-                        ))}
+                            {item.customizations.length > 0 && (
+                                <div className="pl-4 mt-1 space-y-1">
+                                    {item.customizations.map((cust, cIndex) => (
+                                        <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
+                                            <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
+                                            {cust.price && <span>{cust.price.toFixed(2)}€</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    <Separator className="border-dashed" />
+                    <div className="space-y-1">
+                        <div className="flex justify-between">
+                            <span>SOUS-TOTAL</span>
+                            <span>{selectedOrder.subtotal.toFixed(2)}€</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>TVA (10%)</span>
+                            <span>{selectedOrder.tax.toFixed(2)}€</span>
+                        </div>
                     </div>
-                    <Separator className="my-2" />
-                    <div className="flex justify-between font-bold text-lg">
-                        <p>Total</p>
-                        <p>{selectedOrder.amount}</p>
+                    <Separator className="border-dashed" />
+                    <div className="flex justify-between font-bold text-base">
+                        <span>TOTAL</span>
+                        <span>{selectedOrder.total.toFixed(2)}€</span>
                     </div>
-                    <Separator />
+                     <Separator className="border-dashed" />
+                     <div className="text-center text-gray-500 pt-2">
+                        Merci de votre visite !
+                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" className="w-full">Imprimer</Button>
+                    <Button variant="outline" className="w-full font-sans">Imprimer</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -496,3 +532,5 @@ export default function RestaurantDashboard() {
     </>
   );
 }
+
+    
