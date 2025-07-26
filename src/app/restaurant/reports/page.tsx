@@ -536,13 +536,15 @@ export default function ReportsPage() {
                                                 Un **SMS** va être envoyé automatiquement à <span className="font-semibold">{selectedReport.customer.phone}</span> pour lui demander une preuve. Il sera invité à répondre par photo sur le numéro WhatsApp de la boutique.
                                             </AlertDialogDescription>
                                         ) : (
-                                            <AlertDialogDescription>
-                                                Le numéro du client (<span className="font-semibold">{selectedReport.customer.phone}</span>) semble être une ligne fixe. Veuillez renseigner son numéro WhatsApp pour lui envoyer la demande.
-                                                <div className="mt-4">
+                                            <>
+                                                <AlertDialogDescription>
+                                                    Le numéro du client (<span className="font-semibold">{selectedReport.customer.phone}</span>) semble être une ligne fixe. Veuillez renseigner son numéro WhatsApp pour lui envoyer la demande.
+                                                </AlertDialogDescription>
+                                                <div className="mt-4 pt-4 border-t">
                                                     <Label htmlFor="whatsapp-input">Numéro WhatsApp du client</Label>
                                                     <Input id="whatsapp-input" placeholder="Ex: 0612345678" value={whatsappNumberInput} onChange={(e) => setWhatsappNumberInput(e.target.value)} />
                                                 </div>
-                                            </AlertDialogDescription>
+                                            </>
                                         )}
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -641,3 +643,4 @@ export default function ReportsPage() {
         </div>
     );
 }
+
