@@ -188,23 +188,18 @@ const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId)
 
 const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
     const taxBreakdown: Record<number, { base: number; amount: number }> = {};
-    let total = 0;
-
+    
     order.items.forEach(item => {
         const itemTotalTTC = item.finalPrice * item.quantity;
-        total += itemTotalTTC;
-        
         const rate = item.taxRate;
         
         if (!taxBreakdown[rate]) {
             taxBreakdown[rate] = { base: 0, amount: 0 };
         }
         
-        // Add the item's total TTC to the base for this tax rate
         taxBreakdown[rate].base += itemTotalTTC;
     });
 
-    // Calculate the included VAT for each rate
     for (const rate in taxBreakdown) {
         const numericRate = parseFloat(rate);
         const baseTTC = taxBreakdown[rate].base;
@@ -218,7 +213,6 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
         base: values.base,
     }));
     
-    // Recalculate total from items to ensure accuracy
     const finalTotal = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
 
     return { total: finalTotal, taxDetails };
@@ -252,6 +246,10 @@ export default function ClientProfilePage() {
         setSelectedOrder(order);
         setOrderTicketOpen(true);
     }
+    
+    const handlePrint = () => {
+      window.print();
+    };
 
     const calculatedTotals = selectedOrder ? calculateOrderTotals(selectedOrder) : null;
 
@@ -461,7 +459,7 @@ export default function ClientProfilePage() {
         </div>
         {selectedOrder && calculatedTotals && (
             <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
-                <DialogContent className="sm:max-w-sm font-mono">
+                <DialogContent className="sm:max-w-sm font-mono printable-ticket">
                     <DialogHeader className="text-center space-y-2">
                         <div className="mx-auto">
                             <Receipt className="h-10 w-10"/>
@@ -511,8 +509,8 @@ export default function ClientProfilePage() {
                             Merci de votre visite !
                          </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" className="w-full font-sans">Imprimer</Button>
+                    <DialogFooter className="print-hide">
+                        <Button variant="outline" className="w-full font-sans" onClick={handlePrint}>Imprimer</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
