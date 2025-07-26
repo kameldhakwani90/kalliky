@@ -213,20 +213,21 @@ const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId)
 
 const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
     const taxBreakdown: Record<number, { base: number; amount: number }> = {};
-    
+
     order.items.forEach(item => {
-        const itemTotalTTC = item.finalPrice * item.quantity;
+        const itemTTC = item.finalPrice * item.quantity;
         const rate = item.taxRate;
-        
+
         if (!taxBreakdown[rate]) {
             taxBreakdown[rate] = { base: 0, amount: 0 };
         }
-        
-        const baseTTC = itemTotalTTC;
-        const taxAmount = (baseTTC / (1 + rate / 100)) * (rate / 100);
-        
-        taxBreakdown[rate].base += baseTTC;
-        taxBreakdown[rate].amount += taxAmount;
+        taxBreakdown[rate].base += itemTTC;
+    });
+
+    Object.entries(taxBreakdown).forEach(([rate, values]) => {
+        const rateFloat = parseFloat(rate);
+        const taxAmount = (values.base / (1 + rateFloat / 100)) * (rateFloat / 100);
+        taxBreakdown[rateFloat].amount = taxAmount;
     });
 
     const taxDetails = Object.entries(taxBreakdown).map(([rate, values]) => ({
@@ -270,15 +271,24 @@ export default function ClientProfilePage() {
         setOrderTicketOpen(true);
     }
     
-    const handlePrint = (width: '58mm' | '80mm') => {
+    const handlePrint = () => {
         const ticketElement = ticketRef.current;
         if (!ticketElement) return;
+
+        const receiptPrinter = storePrinters?.find(p => p.role === 'receipt');
+        const printerToUse = receiptPrinter || storePrinters?.[0]; // Fallback to the first printer if no receipt printer is found
+
+        if (!printerToUse) {
+            console.error("No printer configured for this store.");
+            // Optionally, show a toast to the user
+            return;
+        }
 
         // Remove any existing width classes
         ticketElement.classList.remove('width-58mm', 'width-80mm');
         
         // Add the desired width class
-        ticketElement.classList.add(`width-${width}`);
+        ticketElement.classList.add(`width-${printerToUse.width}`);
 
         // Trigger print
         window.print();
@@ -566,11 +576,15 @@ export default function ClientProfilePage() {
                          </div>
                     </div>
                     <DialogFooter className="print-hide mt-4">
-                        {storePrinters && storePrinters.map(printer => (
-                            <Button key={printer.id} variant="outline" className="w-full font-sans" onClick={() => handlePrint(printer.width)}>
-                                <Printer className="mr-2 h-4 w-4" /> Imprimer sur {printer.name} ({printer.width})
+                        {(storePrinters && storePrinters.length > 0) ? (
+                            <Button className="w-full font-sans" onClick={handlePrint}>
+                                <Printer className="mr-2 h-4 w-4" /> Imprimer
                             </Button>
-                        ))}
+                        ) : (
+                             <Button className="w-full font-sans" disabled>
+                                <Printer className="mr-2 h-4 w-4" /> Aucune imprimante configurée
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
