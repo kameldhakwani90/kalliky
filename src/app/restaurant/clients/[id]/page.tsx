@@ -187,17 +187,20 @@ const mockCustomers: Customer[] = [
 const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
 const calculateOrderTotals = (order: DetailedOrder): OrderTotal => {
-    const subtotal = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
+    let subtotal = 0;
+    const taxBreakdown: Record<number, number> = {};
 
-    const taxBreakdown = order.items.reduce((acc, item) => {
+    order.items.forEach(item => {
         const itemTotalHT = item.finalPrice * item.quantity;
+        subtotal += itemTotalHT;
+
         const taxAmount = itemTotalHT * (item.taxRate / 100);
-        if (!acc[item.taxRate]) {
-            acc[item.taxRate] = 0;
+        
+        if (!taxBreakdown[item.taxRate]) {
+            taxBreakdown[item.taxRate] = 0;
         }
-        acc[item.taxRate] += taxAmount;
-        return acc;
-    }, {} as Record<number, number>);
+        taxBreakdown[item.taxRate] += taxAmount;
+    });
 
     const taxDetails = Object.entries(taxBreakdown).map(([rate, amount]) => ({
         rate: parseFloat(rate),
@@ -464,7 +467,7 @@ export default function ClientProfilePage() {
                             <div key={item.id + index}>
                                 <div className="flex justify-between font-bold">
                                     <span>{item.quantity}x {item.name}</span>
-                                    <span>{item.finalPrice.toFixed(2)}€</span>
+                                    <span>{(item.finalPrice * item.quantity).toFixed(2)}€</span>
                                 </div>
                                 {item.customizations.length > 0 && (
                                     <div className="pl-4 mt-1 space-y-1">
