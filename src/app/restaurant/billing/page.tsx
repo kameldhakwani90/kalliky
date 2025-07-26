@@ -30,9 +30,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const invoices = [
-    { id: "INV-2024-005", date: "01/05/2024", amount: "329,00€", status: "Payée" },
-    { id: "INV-2024-004", date: "01/04/2024", amount: "329,00€", status: "Payée" },
-    { id: "INV-2024-003", date: "01/03/2024", amount: "329,00€", status: "Payée" },
+    { id: "INV-2024-005", date: new Date("2024-05-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
+    { id: "INV-2024-004", date: new Date("2024-04-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
+    { id: "INV-2024-003", date: new Date("2024-03-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
 ];
 
 const starterFeatures = [
@@ -349,16 +349,18 @@ export default function BillingPage() {
                             {invoices.map((invoice) => (
                                 <TableRow key={invoice.id}>
                                     <TableCell className="font-medium">{invoice.id}</TableCell>
-                                    <TableCell>{invoice.date}</TableCell>
-                                    <TableCell>{invoice.amount}</TableCell>
+                                    <TableCell>{format(invoice.date, "dd/MM/yyyy")}</TableCell>
+                                    <TableCell>{(invoice.amount / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}</TableCell>
                                     <TableCell>
                                         <Badge className={invoice.status === "Payée" ? "bg-green-100 text-green-800" : ""}>
                                             {invoice.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon">
-                                            <Download className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer">
+                                                <Download className="h-4 w-4" />
+                                            </a>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
