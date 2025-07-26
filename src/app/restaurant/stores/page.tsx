@@ -21,11 +21,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 type TaxRate = {
@@ -40,6 +42,9 @@ type PrinterDevice = {
     name: string;
     role: 'kitchen' | 'receipt';
     width: '58mm' | '80mm';
+    connectionType: 'network' | 'usb';
+    ipAddress?: string;
+    port?: string;
 };
 
 type Store = {
@@ -63,8 +68,8 @@ const initialStores: Store[] = [
             { id: 'tax-1-3', name: 'Normal', rate: 20, isDefault: false },
         ],
         printers: [
-            { id: 'p1', name: 'Imprimante Caisse', role: 'receipt', width: '80mm' },
-            { id: 'p2', name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm' },
+            { id: 'p1', name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network', ipAddress: '192.168.1.50', port: '9100' },
+            { id: 'p2', name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm', connectionType: 'usb' },
         ]
     },
     { 
@@ -179,7 +184,7 @@ export default function StoresPage() {
     };
 
     const addPrinter = () => {
-        setEditablePrinters([...editablePrinters, { id: `printer_${Date.now()}`, name: '', role: 'receipt', width: '80mm' }]);
+        setEditablePrinters([...editablePrinters, { id: `printer_${Date.now()}`, name: 'Nouvelle imprimante', role: 'receipt', width: '80mm', connectionType: 'network' }]);
     };
     
     const removePrinter = (index: number) => {
@@ -377,7 +382,7 @@ export default function StoresPage() {
                                                 </div>
                                                 {editableTaxRates.length > 1 &&
                                                     <div className="col-span-1">
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
+                                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
                                                             <X className="h-4 w-4"/>
                                                         </Button>
                                                     </div>
@@ -392,33 +397,72 @@ export default function StoresPage() {
                           </TabsContent>
                           <TabsContent value="peripherals" className="space-y-4 pt-4">
                                <h4 className="font-medium">Gestion des imprimantes</h4>
-                               <div className="space-y-2 p-3 border rounded-md">
+                               <div className="space-y-3">
                                   {editablePrinters.map((printer, index) => (
-                                      <div key={printer.id} className="grid grid-cols-3 gap-3 items-end">
-                                          <div>
-                                              <Label className="text-xs">Nom</Label>
-                                              <Input value={printer.name} onChange={(e) => handlePrinterChange(index, 'name', e.target.value)} placeholder="Imprimante Caisse"/>
-                                          </div>
-                                          <div>
-                                              <Label className="text-xs">Rôle</Label>
-                                              <select value={printer.role} onChange={(e) => handlePrinterChange(index, 'role', e.target.value)} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background">
-                                                  <option value="receipt">Ticket de caisse</option>
-                                                  <option value="kitchen">Ticket de cuisine</option>
-                                              </select>
-                                          </div>
-                                          <div className="flex items-center gap-2">
+                                    <Card key={printer.id} className="bg-muted/50">
+                                      <CardHeader className="py-3 px-4 flex-row items-center justify-between">
+                                          <CardTitle className="text-base flex items-center gap-2">
+                                              <Printer className="h-4 w-4" />
+                                              <Input 
+                                                  value={printer.name} 
+                                                  onChange={(e) => handlePrinterChange(index, 'name', e.target.value)} 
+                                                  className="border-none shadow-none focus-visible:ring-1 p-1 h-auto w-auto font-semibold"
+                                              />
+                                          </CardTitle>
+                                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePrinter(index)}>
+                                              <X className="h-4 w-4"/>
+                                          </Button>
+                                      </CardHeader>
+                                      <CardContent className="p-4 pt-0 space-y-4">
+                                          <div className="grid grid-cols-2 gap-4">
                                               <div>
-                                                  <Label className="text-xs">Largeur</Label>
-                                                  <select value={printer.width} onChange={(e) => handlePrinterChange(index, 'width', e.target.value)} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background">
-                                                      <option value="80mm">80mm</option>
-                                                      <option value="58mm">58mm</option>
-                                                  </select>
+                                                  <Label className="text-xs">Rôle</Label>
+                                                   <Select value={printer.role} onValueChange={(value) => handlePrinterChange(index, 'role', value)}>
+                                                      <SelectTrigger><SelectValue /></SelectTrigger>
+                                                      <SelectContent>
+                                                        <SelectItem value="receipt">Ticket de caisse</SelectItem>
+                                                        <SelectItem value="kitchen">Ticket de cuisine</SelectItem>
+                                                      </SelectContent>
+                                                  </Select>
                                               </div>
-                                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removePrinter(index)}>
-                                                  <X className="h-4 w-4"/>
-                                              </Button>
+                                               <div>
+                                                  <Label className="text-xs">Largeur</Label>
+                                                  <Select value={printer.width} onValueChange={(value) => handlePrinterChange(index, 'width', value)}>
+                                                      <SelectTrigger><SelectValue /></SelectTrigger>
+                                                      <SelectContent>
+                                                        <SelectItem value="80mm">80mm</SelectItem>
+                                                        <SelectItem value="58mm">58mm</SelectItem>
+                                                      </SelectContent>
+                                                  </Select>
+                                              </div>
                                           </div>
-                                      </div>
+                                          <div>
+                                             <Label className="text-xs">Type de connexion</Label>
+                                             <Select value={printer.connectionType} onValueChange={(value) => handlePrinterChange(index, 'connectionType', value)}>
+                                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="network">Réseau (IP)</SelectItem>
+                                                    <SelectItem value="usb">USB / Autre</SelectItem>
+                                                  </SelectContent>
+                                              </Select>
+                                          </div>
+                                          {printer.connectionType === 'network' && (
+                                              <div className="grid grid-cols-2 gap-4">
+                                                  <div>
+                                                      <Label className="text-xs">Adresse IP</Label>
+                                                      <Input value={printer.ipAddress || ''} onChange={(e) => handlePrinterChange(index, 'ipAddress', e.target.value)} placeholder="192.168.1.100"/>
+                                                  </div>
+                                                  <div>
+                                                      <Label className="text-xs">Port</Label>
+                                                      <Input value={printer.port || ''} onChange={(e) => handlePrinterChange(index, 'port', e.target.value)} placeholder="9100"/>
+                                                  </div>
+                                              </div>
+                                          )}
+                                          <Button type="button" variant="ghost" className="w-full text-muted-foreground" disabled>
+                                              <TestTube2 className="mr-2 h-4 w-4" /> Lancer une page de test
+                                          </Button>
+                                      </CardContent>
+                                    </Card>
                                   ))}
                                   <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addPrinter}>
                                       <Printer className="mr-2 h-4 w-4"/> Ajouter une imprimante
