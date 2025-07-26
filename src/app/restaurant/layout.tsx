@@ -15,7 +15,7 @@ import {
   Bell,
   PlusCircle,
   Home,
-  Bot,
+  User,
   Store,
   Zap,
   XCircle,
@@ -66,7 +66,7 @@ export default function RestaurantLayout({
     { href: "/restaurant/menu", label: "Menu", icon: CookingPot },
     { href: "/restaurant/stores", label: "Boutiques", icon: Store },
     { href: "/restaurant/users", label: "Utilisateurs", icon: Users },
-    { href: "/restaurant/clients", label: "Clients", icon: Users },
+    { href: "/restaurant/clients", label: "Clients", icon: User },
     { href: "#", label: "Signalements", icon: Flag },
   ];
   
@@ -95,7 +95,7 @@ export default function RestaurantLayout({
               <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href}
+                  isActive={pathname.startsWith(item.href)}
                   tooltip={item.label}
                   className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold"
                 >

@@ -1,0 +1,326 @@
+
+'use client';
+
+import { useState } from 'react';
+import { notFound, useParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+
+type OrderItem = { name: string; quantity: number; price: string };
+type Order = { id: string; date: string; amount: string; items: OrderItem[] };
+
+type Report = {
+    id: string;
+    date: string;
+    reason: string;
+    status: 'Ouvert' | 'En cours' | 'Résolu';
+    details: string;
+};
+
+type Call = {
+    id: string;
+    date: string;
+    duration: string;
+    type: 'Commande' | 'Info' | 'Signalement';
+    transcript: string;
+};
+
+type Customer = {
+    id: string;
+    phone: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    address?: string;
+    birthDate?: string;
+    gender?: 'Homme' | 'Femme' | 'Autre';
+    status: 'Nouveau' | 'Fidèle' | 'VIP';
+    avgBasket: string;
+    totalSpent: string;
+    firstSeen: string;
+    lastSeen: string;
+    orderHistory: Order[];
+    callHistory: Call[];
+    reportHistory: Report[];
+};
+
+const mockCustomers: Customer[] = [
+    {
+        id: 'cust-1',
+        phone: "06 12 34 56 78",
+        firstName: "Alice",
+        lastName: "Martin",
+        email: "alice.martin@email.com",
+        address: "123 Rue de la Paix, 75001 Paris",
+        birthDate: '1990-05-15',
+        gender: 'Femme',
+        status: "Fidèle",
+        avgBasket: "72.50€",
+        totalSpent: "870.00€",
+        firstSeen: "12/01/2024",
+        lastSeen: "28/05/2024",
+        orderHistory: [
+            { id: "#1024", date: "28/05/2024", amount: "67.00€", items: [{name: 'Pizza Regina', quantity: 2, price: '14.00€'}, {name: 'Salade César', quantity: 1, price: '12.50€'}] },
+            { id: "#987", date: "15/05/2024", amount: "82.50€", items: [] },
+        ],
+        callHistory: [
+            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Bonjour, je voudrais commander deux pizzas Regina. Et aussi une salade César s'il vous plaît. Ce sera pour une livraison au 123 Rue de la Paix. Merci." },
+            { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "..." },
+        ],
+        reportHistory: [
+            {id: 'rep-1', date: '16/05/2024', reason: 'Retard de livraison', status: 'Résolu', details: 'La commande #987 a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.'}
+        ]
+    },
+     {
+        id: 'cust-2',
+        phone: "07 87 65 43 21",
+        firstName: "Bob",
+        lastName: "Dupont",
+        status: "Nouveau",
+        avgBasket: "57.90€",
+        totalSpent: "57.90€",
+        firstSeen: "27/05/2024",
+        lastSeen: "27/05/2024",
+        orderHistory: [
+            { id: "#1023", date: "27/05/2024", amount: "57.90€", items: [{name: 'Burger "Le Personnalisé"', quantity: 2, price: '18.50€'}] },
+        ],
+        callHistory: [
+            { id: 'call-3', date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande', transcript: "Salut, je voudrais deux burgers personnalisés. Viande bien cuite pour les deux s'il vous plait. À emporter. C'est tout !" },
+        ],
+        reportHistory: []
+    },
+];
+
+export default function ClientProfilePage() {
+    const params = useParams();
+    const customerId = params.id as string;
+    const customer = mockCustomers.find(c => c.id === customerId);
+    
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedCustomer, setEditedCustomer] = useState<Customer | null>(customer ? { ...customer } : null);
+
+    if (!customer || !editedCustomer) {
+        return notFound();
+    }
+
+    const handleInputChange = (field: keyof Customer, value: string) => {
+        setEditedCustomer(prev => prev ? { ...prev, [field]: value } : null);
+    };
+    
+    const handleSave = () => {
+        // Here you would typically save the data to your backend
+        console.log("Saving customer data:", editedCustomer);
+        setIsEditing(false);
+    };
+
+    return (
+        <div className="space-y-6">
+            <header className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                     <Avatar className="h-16 w-16">
+                        <AvatarFallback className="text-xl">
+                            {(editedCustomer.firstName ? editedCustomer.firstName.charAt(0) : '') + (editedCustomer.lastName ? editedCustomer.lastName.charAt(0) : '') || 'CL'}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">{editedCustomer.firstName} {editedCustomer.lastName}</h1>
+                        <p className="text-muted-foreground">{editedCustomer.phone}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    {isEditing ? (
+                        <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/>Enregistrer</Button>
+                    ) : (
+                        <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/>Modifier</Button>
+                    )}
+                </div>
+            </header>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Statut</CardTitle></CardHeader>
+                    <CardContent><p className="text-lg font-semibold flex items-center gap-2"><Star className="text-yellow-500"/> {customer.status}</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Panier Moyen</CardTitle></CardHeader>
+                    <CardContent><p className="text-lg font-semibold">{customer.avgBasket}</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Dépensé</CardTitle></CardHeader>
+                    <CardContent><p className="text-lg font-semibold">{customer.totalSpent}</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Dernière Visite</CardTitle></CardHeader>
+                    <CardContent><p className="text-lg font-semibold">{customer.lastSeen}</p></CardContent>
+                </Card>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Informations Personnelles</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Prénom</Label>
+                                <Input value={editedCustomer.firstName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('firstName', e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Nom</Label>
+                                <Input value={editedCustomer.lastName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('lastName', e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <Input type="email" value={editedCustomer.email || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('email', e.target.value)} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Adresse</Label>
+                                <Input value={editedCustomer.address || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('address', e.target.value)} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Date de naissance</Label>
+                                <Input type="date" value={editedCustomer.birthDate || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('birthDate', e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Genre</Label>
+                                <Select value={editedCustomer.gender || ''} disabled={!isEditing} onValueChange={(value) => handleInputChange('gender', value)}>
+                                    <SelectTrigger><SelectValue placeholder="Non spécifié" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Homme">Homme</SelectItem>
+                                        <SelectItem value="Femme">Femme</SelectItem>
+                                        <SelectItem value="Autre">Autre</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="lg:col-span-2">
+                     <Tabs defaultValue="orders">
+                        <TabsList className="mb-4">
+                            <TabsTrigger value="orders"><Receipt className="mr-2 h-4 w-4"/>Historique des Commandes</TabsTrigger>
+                            <TabsTrigger value="calls"><Phone className="mr-2 h-4 w-4"/>Historique des Appels</TabsTrigger>
+                            <TabsTrigger value="reports"><Flag className="mr-2 h-4 w-4"/>Historique des Signalements</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="orders">
+                            <Card>
+                                <CardContent className="p-0">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Commande</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Montant</TableHead>
+                                                <TableHead className="text-right">Action</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {customer.orderHistory.map(order => (
+                                                <TableRow key={order.id}>
+                                                    <TableCell className="font-medium">{order.id} ({order.items.length} art.)</TableCell>
+                                                    <TableCell>{order.date}</TableCell>
+                                                    <TableCell>{order.amount}</TableCell>
+                                                    <TableCell className="text-right"><Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4"/></Button></TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="calls">
+                            <Card>
+                                <CardContent className="p-4 space-y-4">
+                                    {customer.callHistory.map(call => (
+                                        <div key={call.id} className="text-sm p-3 bg-muted/50 rounded-lg">
+                                            <div className="flex items-center justify-between font-medium">
+                                                <p>{call.date}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="secondary">{call.type}</Badge>
+                                                    <p className="text-xs text-muted-foreground">{call.duration}</p>
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" size="sm" className="h-8">
+                                                                <PlayCircle className="mr-2 h-4 w-4"/> Lire l'échange
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>Transcription de l'appel</DialogTitle>
+                                                                <DialogDescription>{call.date} - {call.duration}</DialogDescription>
+                                                            </DialogHeader>
+                                                            <div className="my-4 p-4 bg-muted rounded-md text-sm max-h-64 overflow-y-auto">
+                                                                <p className="whitespace-pre-wrap leading-relaxed">
+                                                                    {call.transcript}
+                                                                </p>
+                                                            </div>
+                                                            <DialogFooter>
+                                                                <Button variant="outline">Fermer</Button>
+                                                            </DialogFooter>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="reports">
+                            <Card>
+                                <CardContent className="p-0">
+                                        <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Raison</TableHead>
+                                                <TableHead>Statut</TableHead>
+                                                <TableHead className="text-right">Action</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                                {customer.reportHistory.map(report => (
+                                                <TableRow key={report.id}>
+                                                    <TableCell>{report.date}</TableCell>
+                                                    <TableCell className="font-medium">{report.reason}</TableCell>
+                                                    <TableCell><Badge variant={report.status === 'Résolu' ? 'default' : 'secondary'} className={report.status === 'Résolu' ? 'bg-green-100 text-green-700' : ''}>{report.status}</Badge></TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4"/></Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Détails du Signalement</DialogTitle>
+                                                                    <DialogDescription>{report.reason} - {report.date}</DialogDescription>
+                                                                </DialogHeader>
+                                                                <div className="my-4 p-4 bg-muted rounded-md text-sm">
+                                                                    <p>{report.details}</p>
+                                                                </div>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+                </div>
+            </div>
+        </div>
+    );
+}
