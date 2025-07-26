@@ -430,6 +430,8 @@ export default function MenuPage() {
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   const [tagInput, setTagInput] = useState('');
   
+  const [newItemStoreIds, setNewItemStoreIds] = useState<number[]>(availableStores.map(s => s.id));
+
   const currentView = useMemo(() => {
     if (compositionHistory.length > 0) {
       return compositionHistory[compositionHistory.length - 1];
@@ -468,7 +470,7 @@ export default function MenuPage() {
       imageHint: 'new item',
       tags: [],
       variations: [{ id: 'default', name: 'Taille unique', price: 0 }],
-      storeIds: availableStores.map(s => s.id),
+      storeIds: newItemStoreIds,
       status: 'inactive',
       availability: defaultAvailability,
     };
@@ -636,6 +638,27 @@ export default function MenuPage() {
                        <p className="text-sm text-muted-foreground">
                         Créez un nouvel article manuellement et configurez toutes ses options en détail.
                        </p>
+                       <div className="space-y-2">
+                            <Label>Disponible dans les boutiques :</Label>
+                            <div className="space-y-2 rounded-md border p-4">
+                                {availableStores.map(store => (
+                                    <div key={store.id} className="flex items-center gap-2">
+                                        <Checkbox
+                                            id={`new-item-store-${store.id}`}
+                                            checked={newItemStoreIds.includes(store.id)}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setNewItemStoreIds(prev => [...prev, store.id]);
+                                                } else {
+                                                    setNewItemStoreIds(prev => prev.filter(id => id !== store.id));
+                                                }
+                                            }}
+                                        />
+                                        <Label htmlFor={`new-item-store-${store.id}`} className="font-normal">{store.name}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                        <Button className="w-full" onClick={handleCreateNewItem}><PlusCircle className="mr-2 h-4 w-4"/>Créer un nouvel article</Button>
                     </TabsContent>
                     <TabsContent value="category" className="pt-4 space-y-4">
