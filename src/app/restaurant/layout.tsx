@@ -281,6 +281,12 @@ export default function RestaurantLayout({
                             <span>{t({fr: "Profil", en: "Profile"})}</span>
                         </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/restaurant/stores">
+                           <PlusCircle className="mr-2 h-4 w-4" />
+                           <span>{t({fr: "Ajouter une boutique", en: "Add store"})}</span>
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem className="text-destructive">
                         <XCircle className="mr-2 h-4 w-4" />

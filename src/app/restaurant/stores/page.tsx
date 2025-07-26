@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
+import { useToast } from '@/hooks/use-toast';
 
 
 type TaxRate = {
@@ -49,6 +50,13 @@ type PrinterDevice = {
     port?: string;
 };
 
+type KDSConnection = {
+    id: string;
+    name: string;
+    connectionCode: string;
+    lastSeen: string;
+}
+
 type Store = {
     id: string;
     name: string;
@@ -60,6 +68,7 @@ type Store = {
     currency: 'EUR' | 'USD' | 'TND';
     taxRates: TaxRate[];
     printers?: PrinterDevice[];
+    kdsConnections?: KDSConnection[];
 };
 
 const initialStores: Store[] = [
@@ -74,6 +83,9 @@ const initialStores: Store[] = [
         printers: [
             { id: 'p1', name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network', ipAddress: '192.168.1.50', port: '9100' },
             { id: 'p2', name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm', connectionType: 'usb' },
+        ],
+        kdsConnections: [
+            { id: 'kds-1', name: 'Tablette Cuisine 1', connectionCode: 'AB12-CD34', lastSeen: 'il y a 5 minutes'}
         ]
     },
     { 
@@ -83,7 +95,8 @@ const initialStores: Store[] = [
             { id: 'tax-2-2', name: 'Intermédiaire', rate: 10, isDefault: true },
             { id: 'tax-2-3', name: 'Normal', rate: 20, isDefault: false },
         ],
-        printers: []
+        printers: [],
+        kdsConnections: []
     },
     { 
         id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', 
@@ -91,7 +104,8 @@ const initialStores: Store[] = [
              { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
              { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
         ],
-        printers: []
+        printers: [],
+        kdsConnections: []
     },
 ];
 
@@ -100,13 +114,14 @@ const daysOfWeekFr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi
 
 
 export default function StoresPage() {
+    const { toast } = useToast();
     const { t, language } = useLanguage();
     const [stores, setStores] = useState<Store[]>(initialStores);
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-    const [isConnectionsDialogOpen, setIsConnectionsDialogOpen] = useState(false);
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
     const [editableTaxRates, setEditableTaxRates] = useState<TaxRate[]>([]);
     const [editablePrinters, setEditablePrinters] = useState<PrinterDevice[]>([]);
+    const [editableKDS, setEditableKDS] = useState<KDSConnection[]>([]);
 
     const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
 
@@ -114,13 +129,9 @@ export default function StoresPage() {
         setSelectedStore(store);
         setEditableTaxRates(store ? [...store.taxRates] : [{ id: `tax_${Date.now()}`, name: t({fr: 'TVA par défaut', en: 'Default VAT'}), rate: 0, isDefault: true }]);
         setEditablePrinters(store ? [...(store.printers || [])] : []);
+        setEditableKDS(store ? [...(store.kdsConnections || [])] : []);
         setIsFormDialogOpen(true);
     };
-
-    const handleOpenConnectionsDialog = (store: Store) => {
-        setSelectedStore(store);
-        setIsConnectionsDialogOpen(true);
-    }
 
     const handleSaveStore = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -131,12 +142,13 @@ export default function StoresPage() {
             name: formData.get('name') as string,
             address: formData.get('address') as string,
             phone: formData.get('phone') as string,
-            whatsappNumber: selectedStore?.whatsappNumber,
+            whatsappNumber: (formData.get('whatsapp-number') as string) || selectedStore?.whatsappNumber,
             status: selectedStore?.status || 'active',
             stripeStatus: selectedStore?.stripeStatus || 'disconnected',
             currency: (formData.get('currency') as Store['currency']) || 'EUR',
             taxRates: editableTaxRates,
             printers: editablePrinters,
+            kdsConnections: editableKDS
         } as Store;
 
         if (selectedStore) {
@@ -147,12 +159,6 @@ export default function StoresPage() {
         setIsFormDialogOpen(false);
     };
     
-    const handleSaveConnections = () => {
-        if (!selectedStore) return;
-        setStores(stores.map(s => s.id === selectedStore.id ? selectedStore : s));
-        setIsConnectionsDialogOpen(false);
-    }
-
     const toggleStoreStatus = (id: string) => {
         setStores(stores.map(s => s.id === id ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' } : s));
     };
@@ -160,14 +166,6 @@ export default function StoresPage() {
     const deleteStore = (id: string) => {
         setStores(stores.filter(s => s.id !== id));
     };
-    
-    const handleStripeConnect = () => {
-        if (!selectedStore) return;
-        // Simulate a successful connection
-        const updatedStore = { ...selectedStore, stripeStatus: 'connected' as const };
-        setSelectedStore(updatedStore);
-        setStores(stores.map(s => s.id === selectedStore.id ? updatedStore : s));
-    }
     
     const handleTaxRateChange = (index: number, field: keyof TaxRate, value: string | number | boolean) => {
         const newTaxRates = [...editableTaxRates];
@@ -207,6 +205,24 @@ export default function StoresPage() {
         const newPrinters = editablePrinters.filter((_, i) => i !== index);
         setEditablePrinters(newPrinters);
     };
+
+    const addKDS = () => {
+        const newCode = `${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        setEditableKDS([...editableKDS, { id: `kds_${Date.now()}`, name: t({fr: 'Nouvelle tablette', en: 'New Tablet'}), connectionCode: newCode, lastSeen: t({fr: 'Jamais vu', en: 'Never seen'})}]);
+    }
+    
+    const removeKDS = (index: number) => {
+        setEditableKDS(editableKDS.filter((_, i) => i !== index));
+    }
+    
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({
+            title: t({fr: "Copié !", en: "Copied!"}),
+            description: t({fr: "Le code de connexion a été copié dans le presse-papiers.", en: "The connection code has been copied to the clipboard."}),
+        });
+    }
+
     
     const translations = {
         title: { fr: "Gestion des Boutiques", en: "Store Management" },
@@ -282,6 +298,13 @@ export default function StoresPage() {
         whatsappNumber: { fr: "Numéro WhatsApp de la boutique", en: "Store's WhatsApp number" },
         twilioNumberInfo: { fr: "Doit être un numéro activé sur la plateforme Twilio.", en: "Must be a number activated on the Twilio platform." },
         saveConnections: { fr: "Enregistrer les connexions", en: "Save connections" },
+        kdsConnections: { fr: 'Connexions KDS', en: 'KDS Connections' },
+        kdsDescription: { fr: "Connectez vos tablettes de cuisine (KDS) pour recevoir les commandes en temps réel.", en: "Connect your kitchen display systems (KDS) to receive orders in real time." },
+        deviceName: { fr: "Nom de l'appareil", en: "Device Name" },
+        connectionCode: { fr: "Code de connexion", en: "Connection Code" },
+        lastSeen: { fr: "Dernière connexion", en: "Last seen" },
+        addKDS: { fr: "Ajouter un KDS", en: "Add a KDS" },
+        kdsSync: { fr: "Synchronisation KDS", en: "KDS Sync" },
     };
 
 
@@ -343,11 +366,6 @@ export default function StoresPage() {
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         {t(translations.editInfo)}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleOpenConnectionsDialog(store)}>
-                                                        <Zap className="mr-2 h-4 w-4" />
-                                                        {t(translations.connections)}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>
                                                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
@@ -380,7 +398,7 @@ export default function StoresPage() {
             </Card>
 
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-                <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+                <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>{selectedStore ? t(translations.editStore) : t(translations.addNewStore)}</DialogTitle>
                         <DialogDescription>
@@ -389,11 +407,12 @@ export default function StoresPage() {
                     </DialogHeader>
                     <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto">
                       <Tabs defaultValue="general" className="p-1">
-                          <TabsList className="grid w-full grid-cols-4">
+                          <TabsList className="grid w-full grid-cols-5">
                               <TabsTrigger value="general">{t(translations.general)}</TabsTrigger>
                               <TabsTrigger value="opening">{t(translations.openingHours)}</TabsTrigger>
                               <TabsTrigger value="taxes">{t(translations.taxes)}</TabsTrigger>
                               <TabsTrigger value="peripherals">{t(translations.peripherals)}</TabsTrigger>
+                              <TabsTrigger value="connections">{t(translations.connections)}</TabsTrigger>
                           </TabsList>
                           <TabsContent value="general" className="space-y-6 pt-4">
                               <div className="space-y-4">
@@ -561,6 +580,84 @@ export default function StoresPage() {
                                   </Button>
                                </div>
                           </TabsContent>
+                          <TabsContent value="connections" className="space-y-6 pt-4">
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.kdsSync)}</h3>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base flex items-center gap-2"><TabletSmartphone className="h-4 w-4"/> {t(translations.kdsConnections)}</CardTitle>
+                                        <CardDescription>{t(translations.kdsDescription)}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                        {editableKDS.map((kds, index) => (
+                                            <Card key={kds.id} className="bg-muted/50 p-3">
+                                                <div className="grid grid-cols-12 gap-2 items-center">
+                                                    <div className="col-span-5 space-y-1">
+                                                        <Label className="text-xs">{t(translations.deviceName)}</Label>
+                                                        <Input className="h-8" value={kds.name} />
+                                                    </div>
+                                                    <div className="col-span-5 space-y-1">
+                                                        <Label className="text-xs">{t(translations.connectionCode)}</Label>
+                                                        <div className="flex">
+                                                            <Input className="h-8 rounded-r-none font-mono" value={kds.connectionCode} readOnly />
+                                                            <Button type="button" size="icon" className="h-8 w-8 rounded-l-none" onClick={() => copyToClipboard(kds.connectionCode)}>
+                                                                <Copy className="h-4 w-4"/>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-2 text-right">
+                                                         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeKDS(index)}>
+                                                            <X className="h-4 w-4"/>
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-1">{t(translations.lastSeen)}: {kds.lastSeen}</p>
+                                            </Card>
+                                        ))}
+                                        <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addKDS}>
+                                            <PlusCircle className="mr-2 h-4 w-4" /> {t(translations.addKDS)}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.endCustomerPayments)}</h3>
+                                <Card>
+                                    <CardHeader>
+                                         <CardTitle className="flex items-center gap-3">
+                                            <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                            <span>Stripe Connect</span>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-xs text-muted-foreground pt-1">
+                                            {t(translations.stripeDescription)}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.messaging)}</h3>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24"><path fill="#25D366" d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.73-1.11-5.2-2.9-7.01zm-7.01 15.26c-1.53 0-3.01-.47-4.29-1.36l-.3-.18l-3.18.83l.85-3.1l-.2-.31a8.084 8.084 0 0 1-1.23-4.38c0-4.54 3.7-8.24 8.24-8.24c2.2 0 4.23.86 5.82 2.45c1.59 1.59 2.45 3.62 2.45 5.82c0 4.54-3.7 8.24-8.24 8.24zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81c-.23-.08-.39-.12-.56.12c-.17.25-.64.81-.79.97c-.15.17-.29.19-.54.06c-.25-.12-1.06-.39-2.02-1.25c-.75-.67-1.25-1.5-1.4-1.75c-.14-.25-.02-.38.11-.51c.11-.11.25-.29.37-.43s.17-.25.25-.41c.08-.17.04-.31-.02-.43c-.06-.12-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42c-.14,0-.3,0-.46,0s-.39.06-.6.3c-.2.25-.79.76-.79,1.85s.81,2.15.93,2.3c.12.17 1.58,2.41 3.83,3.39c.54.24.97.38,1.3.48c.55.17,1.05.14,1.44.09c.44-.06 1.47-.6 1.68-1.18c.21-.58.21-1.07.14-1.18c-.05-.12-.19-.19-.43-.31z"/></svg>
+                                            <span>WhatsApp (via Twilio)</span>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Label htmlFor="whatsapp-number">{t(translations.whatsappNumber)}</Label>
+                                        <Input
+                                            id="whatsapp-number"
+                                            name="whatsapp-number"
+                                            placeholder="+33612345678"
+                                            defaultValue={selectedStore?.whatsappNumber || ''}
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-2">{t(translations.twilioNumberInfo)}</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                          </TabsContent>
                       </Tabs>
 
                       <DialogFooter className="mt-6 pt-4 border-t">
@@ -568,108 +665,6 @@ export default function StoresPage() {
                           <Button type="submit">{t(translations.saveStore)}</Button>
                       </DialogFooter>
                     </form>
-                </DialogContent>
-            </Dialog>
-
-             <Dialog open={isConnectionsDialogOpen} onOpenChange={setIsConnectionsDialogOpen}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>{t(translations.manageConnections)}</DialogTitle>
-                        <DialogDescription>
-                            {t(translations.connectionsDescription).replace('{storeName}', selectedStore?.name || '')}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-6 pt-4">
-                        <div>
-                            <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.endCustomerPayments)}</h3>
-                             <Card>
-                                <CardHeader className="flex flex-row items-start justify-between gap-4">
-                                    <div>
-                                        <CardTitle className="flex items-center gap-3">
-                                            <svg role="img" viewBox="0 0 48 48" className="h-8 w-8"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72-.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
-                                            <span>Stripe Connect</span>
-                                        </CardTitle>
-                                    </div>
-                                    {selectedStore?.stripeStatus === 'connected' ? (
-                                        <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
-                                            <CheckCircle className="mr-1 h-3 w-3" /> {t(translations.connected)}
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="secondary">{t(translations.notConnected)}</Badge>
-                                    )}
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-xs text-muted-foreground pt-1">
-                                        {t(translations.stripeDescription)}
-                                    </div>
-                                    {selectedStore?.stripeStatus === 'connected' ? (
-                                        <div className="mt-4 p-4 bg-muted rounded-md text-sm text-muted-foreground">
-                                            {t(translations.stripeConnectedInfo)}
-                                        </div>
-                                    ) : (
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button className="mt-4">
-                                                    <LinkIcon className="mr-2 h-4 w-4" />
-                                                    {t(translations.connectStripe)}
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t(translations.redirectToStripe)}</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        {t(translations.stripeRedirectDesc)}
-                                                         <a href="#" className="underline text-primary block mt-2">{t(translations.learnMoreStripe)}</a>.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleStripeConnect}>{t(translations.continueToStripe)}</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                        <div>
-                             <h3 className="text-sm font-medium text-muted-foreground mb-2">{t(translations.messaging)}</h3>
-                             <Card>
-                                 <CardHeader className="flex flex-row items-start justify-between gap-4">
-                                     <div>
-                                        <CardTitle className="flex items-center gap-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24"><path fill="#25D366" d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.73-1.11-5.2-2.9-7.01zm-7.01 15.26c-1.53 0-3.01-.47-4.29-1.36l-.3-.18l-3.18.83l.85-3.1l-.2-.31a8.084 8.084 0 0 1-1.23-4.38c0-4.54 3.7-8.24 8.24-8.24c2.2 0 4.23.86 5.82 2.45c1.59 1.59 2.45 3.62 2.45 5.82c0 4.54-3.7 8.24-8.24 8.24zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81c-.23-.08-.39-.12-.56.12c-.17.25-.64.81-.79.97c-.15.17-.29.19-.54.06c-.25-.12-1.06-.39-2.02-1.25c-.75-.67-1.25-1.5-1.4-1.75c-.14-.25-.02-.38.11-.51c.11-.11.25-.29.37-.43s.17-.25.25-.41c.08-.17.04-.31-.02-.43c-.06-.12-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42c-.14,0-.3,0-.46,0s-.39.06-.6.3c-.2.25-.79.76-.79,1.85s.81,2.15.93,2.3c.12.17 1.58,2.41 3.83,3.39c.54.24.97.38,1.3.48c.55.17,1.05.14,1.44.09c.44-.06 1.47-.6 1.68-1.18c.21-.58.21-1.07.14-1.18c-.05-.12-.19-.19-.43-.31z"/></svg>
-                                            <span>WhatsApp (via Twilio)</span>
-                                        </CardTitle>
-                                        <div className="flex items-center text-xs pt-1 text-muted-foreground">
-                                            <span>{t(translations.messagingDescription)}</span>
-                                        </div>
-                                     </div>
-                                      {selectedStore?.whatsappNumber ? (
-                                        <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100/90">
-                                            <CheckCircle className="mr-1 h-3 w-3" /> {t(translations.configured)}
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="secondary">{t(translations.notConfigured)}</Badge>
-                                    )}
-                                 </CardHeader>
-                                 <CardContent>
-                                    <Label htmlFor="whatsapp-number">{t(translations.whatsappNumber)}</Label>
-                                    <Input 
-                                        id="whatsapp-number" 
-                                        placeholder="+33612345678" 
-                                        value={selectedStore?.whatsappNumber || ''}
-                                        onChange={(e) => setSelectedStore(prev => prev ? {...prev, whatsappNumber: e.target.value} : null)}
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-2">{t(translations.twilioNumberInfo)}</p>
-                                 </CardContent>
-                             </Card>
-                        </div>
-                    </div>
-                    <DialogFooter className="mt-6">
-                        <Button type="button" variant="outline" onClick={() => setIsConnectionsDialogOpen(false)}>{t(translations.cancel)}</Button>
-                        <Button type="button" onClick={handleSaveConnections}>{t(translations.saveConnections)}</Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>
