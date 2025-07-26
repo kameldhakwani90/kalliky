@@ -38,7 +38,9 @@ type DetailedOrder = {
     items: DetailedOrderItem[];
     subtotal: number;
     tax: number;
+    taxRate: number;
     total: number;
+    storeId: string;
 };
 
 type Report = {
@@ -76,10 +78,16 @@ type Customer = {
     reportHistory: Report[];
 };
 
+const mockStores = [
+    { id: "store-1", name: "Le Gourmet Parisien", address: "12 Rue de la Paix, 75002 Paris", taxRate: 10 },
+    { id: "store-2", name: "Pizzeria Bella", address: "3 Rue de la Roquette, 75011 Paris", taxRate: 5.5 },
+];
+
 const mockOrders: DetailedOrder[] = [
     {
         id: "#1024",
         date: "28/05/2024",
+        storeId: "store-1",
         items: [
             { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, customizations: [
                 { type: 'add', name: 'Bacon grillé', price: 2.00 },
@@ -90,9 +98,10 @@ const mockOrders: DetailedOrder[] = [
         ],
         subtotal: 32.00,
         tax: 3.20,
+        taxRate: 10,
         total: 35.20,
     },
-     { id: "#987", date: "15/05/2024", items: [], subtotal: 82.50, tax: 8.25, total: 90.75 },
+     { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], subtotal: 82.50, tax: 8.25, taxRate: 10, total: 90.75 },
 ];
 
 
@@ -137,6 +146,8 @@ const mockCustomers: Customer[] = [
         reportHistory: []
     },
 ];
+
+const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
 export default function ClientProfilePage() {
     const params = useParams();
@@ -377,9 +388,9 @@ export default function ClientProfilePage() {
                         <div className="mx-auto">
                             <Receipt className="h-10 w-10"/>
                         </div>
-                        <DialogTitle className="font-headline text-lg">Le Gourmet Parisien</DialogTitle>
+                        <DialogTitle className="font-headline text-lg">{getStoreInfo(selectedOrder.storeId)?.name}</DialogTitle>
                         <DialogDescription className="text-xs">
-                            12 Rue de la Paix, 75002 Paris<br />
+                            {getStoreInfo(selectedOrder.storeId)?.address}<br />
                             Commande {selectedOrder.id} - {selectedOrder.date}
                         </DialogDescription>
                     </DialogHeader>
@@ -410,7 +421,7 @@ export default function ClientProfilePage() {
                                 <span>{selectedOrder.subtotal.toFixed(2)}€</span>
                             </div>
                             <div className="flex justify-between">
-                                <span>TVA (10%)</span>
+                                <span>TVA ({selectedOrder.taxRate}%)</span>
                                 <span>{selectedOrder.tax.toFixed(2)}€</span>
                             </div>
                         </div>
@@ -433,4 +444,3 @@ export default function ClientProfilePage() {
         </>
     );
 }
-

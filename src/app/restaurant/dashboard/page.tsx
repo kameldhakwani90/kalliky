@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from "react";
@@ -68,7 +69,9 @@ type DetailedOrder = {
     items: DetailedOrderItem[];
     subtotal: number;
     tax: number;
+    taxRate: number;
     total: number;
+    storeId: string;
 };
 
 
@@ -83,6 +86,12 @@ type Customer = {
     orderHistory: DetailedOrder[];
     callHistory: { date: string; duration: string; type: 'Commande' | 'Info' }[];
 };
+
+const mockStores = [
+    { id: "store-1", name: "Le Gourmet Parisien", address: "12 Rue de la Paix, 75002 Paris", taxRate: 10 },
+    { id: "store-2", name: "Pizzeria Bella", address: "3 Rue de la Roquette, 75011 Paris", taxRate: 5.5 },
+];
+
 
 const customersData: Record<string, Customer> = {
     "0612345678": {
@@ -114,6 +123,7 @@ const recentOrders: DetailedOrder[] = [
         id: "#1024",
         date: "28/05/2024 - 19:30",
         customerPhone: "0612345678",
+        storeId: "store-1",
         items: [
             { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, customizations: [
                 { type: 'add', name: 'Bacon grillé', price: 2.00 },
@@ -125,25 +135,30 @@ const recentOrders: DetailedOrder[] = [
         ],
         subtotal: 35.50,
         tax: 3.55,
+        taxRate: 10,
         total: 39.05,
     },
     {
         id: "#1023",
         date: "27/05/2024 - 20:15",
         customerPhone: "0787654321",
+        storeId: "store-2",
         items: [
             { id: "item-3", name: "Pizza Regina", quantity: 2, basePrice: 14.00, customizations: [
                 { type: 'add', name: 'Extra Mozzarella', price: 2.00 },
             ], finalPrice: 16.00 }
         ],
         subtotal: 32.00,
-        tax: 3.20,
-        total: 35.20,
+        tax: 1.76,
+        taxRate: 5.5,
+        total: 33.76,
     },
-    { id: "#1022", date: "27/05/2024 - 12:10", customerPhone: "0601020304", items: [], subtotal: 22.50, tax: 2.25, total: 24.75 },
-    { id: "#1021", date: "26/05/2024 - 19:50", customerPhone: "0655443322", items: [], subtotal: 89.00, tax: 8.90, total: 97.90 },
+    { id: "#1022", date: "27/05/2024 - 12:10", customerPhone: "0601020304", storeId: "store-1", items: [], subtotal: 22.50, tax: 2.25, taxRate: 10, total: 24.75 },
+    { id: "#1021", date: "26/05/2024 - 19:50", customerPhone: "0655443322", storeId: "store-2", items: [], subtotal: 89.00, tax: 4.90, taxRate: 5.5, total: 93.90 },
 ];
 
+
+const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
 
 // Default customer for phones not in customersData
 const defaultCustomer = (phone: string): Customer => ({
@@ -476,9 +491,9 @@ export default function RestaurantDashboard() {
                     <div className="mx-auto">
                         <Receipt className="h-10 w-10"/>
                     </div>
-                    <DialogTitle className="font-headline text-lg">Le Gourmet Parisien</DialogTitle>
+                    <DialogTitle className="font-headline text-lg">{getStoreInfo(selectedOrder.storeId)?.name}</DialogTitle>
                     <DialogDescription className="text-xs">
-                        12 Rue de la Paix, 75002 Paris<br />
+                        {getStoreInfo(selectedOrder.storeId)?.address}<br />
                         Commande {selectedOrder.id} - {selectedOrder.date}
                     </DialogDescription>
                 </DialogHeader>
@@ -509,7 +524,7 @@ export default function RestaurantDashboard() {
                             <span>{selectedOrder.subtotal.toFixed(2)}€</span>
                         </div>
                         <div className="flex justify-between">
-                            <span>TVA (10%)</span>
+                            <span>TVA ({selectedOrder.taxRate}%)</span>
                             <span>{selectedOrder.tax.toFixed(2)}€</span>
                         </div>
                     </div>
@@ -532,5 +547,3 @@ export default function RestaurantDashboard() {
     </>
   );
 }
-
-    

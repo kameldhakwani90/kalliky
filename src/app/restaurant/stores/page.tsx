@@ -35,12 +35,13 @@ type Store = {
     status: 'active' | 'inactive';
     stripeStatus: 'connected' | 'disconnected';
     currency: 'EUR' | 'USD' | 'TND';
+    taxRate: number;
 };
 
 const initialStores: Store[] = [
-    { id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active', stripeStatus: 'connected', currency: 'EUR' },
-    { id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active', stripeStatus: 'disconnected', currency: 'EUR' },
-    { id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR' },
+    { id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active', stripeStatus: 'connected', currency: 'EUR', taxRate: 10 },
+    { id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active', stripeStatus: 'disconnected', currency: 'EUR', taxRate: 10 },
+    { id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', taxRate: 5.5 },
 ];
 
 const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -74,6 +75,7 @@ export default function StoresPage() {
             status: selectedStore?.status || 'active',
             stripeStatus: selectedStore?.stripeStatus || 'disconnected',
             currency: (formData.get('currency') as Store['currency']) || 'EUR',
+            taxRate: parseFloat(formData.get('taxRate') as string) || 0,
         } as Store;
 
         if (selectedStore) {
@@ -95,7 +97,6 @@ export default function StoresPage() {
     const handleStripeConnect = () => {
         if (!selectedStore) return;
         setStores(stores.map(s => s.id === selectedStore.id ? { ...s, stripeStatus: 'connected' } : s));
-        // We update the selectedStore as well to reflect the change in the dialog
         setSelectedStore(prev => prev ? {...prev, stripeStatus: 'connected'} : null);
     }
 
@@ -240,14 +241,20 @@ export default function StoresPage() {
                             <Separator />
 
                              <div className="space-y-4">
-                                <h4 className="font-medium">Devise</h4>
-                                <div className="space-y-2">
-                                     <Label htmlFor="currency">Devise par défaut</Label>
-                                     <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                         <option value="EUR">Euro (€)</option>
-                                         <option value="USD">Dollar ($)</option>
-                                         <option value="TND">Dinar (DT)</option>
-                                     </select>
+                                <h4 className="font-medium">Devise & Taxes</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="currency">Devise par défaut</Label>
+                                        <select name="currency" id="currency" defaultValue={selectedStore?.currency || 'EUR'} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                            <option value="EUR">Euro (€)</option>
+                                            <option value="USD">Dollar ($)</option>
+                                            <option value="TND">Dinar (DT)</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="taxRate">Taux de TVA (%)</Label>
+                                        <Input id="taxRate" name="taxRate" type="number" defaultValue={selectedStore?.taxRate || ''} placeholder="Ex: 20" step="0.1" required />
+                                    </div>
                                 </div>
                              </div>
 
@@ -329,5 +336,3 @@ export default function StoresPage() {
         </div>
     );
 }
-
-    
