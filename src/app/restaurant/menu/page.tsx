@@ -37,7 +37,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, UploadCloud, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -420,7 +420,7 @@ export default function MenuPage() {
     setEditedItem(newItem);
     setCompositionHistory([]); 
     setIsPopupOpen(true);
-    setIsSyncPopupOpen(false); // Close the sync popup
+    setIsSyncPopupOpen(false);
   };
   
   const toggleItemStatus = (itemId: number, checked: boolean) => {
@@ -454,9 +454,16 @@ export default function MenuPage() {
       }
   };
 
-  const handleCreateBaseComposition = () => {
+ const handleCreateBaseComposition = (isStepped: boolean) => {
     if (!editedItem) return;
-    updateComposition([]);
+    const firstStep: CompositionStep = {
+      id: `step_${Date.now()}`,
+      title: isStepped ? 'Étape 1' : '', 
+      selectionType: 'single',
+      isRequired: false,
+      options: [],
+    };
+    updateComposition([firstStep]);
   };
 
   const handleCreateSubComposition = (stepIndex: number, optionIndex: number) => {
@@ -828,7 +835,14 @@ export default function MenuPage() {
                         <div className="text-center">
                            <Info className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
                            <p className="text-sm text-muted-foreground mb-4">Ce plat n'a pas de composition.</p>
-                           <Button variant="secondary" onClick={handleCreateBaseComposition}><Plus className="mr-2 h-4 w-4"/> Créer une composition</Button>
+                           <div className="flex flex-col gap-3">
+                                <Button variant="secondary" onClick={() => handleCreateBaseComposition(true)}>
+                                    <Layers className="mr-2 h-4 w-4"/> Créer une composition par étapes
+                                </Button>
+                                <Button variant="secondary" onClick={() => handleCreateBaseComposition(false)}>
+                                    <List className="mr-2 h-4 w-4"/> Ajouter une liste d'options simple
+                                </Button>
+                           </div>
                         </div>
                     </Card>
                 )}
