@@ -15,7 +15,8 @@ import {
   Zap,
   XCircle,
   PlusCircle,
-  Bell
+  Bell,
+  Receipt
 } from "lucide-react"
 
 import {
@@ -42,6 +43,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
@@ -54,6 +56,27 @@ function KallikyLogo() {
       </div>
     )
 }
+
+const notifications = [
+    {
+      type: 'order',
+      title: 'Nouvelle commande #1025',
+      description: 'Alice Martin - 2 articles - 24,50€',
+      time: 'il y a 2 minutes',
+    },
+    {
+      type: 'report',
+      title: 'Nouveau signalement',
+      description: 'Carole Leblanc - Erreur dans la commande #1028',
+      time: 'il y a 1 heure',
+    },
+     {
+      type: 'order',
+      title: 'Nouvelle commande #1024',
+      description: 'Bob Dupont - 1 article - 18,00€',
+      time: 'il y a 3 heures',
+    },
+]
 
 export default function RestaurantLayout({
   children,
@@ -149,10 +172,32 @@ export default function RestaurantLayout({
             <div className="flex-1">
                 {/* Optional Header Content */}
             </div>
-             <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-                <span className="sr-only">Notifications</span>
-            </Button>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Bell className="h-5 w-5" />
+                        <span className="sr-only">Notifications</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-80" align="end">
+                    <DropdownMenuLabel>{t({fr: "Notifications", en: "Notifications"})}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {notifications.map((notif, index) => (
+                         <DropdownMenuItem key={index} className="flex items-start gap-3 p-3 cursor-pointer">
+                            <Avatar className="h-8 w-8 mt-1">
+                                <AvatarFallback className={notif.type === 'order' ? 'bg-blue-100' : 'bg-red-100'}>
+                                    {notif.type === 'order' ? <Receipt className="h-4 w-4 text-blue-600"/> : <Flag className="h-4 w-4 text-red-600"/>}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold text-sm">{notif.title}</p>
+                                <p className="text-xs text-muted-foreground">{notif.description}</p>
+                                <p className="text-xs text-muted-foreground/70 mt-1">{notif.time}</p>
+                            </div>
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+             </DropdownMenu>
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Avatar className="h-9 w-9 cursor-pointer">
