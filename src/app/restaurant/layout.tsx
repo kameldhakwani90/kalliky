@@ -59,25 +59,28 @@ function KallikyLogo() {
 
 const notifications = [
     {
+      id: 'notif-1',
       type: 'order',
       title: 'Nouvelle commande #1025',
       description: 'Alice Martin - 2 articles - 24,50€',
       time: 'il y a 2 minutes',
-      link: '/restaurant/dashboard'
+      link: '/restaurant/clients/cust-1'
     },
     {
+      id: 'notif-2',
       type: 'report',
       title: 'Nouveau signalement',
       description: 'Carole Leblanc - Erreur dans la commande #1028',
       time: 'il y a 1 heure',
-      link: '/restaurant/reports'
+      link: '/restaurant/reports#rep-2'
     },
      {
+      id: 'notif-3',
       type: 'order',
       title: 'Nouvelle commande #1024',
       description: 'Bob Dupont - 1 article - 18,00€',
       time: 'il y a 3 heures',
-      link: '/restaurant/dashboard'
+      link: '/restaurant/clients/cust-2'
     },
 ]
 
@@ -189,8 +192,8 @@ export default function RestaurantLayout({
                 <DropdownMenuContent className="w-80" align="end">
                     <DropdownMenuLabel>{t({fr: "Notifications", en: "Notifications"})}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {notifications.map((notif, index) => (
-                         <DropdownMenuItem key={index} asChild>
+                    {notifications.map((notif) => (
+                         <DropdownMenuItem key={notif.id} asChild>
                           <Link href={notif.link} className="flex items-start gap-3 p-3 cursor-pointer">
                             <Avatar className="h-8 w-8 mt-1">
                                 <AvatarFallback className={notif.type === 'order' ? 'bg-blue-100' : 'bg-red-100'}>
