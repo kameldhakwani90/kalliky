@@ -318,15 +318,17 @@ const EditableCompositionDisplay: React.FC<{
       <h3 className="font-semibold text-lg">{view.title}</h3>
       {view.steps.map((step, stepIndex) => (
         <Card key={step.id} className="bg-muted/30">
-          <CardHeader className="py-3 px-4 flex-row items-center justify-between">
-            <Input defaultValue={step.title} className="text-base font-semibold border-none shadow-none focus-visible:ring-1 p-1 h-auto" />
-             <div className="flex items-center gap-2">
-                <Badge variant={step.isRequired ? "destructive" : "secondary"} className="text-xs">{step.isRequired ? "Requis" : "Optionnel"}</Badge>
-                <Switch checked={step.isRequired} />
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveStep(stepIndex)}><Trash2 className="h-4 w-4"/></Button>
-             </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 space-y-2">
+          {step.title && (
+            <CardHeader className="py-3 px-4 flex-row items-center justify-between">
+              <Input defaultValue={step.title} className="text-base font-semibold border-none shadow-none focus-visible:ring-1 p-1 h-auto" />
+              <div className="flex items-center gap-2">
+                  <Badge variant={step.isRequired ? "destructive" : "secondary"} className="text-xs">{step.isRequired ? "Requis" : "Optionnel"}</Badge>
+                  <Switch checked={step.isRequired} />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveStep(stepIndex)}><Trash2 className="h-4 w-4"/></Button>
+              </div>
+            </CardHeader>
+          )}
+          <CardContent className={cn("p-4 space-y-2", !step.title && "pt-4")}>
             <ul className="space-y-2">
               {step.options.map((option, optionIndex) => (
                 <li key={option.id} className="flex flex-col text-sm border-t border-border pt-3">
