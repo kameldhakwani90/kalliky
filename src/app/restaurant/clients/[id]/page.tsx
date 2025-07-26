@@ -43,7 +43,7 @@ type DetailedOrder = {
     id: string;
     date: string;
     items: DetailedOrderItem[];
-    total: number; // Just the final total for list display
+    total: number; // This is now TTC for list display, will be recalculated for ticket.
     storeId: string;
 };
 
@@ -99,9 +99,9 @@ type Store = {
 
 
 const mockStores: Store[] = [
-    { 
-        id: "store-1", 
-        name: "Le Gourmet Parisien", 
+    {
+        id: "store-1",
+        name: "Le Gourmet Parisien",
         address: "12 Rue de la Paix, 75002 Paris",
         taxRates: [
             { id: 'tax-1', name: 'Réduit', rate: 5.5, isDefault: false },
@@ -109,9 +109,9 @@ const mockStores: Store[] = [
             { id: 'tax-3', name: 'Normal', rate: 20, isDefault: false },
         ]
     },
-    { 
-        id: "store-2", 
-        name: "Pizzeria Bella", 
+    {
+        id: "store-2",
+        name: "Pizzeria Bella",
         address: "3 Rue de la Roquette, 75011 Paris",
         taxRates: [
              { id: 'tax-1', name: 'À emporter', rate: 5.5, isDefault: true },
@@ -126,17 +126,17 @@ const mockOrders: DetailedOrder[] = [
         date: "28/05/2024",
         storeId: "store-1",
         items: [
-            { 
+            {
                 id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, taxRate: 10, customizations: [
                     { type: 'add', name: 'Bacon grillé', price: 2.00 },
                     { type: 'add', name: 'Oeuf au plat', price: 1.00 },
                     { type: 'remove', name: 'Oignons' }
-                ], finalPrice: 19.50 
+                ], finalPrice: 19.50
             },
             { id: "item-2", name: 'Bière Blonde', quantity: 1, basePrice: 6.00, taxRate: 20, customizations: [], finalPrice: 6.00 },
             { id: "item-3", name: 'Eau (bouteille)', quantity: 1, basePrice: 2.50, taxRate: 5.5, customizations: [], finalPrice: 2.50 },
         ],
-        total: 28.00, // this is HT, the final total will be calculated
+        total: 31.29,
     },
      { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
 ];
@@ -190,8 +190,8 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotal => {
     const subtotal = order.items.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0);
 
     const taxBreakdown = order.items.reduce((acc, item) => {
-        const itemTotal = item.finalPrice * item.quantity;
-        const taxAmount = itemTotal * (item.taxRate / 100);
+        const itemTotalHT = item.finalPrice * item.quantity;
+        const taxAmount = itemTotalHT * (item.taxRate / 100);
         if (!acc[item.taxRate]) {
             acc[item.taxRate] = 0;
         }
@@ -215,7 +215,7 @@ export default function ClientProfilePage() {
     const params = useParams();
     const customerId = params.id as string;
     const customer = mockCustomers.find(c => c.id === customerId);
-    
+
     const [isEditing, setIsEditing] = useState(false);
     const [editedCustomer, setEditedCustomer] = useState<Customer | null>(customer ? { ...customer } : null);
     const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
@@ -228,7 +228,7 @@ export default function ClientProfilePage() {
     const handleInputChange = (field: keyof Customer, value: string) => {
         setEditedCustomer(prev => prev ? { ...prev, [field]: value } : null);
     };
-    
+
     const handleSave = () => {
         console.log("Saving customer data:", editedCustomer);
         setIsEditing(false);
@@ -238,7 +238,7 @@ export default function ClientProfilePage() {
         setSelectedOrder(order);
         setOrderTicketOpen(true);
     }
-    
+
     const calculatedTotals = selectedOrder ? calculateOrderTotals(selectedOrder) : null;
 
     return (
