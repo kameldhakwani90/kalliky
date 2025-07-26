@@ -101,14 +101,13 @@ type MenuItem = {
   id: string;
   categoryId: string;
   name:string;
-  price: string;
   description: string;
   image: string;
   imageHint: string;
   tags?: string[];
   variations: Variation[];
   composition?: CompositionStep[];
-  storeIds: number[];
+  storeIds: string[];
   status: 'active' | 'out-of-stock' | 'inactive';
   availability: Availability;
 };
@@ -119,9 +118,9 @@ type Category = {
 };
 
 const availableStores = [
-    { id: 1, name: "Le Gourmet Parisien - Centre" },
-    { id: 2, name: "Le Gourmet Parisien - Montmartre"},
-    { id: 3, name: "Pizzeria Bella - Bastille" },
+    { id: "store-1", name: "Le Gourmet Parisien - Centre" },
+    { id: "store-2", name: "Le Gourmet Parisien - Montmartre"},
+    { id: "store-3", name: "Pizzeria Bella - Bastille" },
 ];
 
 const defaultAvailability: Availability = {
@@ -150,12 +149,11 @@ const initialMenuItems: MenuItem[] = [
         id: 'item-1',
         categoryId: 'cat-1',
         name: 'Burger "Le Personnalisé"',
-        price: 'à partir de 16.50€',
         description: 'Composez le burger de vos rêves ! Choisissez votre pain, votre protéine, vos fromages et tous les suppléments que vous aimez.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'custom burger',
         tags: ['Populaire', 'Soir', 'Famille'],
-        storeIds: [1, 2],
+        storeIds: ["store-1", "store-2"],
         status: 'active',
         availability: defaultAvailability,
         variations: [{ id: 'var-1-1', name: 'Taille unique', price: 16.50 }],
@@ -227,12 +225,11 @@ const initialMenuItems: MenuItem[] = [
         id: 'item-2',
         categoryId: 'cat-2',
         name: 'Salade César',
-        price: '12.50€',
         description: 'Laitue romaine croquante, poulet grillé, croûtons à l\'ail, copeaux de parmesan et notre sauce César maison.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'caesar salad',
         tags: ['Léger', 'Midi', 'Froid'],
-        storeIds: [1, 3],
+        storeIds: ["store-1", "store-3"],
         status: 'active',
         variations: [{ id: 'var-2-1', name: 'Taille unique', price: 12.50 }],
         availability: {...defaultAvailability, type: 'scheduled' },
@@ -241,11 +238,10 @@ const initialMenuItems: MenuItem[] = [
         id: 'item-3',
         categoryId: 'cat-3',
         name: 'Formule Regina',
-        price: '18.00€',
         description: 'Le classique italien en formule complète, avec une boisson au choix.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'pizza deal',
-        storeIds: [3],
+        storeIds: ["store-3"],
         status: 'out-of-stock',
         availability: defaultAvailability,
         variations: [{ id: 'var-3-1', name: 'Taille unique', price: 18.00 }],
@@ -276,12 +272,11 @@ const initialMenuItems: MenuItem[] = [
         id: 'item-4',
         categoryId: 'cat-4',
         name: 'Tiramisu au café',
-        price: '8.50€',
         description: 'Biscuit cuillère imbibé de café, crème mascarpone onctueuse et cacao en poudre.',
         image: 'https://placehold.co/600x400.png',
         imageHint: 'tiramisu',
         tags: ['Sucré', 'Fait maison'],
-        storeIds: [1, 2, 3],
+        storeIds: ["store-1", "store-2", "store-3"],
         status: 'inactive',
         availability: defaultAvailability,
         variations: [{ id: 'var-4-1', name: 'Taille unique', price: 8.50 }],
@@ -354,7 +349,6 @@ const EditableCompositionDisplay: React.FC<{
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-lg">{view.title}</h3>
       {view.steps.map((step, stepIndex) => (
         <Card key={step.id} className="bg-muted/30">
           {step.title && (
@@ -437,12 +431,12 @@ export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  
+  const [dialogSelectedStoreIds, setDialogSelectedStoreIds] = useState<string[]>(availableStores.map(s => s.id));
+
 
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   const [tagInput, setTagInput] = useState('');
-
-  const [dialogSelectedStore, setDialogSelectedStore] = useState<string>(availableStores[0]?.id.toString() || 'all');
-
 
   const currentView = useMemo(() => {
     if (compositionHistory.length > 0) {
@@ -456,9 +450,9 @@ export default function MenuPage() {
 
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter(item => {
-      const storeMatch = selectedStore === 'all' || item.storeIds.includes(parseInt(selectedStore));
+      const storeMatch = selectedStore === 'all' || item.storeIds.includes(selectedStore);
       const categoryMatch = selectedCategory === 'all' || item.categoryId === selectedCategory;
-      const statusMatch = selectedStatus === 'all' || item.status === statusMatch;
+      const statusMatch = selectedStatus === 'all' || item.status === selectedStatus;
       const searchMatch = searchTerm === '' || item.name.toLowerCase().includes(searchTerm.toLowerCase());
       return storeMatch && categoryMatch && statusMatch && searchMatch;
     });
@@ -476,13 +470,12 @@ export default function MenuPage() {
       id: `item-${Date.now()}`,
       name: "Nouvel Article",
       categoryId: categories.length > 0 ? categories[0].id : "cat-1",
-      price: '0.00€',
       description: 'Description du nouvel article',
       image: 'https://placehold.co/600x400.png',
       imageHint: 'new item',
       tags: [],
-      variations: [{ id: 'default', name: 'Taille unique', price: 0 }],
-      storeIds: [parseInt(dialogSelectedStore)],
+      variations: [{ id: `var_${Date.now()}`, name: 'Taille unique', price: 0 }],
+      storeIds: dialogSelectedStoreIds,
       status: 'inactive',
       availability: defaultAvailability,
     };
@@ -500,6 +493,13 @@ export default function MenuPage() {
         return item;
     }));
   };
+  
+  const getPriceDisplay = (item: MenuItem) => {
+    if (item.variations.length > 1) {
+        return `à partir de ${item.variations[0].price.toFixed(2)}€`
+    }
+    return `${item.variations[0].price.toFixed(2)}€`
+  }
 
   const handleNavigateComposition = (steps: CompositionStep[], title: string) => {
     setCompositionHistory(prev => [...prev, { title, steps }]);
@@ -645,13 +645,23 @@ export default function MenuPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
-                    <Label>Appliquer à la boutique</Label>
-                    <Select value={dialogSelectedStore} onValueChange={setDialogSelectedStore}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            {availableStores.map(store => <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <Label>Disponible dans les boutiques</Label>
+                    <div className="space-y-2">
+                        {availableStores.map(store => (
+                            <div key={store.id} className="flex items-center gap-2">
+                                <Checkbox 
+                                    id={`store-checkbox-${store.id}`}
+                                    checked={dialogSelectedStoreIds.includes(store.id)}
+                                    onCheckedChange={(checked) => {
+                                        setDialogSelectedStoreIds(prev => 
+                                            checked ? [...prev, store.id] : prev.filter(id => id !== store.id)
+                                        )
+                                    }}
+                                />
+                                <Label htmlFor={`store-checkbox-${store.id}`} className="font-normal">{store.name}</Label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
                  <Tabs defaultValue="article" className="pt-2">
                     <TabsList className="grid w-full grid-cols-3">
@@ -700,7 +710,7 @@ export default function MenuPage() {
                         <SelectTrigger className="md:w-48 w-full"><Store className="h-4 w-4 mr-2" /><SelectValue placeholder="Boutique" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Toutes les boutiques</SelectItem>
-                            {availableStores.map(store => <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>)}
+                            {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
@@ -745,7 +755,7 @@ export default function MenuPage() {
                         <TableCell>
                             <Badge variant="outline">{getCategoryName(item.categoryId)}</Badge>
                         </TableCell>
-                        <TableCell>{item.price}</TableCell>
+                        <TableCell>{getPriceDisplay(item)}</TableCell>
                          <TableCell>
                             {item.availability.type === 'scheduled' ? (
                                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -865,12 +875,16 @@ export default function MenuPage() {
                                         value={variation.name}
                                         onChange={(e) => handleVariationChange(variation.id, 'name', e.target.value)}
                                     />
-                                    <Input
-                                        type="number"
-                                        placeholder="Prix de base"
-                                        value={variation.price}
-                                        onChange={(e) => handleVariationChange(variation.id, 'price', parseFloat(e.target.value) || 0)}
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            type="number"
+                                            placeholder="Prix de base"
+                                            value={variation.price}
+                                            onChange={(e) => handleVariationChange(variation.id, 'price', parseFloat(e.target.value) || 0)}
+                                            className="pr-6"
+                                        />
+                                        <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">€</span>
+                                    </div>
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -1002,3 +1016,5 @@ export default function MenuPage() {
     </div>
   );
 }
+
+    

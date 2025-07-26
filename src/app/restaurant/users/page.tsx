@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -16,15 +17,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Separator } from '@/components/ui/separator';
 
 type User = {
-    id: number;
+    id: string;
     name: string;
     email: string;
     role: 'Propriétaire' | 'Cuisinier' | 'Serveur';
-    assignedStores: number[]; // Array of store IDs
+    assignedStores: string[]; // Array of store IDs
 };
 
 type Store = {
-    id: number;
+    id: string;
     name: string;
     address: string;
     phone: string;
@@ -32,16 +33,16 @@ type Store = {
 };
 
 const initialUsers: User[] = [
-    { id: 1, name: "Alice Martin", email: "alice@gourmet.fr", role: 'Propriétaire', assignedStores: [1, 2] },
-    { id: 2, name: "Bob Durand", email: "bob@gourmet.fr", role: 'Cuisinier', assignedStores: [1] },
-    { id: 3, name: "Charlie Dupont", email: "charlie@gourmet.fr", role: 'Serveur', assignedStores: [2] },
-    { id: 4, name: "Diana Petit", email: "diana@pizza-bella.it", role: 'Cuisinier', assignedStores: [3] },
+    { id: "user-1", name: "Alice Martin", email: "alice@gourmet.fr", role: 'Propriétaire', assignedStores: ["store-1", "store-2"] },
+    { id: "user-2", name: "Bob Durand", email: "bob@gourmet.fr", role: 'Cuisinier', assignedStores: ["store-1"] },
+    { id: "user-3", name: "Charlie Dupont", email: "charlie@gourmet.fr", role: 'Serveur', assignedStores: ["store-2"] },
+    { id: "user-4", name: "Diana Petit", email: "diana@pizza-bella.it", role: 'Cuisinier', assignedStores: ["store-3"] },
 ];
 
 const availableStores: Store[] = [
-    { id: 1, name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active' },
-    { id: 2, name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active' },
-    { id: 3, name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive' },
+    { id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active' },
+    { id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active' },
+    { id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive' },
 ];
 
 
@@ -61,7 +62,7 @@ export default function UsersPage() {
         setIsDialogOpen(false);
     };
 
-    const getStoreNameById = (id: number) => {
+    const getStoreNameById = (id: string) => {
         return availableStores.find(store => store.id === id)?.name;
     };
 
@@ -200,3 +201,5 @@ export default function UsersPage() {
         </div>
     );
 }
+
+    
