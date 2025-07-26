@@ -67,8 +67,19 @@ type Availability = {
   };
 };
 
+type SaleChannel = 'dine-in' | 'takeaway' | 'delivery' | 'call-and-collect';
+
+const saleChannels: { id: SaleChannel, label: string }[] = [
+    { id: 'dine-in', label: 'Sur place' },
+    { id: 'takeaway', label: 'À emporter' },
+    { id: 'delivery', label: 'Livraison' },
+    { id: 'call-and-collect', label: 'Call & Collect' },
+];
+
+type PricesByChannel = Partial<Record<SaleChannel, number>>;
+
 type VariationPrice = {
-  [variationId: string]: number;
+  [variationId: string]: PricesByChannel;
 };
 
 type VariationVisibility = {
@@ -94,7 +105,7 @@ type CompositionStep = {
 type Variation = {
   id: string;
   name: string;
-  price: number;
+  prices: PricesByChannel;
 };
 
 type MenuItem = {
@@ -156,7 +167,7 @@ const initialMenuItems: MenuItem[] = [
         storeIds: ["store-1", "store-2"],
         status: 'active',
         availability: defaultAvailability,
-        variations: [{ id: 'var-1-1', name: 'Taille unique', price: 16.50 }],
+        variations: [{ id: 'var-1-1', name: 'Taille unique', prices: { 'dine-in': 16.50, 'takeaway': 16.50, 'delivery': 18.00 } }],
         composition: [
             {
                 id: 'step-1-1',
@@ -202,8 +213,8 @@ const initialMenuItems: MenuItem[] = [
                 isRequired: false,
                 options: [
                     { id: 'opt-1-3-1', name: 'Cheddar' },
-                    { id: 'opt-1-3-2', name: 'Chèvre', prices: { 'var-1-1': 1.50 } },
-                    { id: 'opt-1-3-3', name: 'Reblochon', prices: { 'var-1-1': 1.50 } },
+                    { id: 'opt-1-3-2', name: 'Chèvre', prices: { 'var-1-1': { 'dine-in': 1.50 } } },
+                    { id: 'opt-1-3-3', name: 'Reblochon', prices: { 'var-1-1': { 'dine-in': 1.50 } } },
                 ]
             },
             {
@@ -215,8 +226,8 @@ const initialMenuItems: MenuItem[] = [
                     { id: 'opt-1-4-1', name: 'Salade' },
                     { id: 'opt-1-4-2', name: 'Tomate' },
                     { id: 'opt-1-4-3', name: 'Oignons' },
-                    { id: 'opt-1-4-4', name: 'Bacon grillé', prices: { 'var-1-1': 2.00 } },
-                    { id: 'opt-1-4-5', name: 'Oeuf au plat', prices: { 'var-1-1': 1.00 } },
+                    { id: 'opt-1-4-4', name: 'Bacon grillé', prices: { 'var-1-1': { 'dine-in': 2.00 } } },
+                    { id: 'opt-1-4-5', name: 'Oeuf au plat', prices: { 'var-1-1': { 'dine-in': 1.00 } } },
                 ]
             }
         ]
@@ -231,7 +242,7 @@ const initialMenuItems: MenuItem[] = [
         tags: ['Léger', 'Midi', 'Froid'],
         storeIds: ["store-1", "store-3"],
         status: 'active',
-        variations: [{ id: 'var-2-1', name: 'Taille unique', price: 12.50 }],
+        variations: [{ id: 'var-2-1', name: 'Taille unique', prices: { 'dine-in': 12.50 } }],
         availability: {...defaultAvailability, type: 'scheduled' },
     },
     {
@@ -244,7 +255,7 @@ const initialMenuItems: MenuItem[] = [
         storeIds: ["store-3"],
         status: 'out-of-stock',
         availability: defaultAvailability,
-        variations: [{ id: 'var-3-1', name: 'Taille unique', price: 18.00 }],
+        variations: [{ id: 'var-3-1', name: 'Taille unique', prices: { 'takeaway': 18.00 } }],
         composition: [
              {
                 id: 'step-3-1',
@@ -279,7 +290,7 @@ const initialMenuItems: MenuItem[] = [
         storeIds: ["store-1", "store-2", "store-3"],
         status: 'inactive',
         availability: defaultAvailability,
-        variations: [{ id: 'var-4-1', name: 'Taille unique', price: 8.50 }],
+        variations: [{ id: 'var-4-1', name: 'Taille unique', prices: { 'dine-in': 8.50, 'takeaway': 8.50 } }],
     },
 ];
 
@@ -390,8 +401,7 @@ const EditableCompositionDisplay: React.FC<{
                           <Label className="text-xs text-muted-foreground">{variation.name}</Label>
                           <Input
                             type="number"
-                            value={option.prices?.[variation.id] ?? ''}
-                            onChange={(e) => handleOptionChange(stepIndex, optionIndex, 'prices', {...option.prices, [variation.id]: parseFloat(e.target.value)})}
+                            value={option.prices?.[variation.id] ? Object.values(option.prices[variation.id])[0] : ''}
                             className="w-full h-7 text-xs"
                             placeholder="Prix" />
                           <div className="flex items-center gap-2">
@@ -432,7 +442,7 @@ export default function MenuPage() {
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
-  const [dialogSelectedStoreIds, setDialogSelectedStoreIds] = useState<string[]>(availableStores.map(s => s.id));
+  const [dialogSelectedStoreId, setDialogSelectedStoreId] = useState<string>(availableStores[0]?.id || 'all');
 
 
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
@@ -468,14 +478,14 @@ export default function MenuPage() {
   const handleCreateNewItem = () => {
     const newItem: MenuItem = {
       id: `item-${Date.now()}`,
-      name: "Nouvel Article",
+      name: "",
       categoryId: categories.length > 0 ? categories[0].id : "cat-1",
-      description: 'Description du nouvel article',
+      description: '',
       image: 'https://placehold.co/600x400.png',
       imageHint: 'new item',
       tags: [],
-      variations: [{ id: `var_${Date.now()}`, name: 'Taille unique', price: 0 }],
-      storeIds: dialogSelectedStoreIds,
+      variations: [{ id: `var_${Date.now()}`, name: 'Taille unique', prices: {} }],
+      storeIds: dialogSelectedStoreId === 'all' ? availableStores.map(s => s.id) : [dialogSelectedStoreId],
       status: 'inactive',
       availability: defaultAvailability,
     };
@@ -495,10 +505,14 @@ export default function MenuPage() {
   };
   
   const getPriceDisplay = (item: MenuItem) => {
+    const firstVariationPrices = Object.values(item.variations[0].prices);
+    if (firstVariationPrices.length === 0) return 'N/A';
+    const firstPrice = firstVariationPrices[0];
+    
     if (item.variations.length > 1) {
-        return `à partir de ${item.variations[0].price.toFixed(2)}€`
+        return `à partir de ${firstPrice.toFixed(2)}€`
     }
-    return `${item.variations[0].price.toFixed(2)}€`
+    return `${firstPrice.toFixed(2)}€`
   }
 
   const handleNavigateComposition = (steps: CompositionStep[], title: string) => {
@@ -593,8 +607,8 @@ export default function MenuPage() {
     if (!editedItem) return;
     const newVariation: Variation = {
       id: `var_${Date.now()}`,
-      name: 'Nouvelle taille',
-      price: 0,
+      name: '',
+      prices: {},
     };
     setEditedItem({ ...editedItem, variations: [...editedItem.variations, newVariation] });
   };
@@ -604,12 +618,29 @@ export default function MenuPage() {
     setEditedItem({ ...editedItem, variations: editedItem.variations.filter(v => v.id !== variationId) });
   };
 
-  const handleVariationChange = (variationId: string, field: keyof Variation, value: string | number) => {
+  const handleVariationChange = (variationId: string, field: keyof Variation, value: any) => {
     if (!editedItem) return;
     setEditedItem({
       ...editedItem,
       variations: editedItem.variations.map(v => v.id === variationId ? { ...v, [field]: value } : v)
     });
+  };
+
+  const handleVariationPriceChange = (variationId: string, channel: SaleChannel, value: string) => {
+    if (!editedItem) return;
+    const newVariations = [...editedItem.variations];
+    const variationIndex = newVariations.findIndex(v => v.id === variationId);
+    if(variationIndex !== -1) {
+        const newPrices = { ...newVariations[variationIndex].prices };
+        const priceValue = parseFloat(value);
+        if (isNaN(priceValue) || priceValue <= 0) {
+            delete newPrices[channel];
+        } else {
+            newPrices[channel] = priceValue;
+        }
+        newVariations[variationIndex].prices = newPrices;
+        setEditedItem({ ...editedItem, variations: newVariations });
+    }
   };
 
   const getCategoryName = (categoryId: string) => {
@@ -641,27 +672,20 @@ export default function MenuPage() {
                 <DialogHeader>
                     <DialogTitle>Outils de création et synchronisation</DialogTitle>
                     <DialogDescription>
-                        Utilisez nos outils pour créer ou mettre à jour votre menu rapidement.
+                        Sélectionnez une boutique puis choisissez une action.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-2">
-                    <Label>Disponible dans les boutiques</Label>
-                    <div className="space-y-2">
-                        {availableStores.map(store => (
-                            <div key={store.id} className="flex items-center gap-2">
-                                <Checkbox 
-                                    id={`store-checkbox-${store.id}`}
-                                    checked={dialogSelectedStoreIds.includes(store.id)}
-                                    onCheckedChange={(checked) => {
-                                        setDialogSelectedStoreIds(prev => 
-                                            checked ? [...prev, store.id] : prev.filter(id => id !== store.id)
-                                        )
-                                    }}
-                                />
-                                <Label htmlFor={`store-checkbox-${store.id}`} className="font-normal">{store.name}</Label>
-                            </div>
-                        ))}
-                    </div>
+                 <div className="space-y-2 py-2">
+                    <Label>Appliquer à la boutique</Label>
+                    <Select value={dialogSelectedStoreId} onValueChange={setDialogSelectedStoreId}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sélectionner une boutique" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Toutes les boutiques</SelectItem>
+                            {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
                  <Tabs defaultValue="article" className="pt-2">
                     <TabsList className="grid w-full grid-cols-3">
@@ -812,13 +836,9 @@ export default function MenuPage() {
                   Retour
                 </Button>
               )}
-               <div className="text-center pt-2">
-                 {compositionHistory.length > 0 ? (
-                    <DialogTitle className="text-2xl font-headline">{currentView?.title}</DialogTitle>
-                 ) : (
-                    <DialogTitle className="text-2xl font-headline">{editedItem.name}</DialogTitle>
-                 )}
-               </div>
+               <DialogTitle className="text-center text-2xl font-headline pt-2">
+                {compositionHistory.length > 0 ? currentView?.title : (editedItem.name || 'Nouvel Article')}
+               </DialogTitle>
             </DialogHeader>
 
             <div className="flex-1 overflow-y-auto -mx-6 px-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -860,40 +880,48 @@ export default function MenuPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base font-headline flex items-center justify-between">
-                                <span className="flex items-center gap-2"><Ruler className="h-4 w-4" /> Tailles / Variations</span>
-                            </CardTitle>
-                             <CardDescription>
-                                Définissez les différentes tailles et leurs prix de base.
+                            <CardTitle className="text-base font-headline flex items-center gap-2"><Ruler className="h-4 w-4" /> Tailles & Tarifs</CardTitle>
+                            <CardDescription>
+                                Définissez les tailles et les prix par canal de vente.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-3">
-                            {editedItem.variations.map((variation) => (
-                                <div key={variation.id} className="grid grid-cols-3 gap-2 items-center">
+                        <CardContent className="space-y-6">
+                            {editedItem.variations.map((variation, v_index) => (
+                                <div key={variation.id} className="space-y-3 p-3 border rounded-md relative">
+                                    {editedItem.variations.length > 1 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="absolute top-1 right-1 text-destructive h-7 w-7"
+                                            onClick={() => handleRemoveVariation(variation.id)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                     <Input
-                                        placeholder="Nom (ex: Large)"
+                                        placeholder="Nom de la taille (ex: Large)"
                                         value={variation.name}
                                         onChange={(e) => handleVariationChange(variation.id, 'name', e.target.value)}
+                                        className="font-semibold"
                                     />
-                                    <div className="relative">
-                                        <Input
-                                            type="number"
-                                            placeholder="Prix de base"
-                                            value={variation.price}
-                                            onChange={(e) => handleVariationChange(variation.id, 'price', parseFloat(e.target.value) || 0)}
-                                            className="pr-6"
-                                        />
-                                        <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">€</span>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs text-muted-foreground">Prix par mode de vente</Label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {saleChannels.map(channel => (
+                                                <div key={channel.id} className="relative">
+                                                    <Input
+                                                        type="number"
+                                                        placeholder={channel.label}
+                                                        value={variation.prices[channel.id]?.toFixed(2) || ''}
+                                                        onChange={(e) => handleVariationPriceChange(variation.id, channel.id, e.target.value)}
+                                                        className="pl-3 pr-5 text-sm h-9"
+                                                        step="0.01"
+                                                    />
+                                                    <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">€</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive h-8 w-8"
-                                        onClick={() => handleRemoveVariation(variation.id)}
-                                        disabled={editedItem.variations.length <= 1}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
                                 </div>
                             ))}
                             <Button variant="outline" size="sm" className="w-full" onClick={handleAddVariation}><Plus className="mr-2 h-4 w-4" />Ajouter une taille/variation</Button>
