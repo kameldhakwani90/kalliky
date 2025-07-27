@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Sun, Moon, Settings, ChefHat, ShoppingBag, Car } from 'lucide-react';
+import { ArrowRight, Sun, Moon, Settings, ChefHat, ShoppingBag, Car, User, Phone } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,18 +21,22 @@ type OrderItem = {
 type Order = {
   id: string;
   time: string;
+  customer: {
+      name: string;
+      phone: string;
+  };
   items: OrderItem[];
   status: 'pending' | 'in-progress' | 'ready';
   saleChannel: 'dine-in' | 'takeaway' | 'delivery';
 };
 
 const initialOrders: Order[] = [
-  { id: '#1025', time: '12:38', items: [{ name: 'Salade Niçoise', quantity: 1, mods: [] }], status: 'pending', saleChannel: 'dine-in' },
-  { id: '#1024', time: '12:35', items: [{ name: 'Pizza Margherita', quantity: 1, mods: [] }, { name: 'Coca-Cola', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'takeaway' },
-  { id: '#1023', time: '12:32', items: [{ name: 'Burger Le Classic', quantity: 1, mods: ['+ cheddar', '- oignons'] }], status: 'in-progress', saleChannel: 'delivery' },
-  { id: '#1022', time: '12:15', items: [{ name: 'Salade César', quantity: 1, mods: ['sans gluten'] }, { name: 'Evian', quantity: 1, mods: [] }], status: 'in-progress', saleChannel: 'dine-in' },
-  { id: '#1026', time: '12:40', items: [{ name: 'Plat du jour', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'delivery' },
-  { id: '#1027', time: '12:42', items: [{ name: 'Pâtes Carbonara', quantity: 1, mods: ['sans lardons'] }], status: 'pending', saleChannel: 'dine-in' },
+  { id: '#1025', time: '12:38', customer: { name: 'Alice Martin', phone: '0612345678' }, items: [{ name: 'Salade Niçoise', quantity: 1, mods: [] }], status: 'pending', saleChannel: 'dine-in' },
+  { id: '#1024', time: '12:35', customer: { name: 'Bob Dupont', phone: '0787654321' }, items: [{ name: 'Pizza Margherita', quantity: 1, mods: [] }, { name: 'Coca-Cola', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'takeaway' },
+  { id: '#1023', time: '12:32', customer: { name: 'Carole Leblanc', phone: '0611223344' }, items: [{ name: 'Burger Le Classic', quantity: 1, mods: ['+ cheddar', '- oignons'] }], status: 'in-progress', saleChannel: 'delivery' },
+  { id: '#1022', time: '12:15', customer: { name: 'David Petit', phone: '0699887766' }, items: [{ name: 'Salade César', quantity: 1, mods: ['sans gluten'] }, { name: 'Evian', quantity: 1, mods: [] }], status: 'in-progress', saleChannel: 'dine-in' },
+  { id: '#1026', time: '12:40', customer: { name: 'Anonyme', phone: 'N/A' }, items: [{ name: 'Plat du jour', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'delivery' },
+  { id: '#1027', time: '12:42', customer: { name: 'Anonyme', phone: 'N/A' }, items: [{ name: 'Pâtes Carbonara', quantity: 1, mods: ['sans lardons'] }], status: 'pending', saleChannel: 'dine-in' },
 
 ];
 
@@ -55,6 +59,8 @@ export default function KDSPage() {
       'takeaway': true,
       'delivery': true,
   });
+  const [newOrderFlash, setNewOrderFlash] = useState(false);
+
 
   useEffect(() => {
     // Simulate new order arrival
@@ -65,11 +71,17 @@ export default function KDSPage() {
       const newOrder: Order = {
         id: newId,
         time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        customer: { name: 'Nouveau Client', phone: '0600000000' },
         items: [{ name: 'Nouveau Plat', quantity: 1, mods: [] }],
         status: 'pending',
         saleChannel: randomChannel,
       };
       setOrders(prev => [newOrder, ...prev]);
+
+      // Trigger visual notification
+      setNewOrderFlash(true);
+      setTimeout(() => setNewOrderFlash(false), 3000);
+
     }, 30000); // every 30 seconds
 
     return () => clearInterval(interval);
@@ -93,11 +105,9 @@ export default function KDSPage() {
 
   const moveOrder = (id: string, nextStatus: Order['status'] | 'remove') => {
     if (nextStatus === 'remove') {
-        // Find the card element to apply exit animation
         const cardElement = document.getElementById(`order-card-${id}`);
         if(cardElement) {
             cardElement.classList.add('animate-fade-out');
-            // Remove from state after animation
             setTimeout(() => {
                  setOrders(prev => prev.filter(order => order.id !== id));
             }, 500);
@@ -118,7 +128,10 @@ export default function KDSPage() {
   const filteredOrders = orders.filter(order => visibleChannels[order.saleChannel]);
 
   return (
-    <div className="flex h-screen w-full flex-col bg-muted/40 dark:bg-black">
+    <div className={cn(
+        "flex h-screen w-full flex-col bg-muted/40 dark:bg-black transition-colors duration-500",
+        newOrderFlash && 'bg-green-400 dark:bg-green-800'
+    )}>
       <header className="flex h-16 items-center justify-between border-b bg-background px-4">
         <h1 className="text-2xl font-bold font-headline">KDS - Kalliky.ai</h1>
         <div className="flex items-center gap-2">
@@ -194,6 +207,16 @@ export default function KDSPage() {
                                 <span className="text-lg font-semibold">{order.time}</span>
                              </div>
                           </CardTitle>
+                          <div className="text-sm text-gray-500 pt-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4"/>
+                                    <span>{order.customer.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Phone className="h-4 w-4"/>
+                                    <span>{order.customer.phone}</span>
+                                </div>
+                          </div>
                         </CardHeader>
                         <CardContent className="p-3">
                           <Separator />
@@ -255,6 +278,16 @@ export default function KDSPage() {
                                 <span className="text-lg font-semibold">{order.time}</span>
                              </div>
                           </CardTitle>
+                           <div className="text-sm text-gray-500 pt-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4"/>
+                                    <span>{order.customer.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Phone className="h-4 w-4"/>
+                                    <span>{order.customer.phone}</span>
+                                </div>
+                          </div>
                         </CardHeader>
                         <CardContent className="p-3">
                           <Separator />
@@ -291,5 +324,3 @@ export default function KDSPage() {
     </div>
   );
 }
-
-    
