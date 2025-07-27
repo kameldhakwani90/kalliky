@@ -178,13 +178,13 @@ export default function KDSPage() {
     return orders.filter(order => visibleChannels[order.saleChannel]);
   }, [orders, visibleChannels]);
 
+  const rootClassName = cn(
+      'flex h-screen w-full flex-col bg-muted/40 transition-colors duration-500 dark:bg-black',
+      newOrderFlash && 'bg-green-400 dark:bg-green-800'
+  );
+
   return (
-    <div
-      className={cn(
-        'flex h-screen w-full flex-col bg-muted/40 transition-colors duration-500 dark:bg-black',
-        newOrderFlash && 'bg-green-400 dark:bg-green-800'
-      )}
-    >
+    <div className={rootClassName}>
       <header className="flex h-16 items-center justify-between border-b bg-background px-4">
         <h1 className="text-2xl font-bold font-headline">KDS - Kalliky.ai</h1>
         <div className="flex items-center gap-2">
@@ -441,3 +441,5 @@ export default function KDSPage() {
     </div>
   );
 }
+
+    
