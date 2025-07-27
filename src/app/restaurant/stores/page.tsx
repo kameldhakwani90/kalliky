@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -22,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -70,6 +69,8 @@ type Store = {
     taxRates: TaxRate[];
     printers?: PrinterDevice[];
     kdsConnections?: KDSConnection[];
+    telnyxNumber?: string;
+    telnyxConfigured?: boolean;
 };
 
 const initialStores: Store[] = [
@@ -87,7 +88,9 @@ const initialStores: Store[] = [
         ],
         kdsConnections: [
             { id: 'kds-1', name: 'Tablette Cuisine 1', connectionCode: 'AB12-CD34', lastSeen: 'il y a 5 minutes'}
-        ]
+        ],
+        telnyxNumber: '+33987654321',
+        telnyxConfigured: true,
     },
     { 
         id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active', stripeStatus: 'disconnected', currency: 'EUR', 
@@ -97,7 +100,9 @@ const initialStores: Store[] = [
             { id: 'tax-2-3', name: 'Normal', rate: 20, isDefault: false },
         ],
         printers: [],
-        kdsConnections: []
+        kdsConnections: [],
+        telnyxNumber: '+33912345678',
+        telnyxConfigured: false,
     },
     { 
         id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', 
@@ -141,8 +146,9 @@ export default function StoresPage() {
     useEffect(() => {
         if (searchParams.get('action') === 'new') {
             handleOpenFormDialog();
+            router.replace('/restaurant/stores');
         }
-    }, [searchParams]);
+    }, [searchParams, router]);
 
     const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
 
@@ -158,6 +164,10 @@ export default function StoresPage() {
     const handleSaveStore = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
+        
+        // Mock Telnyx number generation for new stores
+        const newTelnyxNumber = `+339${Math.floor(10000000 + Math.random() * 90000000)}`;
+        
         const storeData = {
             ...selectedStore,
             id: selectedStore ? selectedStore.id : `store-${Date.now()}`,
@@ -170,7 +180,9 @@ export default function StoresPage() {
             currency: (formData.get('currency') as Store['currency']) || 'EUR',
             taxRates: editableTaxRates,
             printers: editablePrinters,
-            kdsConnections: editableKDS
+            kdsConnections: editableKDS,
+            telnyxNumber: selectedStore?.telnyxNumber || newTelnyxNumber,
+            telnyxConfigured: selectedStore?.telnyxConfigured || false
         } as Store;
 
         if (selectedStore) {
@@ -255,6 +267,15 @@ export default function StoresPage() {
     const nextStep = () => setWizardStep(prev => Math.min(prev + 1, WIZARD_STEPS.length - 1));
     const prevStep = () => setWizardStep(prev => Math.max(prev - 1, 0));
     
+    const confirmTelnyxSetup = (storeId: string) => {
+        setStores(stores.map(s => s.id === storeId ? { ...s, telnyxConfigured: true } : s));
+        toast({
+            title: t({fr: "Configuration terminée !", en: "Setup complete!"}),
+            description: t({fr: "Votre boutique est maintenant prête à recevoir des appels.", en: "Your store is now ready to receive calls."}),
+            variant: "default",
+        })
+    }
+
     const translations = {
         title: { fr: "Gestion des Boutiques", en: "Store Management" },
         description: { fr: "Gérez vos points de vente et les menus associés.", en: "Manage your points of sale and associated menus." },
@@ -349,6 +370,17 @@ export default function StoresPage() {
         previous: { fr: 'Précédent', en: 'Previous' },
         next: { fr: 'Suivant', en: 'Next' },
         finishAndCreateMenu: { fr: 'Terminer et créer ma carte', en: 'Finish and Create Menu' },
+
+        telnyxTitle: { fr: "Action requise : activez la réception des appels", en: "Action required: activate call reception" },
+        telnyxDescription: { fr: "Pour que notre IA puisse répondre à vos clients, vous devez rediriger les appels de votre ligne principale vers le numéro que nous avons créé pour vous.", en: "For our AI to be able to answer your customers, you must forward calls from your main line to the number we have created for you." },
+        telnyxNumberLabel: { fr: "Votre numéro vocal Kalliky.ai", en: "Your Kalliky.ai voice number" },
+        telnyxInstructions: { fr: "Instructions :", en: "Instructions:" },
+        telnyxInstruction1: { fr: "1. Connectez-vous à l'interface de votre opérateur téléphonique (Orange, Free, SFR...).", en: "1. Log in to your telephone operator's interface (Orange, Free, SFR...)." },
+        telnyxInstruction2: { fr: "2. Trouvez l'option \"Renvoi d'appel\" ou \"Transfert d'appel\".", en: "2. Find the \"Call Forwarding\" or \"Call Transfer\" option." },
+        telnyxInstruction3: { fr: "3. Configurez un renvoi de tous les appels vers votre numéro Kalliky.ai ci-dessus.", en: "3. Set up forwarding for all calls to your Kalliky.ai number above." },
+        telnyxConfirm: { fr: "C'est fait, j'ai configuré le renvoi d'appel", en: "Done, I have configured call forwarding" },
+        telnyxConnected: { fr: "Prêt à recevoir les appels", en: "Ready to receive calls" },
+
     };
 
 
@@ -365,81 +397,115 @@ export default function StoresPage() {
                 </Button>
             </header>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t(translations.storeList)}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t(translations.name)}</TableHead>
-                                <TableHead>{t(translations.address)}</TableHead>
-                                <TableHead>{t(translations.phone)}</TableHead>
-                                <TableHead>{t(translations.status)}</TableHead>
-                                <TableHead className="text-right">{t(translations.actions)}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {stores.map((store) => (
-                                <TableRow key={store.id}>
-                                    <TableCell className="font-medium">{store.name}</TableCell>
-                                    <TableCell>{store.address}</TableCell>
-                                    <TableCell>{store.phone}</TableCell>
-                                    <TableCell>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {stores.map((store) => (
+                    <Card key={store.id} className="flex flex-col">
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2">
+                                        {store.name}
                                         <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className={store.status === 'active' ? 'bg-green-100 text-green-700' : ''}>
                                             {store.status === 'active' ? t(translations.active) : t(translations.inactive)}
                                         </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Switch
-                                                checked={store.status === 'active'}
-                                                onCheckedChange={() => toggleStoreStatus(store.id)}
-                                                aria-label={t({fr: "Activer/Désactiver la boutique", en: "Activate/Deactivate store"})}
-                                            />
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">{t(translations.openMenu)}</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleOpenFormDialog(store)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        {t(translations.editInfo)}
-                                                    </DropdownMenuItem>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                {t(translations.delete)}
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    {t(translations.deleteConfirmation)}
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => deleteStore(store.id)}>{t(translations.delete)}</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                    </CardTitle>
+                                    <CardDescription>{store.address}</CardDescription>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <span className="sr-only">{t(translations.openMenu)}</span>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleOpenFormDialog(store)}>
+                                            <Pencil className="mr-2 h-4 w-4" />
+                                            {t(translations.editInfo)}
+                                        </DropdownMenuItem>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    {t(translations.delete)}
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        {t(translations.deleteConfirmation)}
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => deleteStore(store.id)}>{t(translations.delete)}</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                            {store.telnyxNumber && !store.telnyxConfigured && (
+                                <Card className="bg-amber-50 border-amber-200">
+                                    <CardHeader>
+                                        <CardTitle className="text-base text-amber-900 flex items-center gap-3">
+                                            <PhoneCall className="h-5 w-5"/>
+                                            {t(translations.telnyxTitle)}
+                                        </CardTitle>
+                                        <CardDescription className="text-amber-800">
+                                            {t(translations.telnyxDescription)}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div>
+                                            <Label className="text-xs">{t(translations.telnyxNumberLabel)}</Label>
+                                            <div className="flex items-center gap-2">
+                                                <Input readOnly value={store.telnyxNumber} className="font-mono text-lg bg-white" />
+                                                <Button size="icon" variant="ghost" onClick={() => copyToClipboard(store.telnyxNumber!)}>
+                                                    <Copy className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                        <div>
+                                            <Label className="text-xs">{t(translations.telnyxInstructions)}</Label>
+                                            <ul className="text-xs text-amber-800 list-none space-y-1 mt-1">
+                                                <li>{t(translations.telnyxInstruction1)}</li>
+                                                <li>{t(translations.telnyxInstruction2)}</li>
+                                                <li>{t(translations.telnyxInstruction3)}</li>
+                                            </ul>
+                                        </div>
+                                        <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={() => confirmTelnyxSetup(store.id)}>
+                                            <PhoneForwarded className="mr-2 h-4 w-4"/>
+                                            {t(translations.telnyxConfirm)}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                             {store.telnyxNumber && store.telnyxConfigured && (
+                                <div className="p-4 rounded-md bg-green-50 border-green-200 border text-green-800 flex items-center gap-3">
+                                     <CheckCircle className="h-5 w-5 text-green-600"/>
+                                     <div>
+                                        <p className="font-semibold text-sm">{t(translations.telnyxConnected)}</p>
+                                        <p className="text-xs">{store.telnyxNumber}</p>
+                                     </div>
+                                </div>
+                            )}
+
+                        </CardContent>
+                        <CardFooter className="bg-muted/50 p-3 border-t text-xs text-muted-foreground flex justify-between items-center">
+                            <span>{store.phone}</span>
+                             <div className="flex items-center gap-2">
+                                {store.stripeStatus === 'connected' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                                <span>Stripe</span>
+                             </div>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
 
             <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
                 <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
@@ -714,7 +780,7 @@ export default function StoresPage() {
                       )}
                       
                        {wizardStep === 5 && (
-                            <div className="text-center space-y-6 py-8 px-1">
+                            <div className="text-center space-y-6 py-8">
                                 <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
                                 <h2 className="text-2xl font-bold font-headline">{t(translations.finishTitle)}</h2>
                                 <p className="text-muted-foreground max-w-md mx-auto">{t(translations.finishDescription)}</p>
@@ -743,19 +809,22 @@ export default function StoresPage() {
                             </div>
                         )}
 
-                      <DialogFooter className="pt-4 border-t">
+                      <DialogFooter className="pt-4 mt-auto border-t">
                           <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>{t(translations.cancel)}</Button>
                           <div className="flex-grow" />
-                          {wizardStep > 0 && (
+                          {wizardStep > 0 && wizardStep < WIZARD_STEPS.length -1 && (
                             <Button type="button" variant="ghost" onClick={prevStep}>{t(translations.previous)}</Button>
                           )}
                           {wizardStep === 0 && (
                             <Button type="button" onClick={nextStep}>{t(translations.startConfig)}</Button>
                           )}
-                          {wizardStep > 0 && wizardStep < WIZARD_STEPS.length - 1 && (
+                          {wizardStep > 0 && wizardStep < WIZARD_STEPS.length - 2 && (
                             <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
                           )}
-                          {wizardStep === WIZARD_STEPS.length - 1 && (
+                           {wizardStep === WIZARD_STEPS.length - 2 && (
+                             <Button type="button" onClick={nextStep}>{t(translations.finishAndCreateMenu)}</Button>
+                          )}
+                           {wizardStep === WIZARD_STEPS.length - 1 && (
                              <Button type="submit">{t(translations.finishAndCreateMenu)}</Button>
                           )}
                       </DialogFooter>
