@@ -274,9 +274,11 @@ export default function RestaurantLayout({
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                     <DropdownMenuItem className="text-destructive">
-                        <XCircle className="mr-2 h-4 w-4" />
-                        <span>{t({fr: "Se déconnecter", en: "Log Out"})}</span>
+                     <DropdownMenuItem asChild className="text-destructive">
+                        <Link href="/login">
+                            <XCircle className="mr-2 h-4 w-4" />
+                            <span>{t({fr: "Se déconnecter", en: "Log Out"})}</span>
+                        </Link>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

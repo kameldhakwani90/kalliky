@@ -743,7 +743,7 @@ export default function StoresPage() {
                             </div>
                         )}
 
-                      <DialogFooter className="pt-4 border-t sticky bottom-0 bg-background pb-0 -mx-2 -mb-6 px-6">
+                      <DialogFooter className="pt-4 border-t sticky bottom-0 bg-background pb-0 -mx-6 -mb-2 px-6">
                           <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>{t(translations.cancel)}</Button>
                           <div className="flex-grow" />
                           {wizardStep > 0 && (
