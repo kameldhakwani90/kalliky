@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -287,6 +288,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         telnyxInstruction2: { fr: "2. Trouvez l'option \"Renvoi d'appel\" ou \"Transfert d'appel\".", en: "2. Find the \"Call Forwarding\" or \"Call Transfer\" option." },
         telnyxInstruction3: { fr: "3. Configurez un renvoi de tous les appels vers votre numéro vocal ci-dessus.", en: "3. Set up forwarding for all calls to your voice number above." },
         telnyxConfirm: { fr: "J'ai configuré le renvoi d'appel", en: "I have configured call forwarding" },
+        configureLater: { fr: 'Configurer plus tard', en: 'Configure later' },
         finishTitle: { fr: 'Votre boutique est prête !', en: 'Your store is ready!' },
         finishDescription: { fr: "Il ne reste plus qu'à créer votre menu. C'est simple et rapide.", en: "All that's left is to create your menu. It's quick and easy." },
         menuCreationMethod: { fr: 'Méthodes de création de menu', en: 'Menu Creation Methods' },
@@ -579,11 +581,16 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                 <CardHeader>
                                     <CardTitle>{t(translations.menuCreationMethod)}</CardTitle>
                                 </CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                                     <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                                         <FileText className="h-6 w-6 text-primary" />
                                         <h3 className="font-semibold">{t(translations.method1Title)}</h3>
                                         <p className="text-xs text-muted-foreground">{t(translations.method1Desc)}</p>
+                                    </div>
+                                     <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                                        <Bot className="h-6 w-6 text-primary" />
+                                        <h3 className="font-semibold">{t({fr: "Création via IA", en: "AI Creation"})}</h3>
+                                        <p className="text-xs text-muted-foreground">{t({fr: "Laissez notre IA créer votre menu à partir de simples descriptions.", en: "Let our AI create your menu from simple descriptions."})}</p>
                                     </div>
                                     <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                                         <Pencil className="h-6 w-6 text-primary" />
@@ -595,24 +602,37 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         </div>
                     )}
                 </div>
-
-                <DialogFooter className="pt-4 border-t">
+            </form>
+             <DialogFooter className="pt-4 border-t">
                     <Button type="button" variant="outline" onClick={onCancel}>{t(translations.cancel)}</Button>
                     <div className="flex-grow" />
                     {wizardStep > 0 && wizardStep < WIZARD_STEPS.length - 1 && (
                         <Button type="button" variant="ghost" onClick={prevStep}>{t(translations.previous)}</Button>
                     )}
-                    {wizardStep < WIZARD_STEPS.length - 2 && (
+                    
+                    {wizardStep === 0 && (
+                        <Button type="button" onClick={nextStep}>{t(translations.startConfig)}</Button>
+                    )}
+
+                    {wizardStep > 0 && wizardStep < 5 && (
                         <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
                     )}
-                    {wizardStep === WIZARD_STEPS.length - 2 && (
-                        <Button type="button" onClick={() => { handleInputChange('telnyxConfigured', true); nextStep(); }}>{t(translations.telnyxConfirm)}</Button>
+                    
+                    {wizardStep === 5 && (
+                       <>
+                        <Button type="button" variant="secondary" onClick={() => { handleInputChange('telnyxConfigured', false); nextStep(); }}>
+                            {t(translations.configureLater)}
+                        </Button>
+                        <Button type="button" onClick={() => { handleInputChange('telnyxConfigured', true); nextStep(); }}>
+                            {t(translations.telnyxConfirm)}
+                        </Button>
+                       </>
                     )}
+
                     {wizardStep === WIZARD_STEPS.length - 1 && (
-                        <Button type="submit">{t(translations.finishAndCreateMenu)}</Button>
+                        <Button onClick={() => router.push('/restaurant/menu')}>{t(translations.finishAndCreateMenu)}</Button>
                     )}
                 </DialogFooter>
-            </form>
         </DialogContent>
     )
 }
@@ -755,7 +775,7 @@ export default function StoresPage() {
                 </Button>
             </header>
 
-            <Card>
+             <Card>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader>
