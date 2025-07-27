@@ -31,6 +31,9 @@ const initialOrders: Order[] = [
   { id: '#1024', time: '12:35', items: [{ name: 'Pizza Margherita', quantity: 1, mods: [] }, { name: 'Coca-Cola', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'takeaway' },
   { id: '#1023', time: '12:32', items: [{ name: 'Burger Le Classic', quantity: 1, mods: ['+ cheddar', '- oignons'] }], status: 'in-progress', saleChannel: 'delivery' },
   { id: '#1022', time: '12:15', items: [{ name: 'Salade César', quantity: 1, mods: ['sans gluten'] }, { name: 'Evian', quantity: 1, mods: [] }], status: 'in-progress', saleChannel: 'dine-in' },
+  { id: '#1026', time: '12:40', items: [{ name: 'Plat du jour', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'delivery' },
+  { id: '#1027', time: '12:42', items: [{ name: 'Pâtes Carbonara', quantity: 1, mods: ['sans lardons'] }], status: 'pending', saleChannel: 'dine-in' },
+
 ];
 
 const KDS_COLUMNS = {
@@ -56,7 +59,7 @@ export default function KDSPage() {
   useEffect(() => {
     // Simulate new order arrival
     const interval = setInterval(() => {
-      const newId = `#${Math.floor(1026 + Math.random() * 100)}`;
+      const newId = `#${Math.floor(1028 + Math.random() * 100)}`;
       const channels: Order['saleChannel'][] = ['dine-in', 'takeaway', 'delivery'];
       const randomChannel = channels[Math.floor(Math.random() * channels.length)];
       const newOrder: Order = {
@@ -161,78 +164,132 @@ export default function KDSPage() {
       </header>
 
       <main className="flex-1 overflow-x-auto p-4">
-        <div className="flex h-full min-w-max gap-4">
-          {Object.entries(KDS_COLUMNS).map(([statusKey, config]) => (
-            <div key={statusKey} className="flex h-full w-80 md:w-96 flex-col">
-              <h2 className={`mb-2 rounded-lg p-2 text-center font-bold text-lg bg-card`}>
-                {config.title}
-              </h2>
-              <div className="flex-1 space-y-4 overflow-y-auto p-2">
-                {filteredOrders
-                  .filter(o => o.status === statusKey)
-                  .sort((a,b) => {
-                      const timeA = a.time.split(':');
-                      const timeB = b.time.split(':');
-                      return new Date(0,0,0, Number(timeA[0]), Number(timeA[1])).getTime() - new Date(0,0,0, Number(timeB[0]), Number(timeB[1])).getTime()
-                  })
-                  .map(order => {
-                      const orderTimeParts = order.time.split(':');
-                      const orderDate = new Date();
-                      orderDate.setHours(Number(orderTimeParts[0]), Number(orderTimeParts[1]), 0);
+        <div className="grid h-full min-w-max grid-cols-3 gap-4">
+          
+          <div className="col-span-2 flex h-full flex-col">
+            <h2 className={`mb-2 rounded-lg p-2 text-center font-bold text-lg bg-card`}>
+              {KDS_COLUMNS.pending.title}
+            </h2>
+            <div className="grid flex-1 grid-cols-2 gap-4 overflow-y-auto p-2">
+              {filteredOrders
+                .filter(o => o.status === 'pending')
+                .sort((a,b) => new Date(0,0,0, ...a.time.split(':').map(Number)).getTime() - new Date(0,0,0, ...b.time.split(':').map(Number)).getTime())
+                .map(order => {
+                    const orderDate = new Date();
+                    orderDate.setHours(...order.time.split(':').map(Number) as [number, number], 0);
+                    const isLate = (new Date().getTime() - orderDate.getTime()) > 10 * 60 * 1000;
+                    const ChannelIcon = SALE_CHANNELS[order.saleChannel].icon;
 
-                      const isLate = (new Date().getTime() - orderDate.getTime()) > 10 * 60 * 1000;
-                      const ChannelIcon = SALE_CHANNELS[order.saleChannel].icon;
-
-                      return (
-                         <Card key={order.id} id={`order-card-${order.id}`} className={cn(
-                             "shadow-md transition-all",
-                             config.color,
-                             {"bg-yellow-100 border-yellow-500 dark:bg-yellow-900/20": isLate}
-                         )}>
-                          <CardHeader className="p-3">
-                            <CardTitle className="flex items-center justify-between">
-                              <span className="text-xl font-bold">{order.id}</span>
-                               <div className="flex items-center gap-2">
-                                  <ChannelIcon className="h-5 w-5 text-muted-foreground" />
-                                  <span className="text-lg font-semibold">{order.time}</span>
-                               </div>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-3">
-                            <Separator />
-                            <div className="mt-3 space-y-2">
-                              {order.items.map((item, i) => (
-                                <div key={i}>
-                                  <p className="text-lg font-semibold">
-                                    {item.quantity}x {item.name}
+                    return (
+                       <Card key={order.id} id={`order-card-${order.id}`} className={cn(
+                           "shadow-md transition-all bg-white text-black",
+                           KDS_COLUMNS.pending.color,
+                           {"bg-yellow-100 border-yellow-500": isLate}
+                       )}>
+                        <CardHeader className="p-3">
+                          <CardTitle className="flex items-center justify-between">
+                            <span className="text-xl font-bold">{order.id}</span>
+                             <div className="flex items-center gap-2 text-gray-600">
+                                <ChannelIcon className="h-5 w-5" />
+                                <span className="text-lg font-semibold">{order.time}</span>
+                             </div>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3">
+                          <Separator />
+                          <div className="mt-3 space-y-2">
+                            {order.items.map((item, i) => (
+                              <div key={i}>
+                                <p className="text-lg font-semibold">
+                                  {item.quantity}x {item.name}
+                                </p>
+                                {item.mods.length > 0 && (
+                                  <p className="text-sm text-pink-600">
+                                    {item.mods.join(', ')}
                                   </p>
-                                  {item.mods.length > 0 && (
-                                    <p className="text-sm text-pink-600 dark:text-pink-400">
-                                      {item.mods.join(', ')}
-                                    </p>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                            
-                            <Button
-                                className="mt-4 w-full"
-                                onClick={() => moveOrder(order.id, config.next ? config.next : 'remove')}
-                                variant={config.next ? 'default' : 'secondary'}
-                            >
-                                {config.next ? `Commencer` : 'Terminé'}
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                           
-                          </CardContent>
-                        </Card>
-                      )
-                  })}
-              </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <Button
+                              className="mt-4 w-full"
+                              onClick={() => moveOrder(order.id, KDS_COLUMNS.pending.next)}
+                              variant={'default'}
+                          >
+                              Commencer <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                         
+                        </CardContent>
+                      </Card>
+                    )
+                })}
             </div>
-          ))}
+          </div>
+
+          <div className="col-span-1 flex h-full flex-col">
+            <h2 className={`mb-2 rounded-lg p-2 text-center font-bold text-lg bg-card`}>
+              {KDS_COLUMNS['in-progress'].title}
+            </h2>
+            <div className="flex-1 space-y-4 overflow-y-auto p-2">
+              {filteredOrders
+                .filter(o => o.status === 'in-progress')
+                .sort((a,b) => new Date(0,0,0, ...a.time.split(':').map(Number)).getTime() - new Date(0,0,0, ...b.time.split(':').map(Number)).getTime())
+                .map(order => {
+                    const orderDate = new Date();
+                    orderDate.setHours(...order.time.split(':').map(Number) as [number, number], 0);
+                    const isLate = (new Date().getTime() - orderDate.getTime()) > 10 * 60 * 1000;
+                    const ChannelIcon = SALE_CHANNELS[order.saleChannel].icon;
+
+                    return (
+                       <Card key={order.id} id={`order-card-${order.id}`} className={cn(
+                           "shadow-md transition-all bg-white text-black",
+                           KDS_COLUMNS['in-progress'].color,
+                           {"bg-yellow-100 border-yellow-500": isLate}
+                       )}>
+                        <CardHeader className="p-3">
+                          <CardTitle className="flex items-center justify-between">
+                            <span className="text-xl font-bold">{order.id}</span>
+                             <div className="flex items-center gap-2 text-gray-600">
+                                <ChannelIcon className="h-5 w-5" />
+                                <span className="text-lg font-semibold">{order.time}</span>
+                             </div>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3">
+                          <Separator />
+                          <div className="mt-3 space-y-2">
+                            {order.items.map((item, i) => (
+                              <div key={i}>
+                                <p className="text-lg font-semibold">
+                                  {item.quantity}x {item.name}
+                                </p>
+                                {item.mods.length > 0 && (
+                                  <p className="text-sm text-pink-600">
+                                    {item.mods.join(', ')}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <Button
+                              className="mt-4 w-full"
+                              onClick={() => moveOrder(order.id, KDS_COLUMNS['in-progress'].next)}
+                              variant={'secondary'}
+                          >
+                              Terminé <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )
+                })}
+            </div>
+          </div>
+
         </div>
       </main>
     </div>
   );
 }
+
+    
