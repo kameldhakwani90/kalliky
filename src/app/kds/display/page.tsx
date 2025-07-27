@@ -73,7 +73,6 @@ export default function KDSPage() {
   });
   const [isFutureOrdersDialogOpen, setFutureOrdersDialogOpen] = useState(false);
 
-  // Separate state for orders that are not yet due to be prepared
   const [scheduledOrders, setScheduledOrders] = useState<Order[]>([]);
 
   const showOrder = (order: Order) => {
@@ -91,7 +90,6 @@ export default function KDSPage() {
   };
   
   useEffect(() => {
-    // Check for scheduled orders that need to be displayed
     const checkInterval = setInterval(() => {
       const nowTime = new Date().getTime();
       const newlyDueOrders: Order[] = [];
@@ -118,7 +116,6 @@ export default function KDSPage() {
 
 
   useEffect(() => {
-    // Separate orders into visible and scheduled on load and when prep times change
     const nowTime = new Date().getTime();
     const visible: Order[] = [];
     const scheduled: Order[] = [];
@@ -134,7 +131,7 @@ export default function KDSPage() {
 
     setOrders(visible);
     setScheduledOrders(scheduled);
-  }, []); // Only run once on mount for initial setup
+  }, []); 
 
 
   useEffect(() => {
@@ -422,10 +419,10 @@ export default function KDSPage() {
                             ))}
                           </div>
                           <Button
-                              className="mt-4 w-full bg-black text-white hover:bg-gray-800"
+                              className="mt-4 w-full bg-orange-500 text-white hover:bg-orange-600"
                               onClick={() => moveOrder(order.id, 'ready')}
                           >
-                              <span className="text-red-500 mr-2 font-bold">Terminé</span> <ArrowRight className="ml-2 h-4 w-4" />
+                              Terminé <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         </CardContent>
                       </Card>
