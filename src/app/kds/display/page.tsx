@@ -40,7 +40,6 @@ const initialOrders: Order[] = [
   { id: '#1024', receivedTime: now - 60000 * 5, dueTime: now + 60000 * 25, customer: { name: 'Bob Dupont', phone: '0787654321' }, items: [{ name: 'Pizza Margherita', quantity: 1, mods: [] }, { name: 'Coca-Cola', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'takeaway' },
   { id: '#1023', receivedTime: now - 60000 * 8, dueTime: now + 60000 * 7, customer: { name: 'Carole Leblanc', phone: '0611223344' }, items: [{ name: 'Burger Le Classic', quantity: 1, mods: ['+ cheddar', '- oignons'] }], status: 'in-progress', saleChannel: 'delivery' },
   { id: '#1022', receivedTime: now - 60000 * 25, dueTime: now + 60000 * 5, customer: { name: 'David Petit', phone: '0699887766' }, items: [{ name: 'Salade César', quantity: 1, mods: ['sans gluten'] }, { name: 'Evian', quantity: 1, mods: [] }], status: 'in-progress', saleChannel: 'dine-in' },
-  // Scheduled orders for later
   { id: '#1026', receivedTime: now, dueTime: now + 60000 * 40, customer: { name: 'Anonyme', phone: 'N/A' }, items: [{ name: 'Plat du jour', quantity: 2, mods: [] }], status: 'pending', saleChannel: 'delivery' },
   { id: '#1027', receivedTime: now, dueTime: now + 60000 * 20, customer: { name: 'Anonyme', phone: 'N/A' }, items: [{ name: 'Pâtes Carbonara', quantity: 1, mods: ['sans lardons'] }], status: 'pending', saleChannel: 'dine-in' },
 ];
