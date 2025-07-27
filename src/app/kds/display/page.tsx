@@ -441,5 +441,3 @@ export default function KDSPage() {
     </div>
   );
 }
-
-    
