@@ -425,7 +425,7 @@ export default function KDSPage() {
                           </div>
                           <Button
                               className="mt-4 w-full bg-black text-white hover:bg-gray-800"
-                              onClick={() => moveOrder(order.id, KDS_COLUMNS['in-progress'].next)}
+                              onClick={() => moveOrder(order.id, 'ready')}
                               variant={'secondary'}
                           >
                               <span className="text-red-500 mr-2 font-bold">Terminé</span> <ArrowRight className="ml-2 h-4 w-4" />
@@ -441,5 +441,6 @@ export default function KDSPage() {
       </main>
     </div>
   );
+}
 
     
