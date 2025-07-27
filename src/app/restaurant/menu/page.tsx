@@ -3,7 +3,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useMemo, ChangeEvent, useRef } from 'react';
+import { useState, useMemo, ChangeEvent, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -514,11 +515,13 @@ const EditableCompositionDisplay: React.FC<{
 
 export default function MenuPage() {
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [editedItem, setEditedItem] = useState<MenuItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
+  const [syncPopupTab, setSyncPopupTab] = useState('article');
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Filters
@@ -532,6 +535,18 @@ export default function MenuPage() {
 
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   const [tagInput, setTagInput] = useState('');
+
+  useEffect(() => {
+    const storeId = searchParams.get('storeId');
+    const action = searchParams.get('action');
+    if (storeId && availableStores.some(s => s.id === storeId)) {
+        setSelectedStore(storeId);
+    }
+    if (action === 'add') {
+        setIsSyncPopupOpen(true);
+        setSyncPopupTab('import');
+    }
+  }, [searchParams]);
 
   const currentView = useMemo(() => {
     if (compositionHistory.length > 0) {
@@ -841,7 +856,7 @@ export default function MenuPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                 <Tabs defaultValue="article" className="pt-2">
+                 <Tabs value={syncPopupTab} onValueChange={setSyncPopupTab} className="pt-2">
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="article">{t(translations.item)}</TabsTrigger>
                         <TabsTrigger value="category">{t(translations.category)}</TabsTrigger>
@@ -860,8 +875,11 @@ export default function MenuPage() {
                         </div>
                         <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4"/>{t(translations.addCategory)}</Button>
                     </TabsContent>
-                    <TabsContent value="import" className="pt-4">
-                      <p className="text-sm text-muted-foreground mb-4">
+                    <TabsContent value="import" className="pt-4 space-y-4">
+                      <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-4">
+                          <p className="text-sm text-muted-foreground">Emplacement Vidéo Explicative</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
                         {t(translations.importDescription)}
                       </p>
                       <MenuSyncForm />

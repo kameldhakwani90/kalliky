@@ -149,8 +149,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
 
     const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
 
-    const handleSaveStore = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSaveStore = () => {
         const finalStore = {
             ...editableStore,
             id: editableStore.id || `store-${Date.now()}`,
@@ -158,10 +157,17 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         } as Store;
 
         onSave(finalStore);
-        if (wizardStep === WIZARD_STEPS.length - 1) {
-            router.push('/restaurant/menu');
-        }
     };
+
+    const handleFinalize = () => {
+        const finalStore = {
+            ...editableStore,
+            id: editableStore.id || `store-${Date.now()}`,
+            telnyxNumber: editableStore.telnyxNumber || `+339${Math.floor(10000000 + Math.random() * 90000000)}`,
+        } as Store;
+        onSave(finalStore);
+        router.push(`/restaurant/menu?storeId=${finalStore.id}&action=add`);
+    }
 
     const handleInputChange = (field: keyof Store, value: any) => {
         setEditableStore(prev => ({ ...prev, [field]: value }));
@@ -319,7 +325,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                 </div>
             }
 
-            <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6">
+            <form onSubmit={(e) => e.preventDefault()} className="flex-1 overflow-y-auto space-y-6">
                 <div className="px-1">
                     {wizardStep === 0 && (
                         <div className="text-center space-y-6 py-8">
@@ -518,7 +524,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                             <div className="grid grid-cols-12 gap-2 items-center">
                                                 <div className="col-span-5 space-y-1">
                                                     <Label className="text-xs">{t(translations.deviceName)}</Label>
-                                                    <Input className="h-8 bg-background" value={kds.name} onChange={(e) => handleKDSChange(index, 'name', e.target.value)} />
+                                                    <Input className="h-8 bg-background" defaultValue={kds.name} onChange={(e) => handleKDSChange(index, 'name', e.target.value)} />
                                                 </div>
                                                 <div className="col-span-5 space-y-1">
                                                     <Label className="text-xs">{t(translations.connectionCode)}</Label>
@@ -630,7 +636,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                     )}
 
                     {wizardStep === WIZARD_STEPS.length - 1 && (
-                        <Button onClick={() => router.push('/restaurant/menu')}>{t(translations.finishAndCreateMenu)}</Button>
+                        <Button onClick={handleFinalize}>{t(translations.finishAndCreateMenu)}</Button>
                     )}
                 </DialogFooter>
         </DialogContent>
@@ -803,7 +809,7 @@ export default function StoresPage() {
                                                 {store.telnyxConfigured ? t(translations.connected) : t(translations.configure)}
                                             </Badge>
                                             <Badge variant="outline" className={cn(store.stripeStatus !== 'connected' && "text-muted-foreground")}>
-                                                <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c-.06.06-.136.09-.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c.06-.06.136-.09.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                                <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06.136-.09.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
                                                 Stripe
                                             </Badge>
                                         </div>
