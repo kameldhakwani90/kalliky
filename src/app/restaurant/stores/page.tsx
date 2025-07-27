@@ -179,7 +179,7 @@ export default function StoresPage() {
             setStores([...stores, storeData]);
         }
         setIsFormDialogOpen(false);
-        router.push('/restaurant/menu'); // Redirect to menu page
+        router.push('/restaurant/menu');
     };
     
     const toggleStoreStatus = (id: string) => {
@@ -459,7 +459,7 @@ export default function StoresPage() {
                     }
 
 
-                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6 px-1">
+                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6">
                        {wizardStep === 0 && (
                             <div className="grid md:grid-cols-2 gap-8 items-center py-8">
                                 <div className="space-y-4">
@@ -474,7 +474,7 @@ export default function StoresPage() {
                         )}
                       
                       {wizardStep === 1 && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 px-1">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">{t(translations.restaurantName)}</Label>
@@ -508,7 +508,7 @@ export default function StoresPage() {
                       )}
 
                       {wizardStep === 2 && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 px-1">
                             <div className="space-y-3">
                                 {daysOfWeek.map(day => (
                                     <div key={day} className="grid grid-cols-3 items-center gap-4">
@@ -528,7 +528,7 @@ export default function StoresPage() {
                       )}
 
                       {wizardStep === 3 && (
-                         <div className="space-y-6">
+                         <div className="space-y-6 px-1">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center gap-2"><BadgeEuro className="h-4 w-4"/> {t(translations.vatRates)}</CardTitle>
@@ -601,7 +601,7 @@ export default function StoresPage() {
                       )}
 
                       {wizardStep === 4 && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 px-1">
                            <Card>
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center gap-2"><Printer className="h-4 w-4"/> {t(translations.printerManagement)}</CardTitle>
@@ -714,7 +714,7 @@ export default function StoresPage() {
                       )}
                       
                        {wizardStep === 5 && (
-                            <div className="text-center space-y-6 py-8">
+                            <div className="text-center space-y-6 py-8 px-1">
                                 <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
                                 <h2 className="text-2xl font-bold font-headline">{t(translations.finishTitle)}</h2>
                                 <p className="text-muted-foreground max-w-md mx-auto">{t(translations.finishDescription)}</p>
