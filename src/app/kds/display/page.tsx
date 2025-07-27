@@ -131,7 +131,7 @@ export default function KDSPage() {
 
     setOrders(visible);
     setScheduledOrders(scheduled);
-  }, []); 
+  }, [prepTimes]); 
 
 
   useEffect(() => {
