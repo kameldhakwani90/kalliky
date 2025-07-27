@@ -459,7 +459,7 @@ export default function StoresPage() {
                     }
 
 
-                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6 p-1 -mx-2 px-2">
+                    <form onSubmit={handleSaveStore} className="flex-1 overflow-y-auto space-y-6 px-1">
                        {wizardStep === 0 && (
                             <div className="grid md:grid-cols-2 gap-8 items-center py-8">
                                 <div className="space-y-4">
@@ -743,7 +743,7 @@ export default function StoresPage() {
                             </div>
                         )}
 
-                      <DialogFooter className="pt-4 border-t sticky bottom-0 bg-background pb-0 -mx-6 -mb-2 px-6">
+                      <DialogFooter className="pt-4 border-t">
                           <Button type="button" variant="outline" onClick={() => setIsFormDialogOpen(false)}>{t(translations.cancel)}</Button>
                           <div className="flex-grow" />
                           {wizardStep > 0 && (
