@@ -548,10 +548,10 @@ export default function StoresPage() {
                                             {editableTaxRates.map((taxRate, index) => (
                                                 <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
                                                     <div className="col-span-5">
-                                                        <Input placeholder={t(translations.taxNamePlaceholder)} value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
+                                                        <Input placeholder={t(translations.taxNamePlaceholder)} defaultValue={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
                                                     </div>
                                                     <div className="col-span-3 relative">
-                                                        <Input placeholder={t(translations.rate)} type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
+                                                        <Input placeholder={t(translations.rate)} type="number" defaultValue={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
                                                          <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
                                                     </div>
                                                     <div className="col-span-3 flex items-center gap-2">
@@ -612,7 +612,7 @@ export default function StoresPage() {
                                       <CardHeader className="py-3 px-4 flex-row items-center justify-between">
                                           <CardTitle className="text-base flex items-center gap-2">
                                               <Input 
-                                                  value={printer.name} 
+                                                  defaultValue={printer.name} 
                                                   onChange={(e) => handlePrinterChange(index, 'name', e.target.value)} 
                                                   className="border-none shadow-none focus-visible:ring-1 p-1 h-auto w-auto font-semibold bg-transparent"
                                               />
@@ -625,7 +625,7 @@ export default function StoresPage() {
                                           <div className="grid grid-cols-2 gap-4">
                                               <div>
                                                   <Label className="text-xs">{t(translations.role)}</Label>
-                                                   <Select value={printer.role} onValueChange={(value) => handlePrinterChange(index, 'role', value)}>
+                                                   <Select defaultValue={printer.role} onValueChange={(value) => handlePrinterChange(index, 'role', value)}>
                                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                                       <SelectContent>
                                                         <SelectItem value="receipt">{t(translations.receipt)}</SelectItem>
@@ -635,7 +635,7 @@ export default function StoresPage() {
                                               </div>
                                                <div>
                                                   <Label className="text-xs">{t(translations.width)}</Label>
-                                                  <Select value={printer.width} onValueChange={(value) => handlePrinterChange(index, 'width', value)}>
+                                                  <Select defaultValue={printer.width} onValueChange={(value) => handlePrinterChange(index, 'width', value)}>
                                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                                       <SelectContent>
                                                         <SelectItem value="80mm">80mm</SelectItem>
@@ -646,7 +646,7 @@ export default function StoresPage() {
                                           </div>
                                           <div>
                                              <Label className="text-xs">{t(translations.connectionType)}</Label>
-                                             <Select value={printer.connectionType} onValueChange={(value) => handlePrinterChange(index, 'connectionType', value)}>
+                                             <Select defaultValue={printer.connectionType} onValueChange={(value) => handlePrinterChange(index, 'connectionType', value)}>
                                                   <SelectTrigger><SelectValue /></SelectTrigger>
                                                   <SelectContent>
                                                     <SelectItem value="network">{t(translations.networkIp)}</SelectItem>
@@ -658,11 +658,11 @@ export default function StoresPage() {
                                               <div className="grid grid-cols-2 gap-4">
                                                   <div>
                                                       <Label className="text-xs">{t(translations.ipAddress)}</Label>
-                                                      <Input value={printer.ipAddress || ''} onChange={(e) => handlePrinterChange(index, 'ipAddress', e.target.value)} placeholder="192.168.1.100"/>
+                                                      <Input defaultValue={printer.ipAddress || ''} onChange={(e) => handlePrinterChange(index, 'ipAddress', e.target.value)} placeholder="192.168.1.100"/>
                                                   </div>
                                                   <div>
                                                       <Label className="text-xs">{t(translations.port)}</Label>
-                                                      <Input value={printer.port || ''} onChange={(e) => handlePrinterChange(index, 'port', e.target.value)} placeholder="9100"/>
+                                                      <Input defaultValue={printer.port || ''} onChange={(e) => handlePrinterChange(index, 'port', e.target.value)} placeholder="9100"/>
                                                   </div>
                                               </div>
                                           )}
@@ -722,7 +722,7 @@ export default function StoresPage() {
                                     <CardHeader>
                                         <CardTitle>{t(translations.menuCreationMethod)}</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="grid md:grid-cols-3 gap-4 text-left">
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                                         <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                                             <FileText className="h-6 w-6 text-primary" />
                                             <h3 className="font-semibold">{t(translations.method1Title)}</h3>
