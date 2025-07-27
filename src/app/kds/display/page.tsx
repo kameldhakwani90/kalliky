@@ -179,10 +179,12 @@ export default function KDSPage() {
   }, [orders, visibleChannels]);
 
   return (
-    <div className={cn(
-        "flex h-screen w-full flex-col bg-muted/40 dark:bg-black transition-colors duration-500",
+    <div
+      className={cn(
+        'flex h-screen w-full flex-col bg-muted/40 transition-colors duration-500 dark:bg-black',
         newOrderFlash && 'bg-green-400 dark:bg-green-800'
-    )}>
+      )}
+    >
       <header className="flex h-16 items-center justify-between border-b bg-background px-4">
         <h1 className="text-2xl font-bold font-headline">KDS - Kalliky.ai</h1>
         <div className="flex items-center gap-2">
