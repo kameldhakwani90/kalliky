@@ -166,7 +166,7 @@ export default function KDSPage() {
   
   const handleChannelVisibilityChange = (channel: Order['saleChannel'], checked: boolean) => {
       setVisibleChannels(prev => ({...prev, [channel]: checked}));
-  }
+  };
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => visibleChannels[order.saleChannel]);
