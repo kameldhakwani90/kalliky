@@ -453,7 +453,7 @@ export default function StoresPage() {
                     </DialogHeader>
                     
                     {WIZARD_STEPS[wizardStep].id !== 'welcome' && WIZARD_STEPS[wizardStep].id !== 'finish' &&
-                      <div className="px-1 py-2">
+                      <div className="py-2">
                         <Progress value={(wizardStep / (WIZARD_STEPS.length - 2)) * 100} className="h-2" />
                       </div>
                     }
