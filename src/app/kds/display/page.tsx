@@ -47,7 +47,8 @@ const initialOrders: Order[] = [
 
 const KDS_COLUMNS = {
   pending: { title: 'À Préparer', color: 'border-t-4 border-red-500', next: 'in-progress' as const },
-  'in-progress': { title: 'En Cours', color: 'border-t-4 border-green-500', next: 'ready' as const },
+  'in-progress': { title: 'En Cours', color: 'border-t-4 border-orange-500', next: 'ready' as const },
+  ready: { title: 'Prêtes', color: 'border-t-4 border-green-500', next: null },
 };
 
 const SALE_CHANNELS = {
@@ -144,11 +145,8 @@ export default function KDSPage() {
   }, []);
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
     localStorage.setItem('kds-theme', theme);
   }, [theme]);
 
@@ -245,7 +243,7 @@ export default function KDSPage() {
                     </DialogHeader>
                     <div className="space-y-6 py-4">
                         <div className="space-y-4">
-                            <Label>Temps de préparation (en minutes)</Label>
+                            <Label>Temps d'anticipation de la préparation (en minutes)</Label>
                             <div className="grid grid-cols-3 gap-4">
                                {Object.entries(prepTimes).map(([key, value]) => (
                                 <div key={key} className="space-y-2">
@@ -299,11 +297,11 @@ export default function KDSPage() {
       <main className="flex-1 overflow-x-auto p-4">
         <div className="grid h-full min-w-max grid-cols-3 gap-4">
           
-          <div className="col-span-2 flex h-full flex-col">
-            <h2 className={`mb-2 rounded-lg p-2 text-center font-bold text-lg bg-card`}>
+          <div className="col-span-1 flex h-full flex-col">
+            <h2 className="mb-2 rounded-lg p-2 text-center text-lg font-bold bg-card dark:text-white">
               {KDS_COLUMNS.pending.title} ({filteredOrders.filter(o => o.status === 'pending').length})
             </h2>
-            <div className="grid flex-1 grid-cols-2 gap-4 overflow-y-auto p-2">
+            <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto p-2">
               {filteredOrders
                 .filter(o => o.status === 'pending')
                 .sort((a,b) => a.dueTime - b.dueTime)
@@ -313,20 +311,20 @@ export default function KDSPage() {
 
                     return (
                        <Card key={order.id} id={`order-card-${order.id}`} className={cn(
-                           "shadow-md transition-all bg-white text-black",
+                           "shadow-md transition-all bg-white text-black dark:bg-neutral-800 dark:text-white",
                            KDS_COLUMNS.pending.color,
-                           {"bg-pink-100 border-pink-500": isLate}
+                           {"bg-pink-100 border-pink-500 text-black": isLate}
                        )}>
                         <CardHeader className="p-3">
                           <CardTitle className="flex items-center justify-between">
                             <span className="text-xl font-bold">{order.id}</span>
-                             <div className="flex items-center gap-2 text-gray-600">
+                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                                 <ChannelIcon className="h-5 w-5" />
                                 <Clock className="h-5 w-5" />
                                 <span className="text-lg font-semibold">{new Date(order.dueTime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                              </div>
                           </CardTitle>
-                          <div className="text-sm text-gray-500 pt-1 space-y-1">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 pt-1 space-y-1">
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4"/>
                                     <span>{order.customer.name}</span>
@@ -338,7 +336,7 @@ export default function KDSPage() {
                           </div>
                         </CardHeader>
                         <CardContent className="p-3">
-                          <Separator />
+                          <Separator className="dark:bg-neutral-600"/>
                           <div className="mt-3 space-y-2">
                             {order.items.map((item, i) => (
                               <div key={i}>
@@ -346,7 +344,7 @@ export default function KDSPage() {
                                   {item.quantity}x {item.name}
                                 </p>
                                 {item.mods.length > 0 && (
-                                  <p className="text-sm text-pink-600">
+                                  <p className="text-sm text-pink-600 dark:text-pink-400">
                                     {item.mods.join(', ')}
                                   </p>
                                 )}
@@ -370,7 +368,7 @@ export default function KDSPage() {
           </div>
 
           <div className="col-span-1 flex h-full flex-col">
-            <h2 className={`mb-2 rounded-lg p-2 text-center font-bold text-lg bg-card`}>
+            <h2 className="mb-2 rounded-lg p-2 text-center text-lg font-bold bg-card dark:text-white">
               {KDS_COLUMNS['in-progress'].title} ({filteredOrders.filter(o => o.status === 'in-progress').length})
             </h2>
             <div className="flex-1 space-y-4 overflow-y-auto p-2">
@@ -383,20 +381,20 @@ export default function KDSPage() {
 
                     return (
                        <Card key={order.id} id={`order-card-${order.id}`} className={cn(
-                           "shadow-md transition-all bg-white text-black",
+                           "shadow-md transition-all bg-white text-black dark:bg-neutral-800 dark:text-white",
                            KDS_COLUMNS['in-progress'].color,
-                           {"bg-pink-100 border-pink-500": isLate}
+                           {"bg-pink-100 border-pink-500 text-black": isLate}
                        )}>
                         <CardHeader className="p-3">
                           <CardTitle className="flex items-center justify-between">
                             <span className="text-xl font-bold">{order.id}</span>
-                             <div className="flex items-center gap-2 text-gray-600">
+                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                                 <ChannelIcon className="h-5 w-5" />
                                 <Clock className="h-5 w-5" />
                                 <span className="text-lg font-semibold">{new Date(order.dueTime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                              </div>
                           </CardTitle>
-                           <div className="text-sm text-gray-500 pt-1 space-y-1">
+                           <div className="text-sm text-gray-500 dark:text-gray-400 pt-1 space-y-1">
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4"/>
                                     <span>{order.customer.name}</span>
@@ -408,7 +406,7 @@ export default function KDSPage() {
                           </div>
                         </CardHeader>
                         <CardContent className="p-3">
-                          <Separator />
+                          <Separator className="dark:bg-neutral-600"/>
                           <div className="mt-3 space-y-2">
                             {order.items.map((item, i) => (
                               <div key={i}>
@@ -416,7 +414,7 @@ export default function KDSPage() {
                                   {item.quantity}x {item.name}
                                 </p>
                                 {item.mods.length > 0 && (
-                                  <p className="text-sm text-pink-600">
+                                  <p className="text-sm text-pink-600 dark:text-pink-400">
                                     {item.mods.join(', ')}
                                   </p>
                                 )}
@@ -435,11 +433,70 @@ export default function KDSPage() {
                 })}
             </div>
           </div>
+          
+           <div className="col-span-1 flex h-full flex-col">
+            <h2 className="mb-2 rounded-lg p-2 text-center text-lg font-bold bg-card dark:text-white">
+              {KDS_COLUMNS.ready.title} ({filteredOrders.filter(o => o.status === 'ready').length})
+            </h2>
+            <div className="flex-1 space-y-4 overflow-y-auto p-2">
+              {filteredOrders
+                .filter(o => o.status === 'ready')
+                .sort((a,b) => a.dueTime - b.dueTime)
+                .map(order => {
+                    const ChannelIcon = SALE_CHANNELS[order.saleChannel].icon;
+
+                    return (
+                       <Card key={order.id} id={`order-card-${order.id}`} className={cn(
+                           "shadow-md transition-all bg-white text-black dark:bg-neutral-800 dark:text-white",
+                           KDS_COLUMNS.ready.color,
+                       )}>
+                        <CardHeader className="p-3">
+                          <CardTitle className="flex items-center justify-between">
+                            <span className="text-xl font-bold">{order.id}</span>
+                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                <ChannelIcon className="h-5 w-5" />
+                                <span className="text-lg font-semibold">{new Date(order.dueTime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                             </div>
+                          </CardTitle>
+                           <div className="text-sm text-gray-500 dark:text-gray-400 pt-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4"/>
+                                    <span>{order.customer.name}</span>
+                                </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-3">
+                          <Separator className="dark:bg-neutral-600"/>
+                          <div className="mt-3 space-y-2">
+                            {order.items.map((item, i) => (
+                              <div key={i}>
+                                <p className="text-lg font-semibold">
+                                  {item.quantity}x {item.name}
+                                </p>
+                                {item.mods.length > 0 && (
+                                  <p className="text-sm text-pink-600 dark:text-pink-400">
+                                    {item.mods.join(', ')}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <Button
+                              className="mt-4 w-full"
+                              variant="secondary"
+                              onClick={() => moveOrder(order.id, 'remove')}
+                          >
+                            Évacuer
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )
+                })}
+            </div>
+          </div>
 
         </div>
       </main>
     </div>
   );
 }
-
-    
