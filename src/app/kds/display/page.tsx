@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Sun, Moon, Settings, ChefHat, Takeaway, Car } from 'lucide-react';
+import { ArrowRight, Sun, Moon, Settings, ChefHat, ShoppingBag, Car } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -40,7 +40,7 @@ const KDS_COLUMNS = {
 
 const SALE_CHANNELS = {
     'dine-in': { label: 'Sur Place', icon: ChefHat },
-    'takeaway': { label: 'À Emporter', icon: Takeaway },
+    'takeaway': { label: 'À Emporter', icon: ShoppingBag },
     'delivery': { label: 'Livraison', icon: Car },
 }
 

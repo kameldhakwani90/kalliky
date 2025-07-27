@@ -25,6 +25,8 @@ export default function KDSLoginPage() {
         setTimeout(() => {
             if (connectionCode.toUpperCase() === 'AB12-CD34') {
                 router.push('/kds/display');
+                 // Reset loading state even on success
+                setIsLoading(false);
             } else {
                 toast({
                     variant: 'destructive',
