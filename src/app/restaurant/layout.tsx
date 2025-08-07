@@ -90,7 +90,7 @@ const notifications = [
       type: 'order',
       title: 'Nouvelle commande #1023',
       description: 'Client anonyme - 4 articles - 55,20€',
-      time: 'il y a 5 heures',
+      time: 'hier',
       link: '/restaurant/dashboard'
     },
     {
