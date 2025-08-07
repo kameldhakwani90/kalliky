@@ -16,7 +16,8 @@ import {
   XCircle,
   PlusCircle,
   Bell,
-  Receipt
+  Receipt,
+  BookCopy
 } from "lucide-react"
 
 import {
@@ -120,7 +121,7 @@ export default function RestaurantLayout({
 
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
-    { href: "/restaurant/menu", label: {fr: "Menu", en: "Menu"}, icon: CookingPot },
+    { href: "/restaurant/menu", label: {fr: "Catalogue", en: "Catalog"}, icon: BookCopy },
     { href: "/restaurant/clients", label: {fr: "Clients", en: "Customers"}, icon: User },
     { href: "/restaurant/reports", label: {fr: "Signalements", en: "Reports"}, icon: Flag },
   ];

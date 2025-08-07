@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -56,11 +56,14 @@ type KDSConnection = {
     lastSeen: string;
 }
 
+type BusinessType = 'restaurant' | 'coffeeshop' | 'event_hall' | 'car_rental';
+
 type Store = {
     id: string;
     name: string;
     address: string;
     phone: string;
+    businessType: BusinessType;
     status: 'active' | 'inactive';
     stripeStatus: 'connected' | 'disconnected';
     whatsappNumber?: string;
@@ -74,7 +77,7 @@ type Store = {
 
 const initialStores: Store[] = [
     { 
-        id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", status: 'active', stripeStatus: 'connected', currency: 'EUR', 
+        id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", businessType: 'restaurant', status: 'active', stripeStatus: 'connected', currency: 'EUR', 
         whatsappNumber: '+33612345678',
         taxRates: [
             { id: 'tax-1-1', name: 'Réduit', rate: 5.5, isDefault: false },
@@ -92,7 +95,7 @@ const initialStores: Store[] = [
         telnyxConfigured: true,
     },
     { 
-        id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", status: 'active', stripeStatus: 'disconnected', currency: 'EUR', 
+        id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", businessType: 'restaurant', status: 'active', stripeStatus: 'disconnected', currency: 'EUR', 
         taxRates: [
             { id: 'tax-2-1', name: 'Réduit', rate: 5.5, isDefault: false },
             { id: 'tax-2-2', name: 'Intermédiaire', rate: 10, isDefault: true },
@@ -104,7 +107,7 @@ const initialStores: Store[] = [
         telnyxConfigured: false,
     },
     { 
-        id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', 
+        id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", businessType: 'restaurant', status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', 
         taxRates: [
              { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
              { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
@@ -137,6 +140,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     const [wizardStep, setWizardStep] = useState(store ? 1 : 0);
     const [editableStore, setEditableStore] = useState<Partial<Store>>(
         store || {
+            businessType: 'restaurant',
             status: 'active',
             stripeStatus: 'disconnected',
             currency: 'EUR',
@@ -246,13 +250,18 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         addNewStore: { fr: "Assistant de création de boutique", en: "Store Creation Wizard" },
         stepOf: { fr: "Étape {step} sur {total}", en: "Step {step} of {total}" },
         welcomeTitle: { fr: 'Bienvenue chez Kalliky.ai !', en: 'Welcome to Kalliky.ai!' },
-        welcomeDescription: { fr: 'Prêt à transformer la gestion de votre restaurant ? Cet assistant va vous guider pour configurer votre premier point de vente en quelques minutes.', en: 'Ready to transform your restaurant management? This wizard will guide you to set up your first point of sale in minutes.' },
+        welcomeDescription: { fr: 'Prêt à transformer la gestion de votre commerce ? Cet assistant va vous guider pour configurer votre premier point de vente en quelques minutes.', en: 'Ready to transform your business management? This wizard will guide you to set up your first point of sale in minutes.' },
         startConfig: { fr: 'Commencer la configuration', en: 'Start Configuration' },
         general: { fr: "Général", en: "General" },
         openingHours: { fr: "Horaires", en: "Hours" },
         taxes: { fr: "Taxes", en: "Taxes" },
         peripherals: { fr: "Périphériques", en: "Peripherals" },
-        restaurantName: { fr: "Nom du restaurant", en: "Restaurant Name" },
+        businessType: { fr: "Type d'activité", en: "Business Type" },
+        restaurant: { fr: "Restaurant", en: "Restaurant" },
+        coffeeshop: { fr: "Café / Salon de thé", en: "Coffee Shop" },
+        eventHall: { fr: "Salle d'événementiel", en: "Event Hall" },
+        carRental: { fr: "Location de véhicules", en: "Car Rental" },
+        restaurantName: { fr: "Nom de l'établissement", en: "Establishment Name" },
         fullAddress: { fr: "Adresse complète", en: "Full address" },
         landline: { fr: "Téléphone fixe", en: "Landline phone" },
         openingHoursDesc: { fr: "Utilisé pour accepter ou refuser les commandes automatiquement.", en: "Used to automatically accept or refuse orders." },
@@ -296,16 +305,16 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         telnyxConfirm: { fr: "J'ai configuré le renvoi d'appel", en: "I have configured call forwarding" },
         configureLater: { fr: 'Configurer plus tard', en: 'Configure later' },
         finishTitle: { fr: 'Votre boutique est prête !', en: 'Your store is ready!' },
-        finishDescription: { fr: "Il ne reste plus qu'à créer votre menu. C'est simple et rapide.", en: "All that's left is to create your menu. It's quick and easy." },
-        menuCreationMethod: { fr: 'Méthodes de création de menu', en: 'Menu Creation Methods' },
+        finishDescription: { fr: "Il ne reste plus qu'à créer votre catalogue. C'est simple et rapide.", en: "All that's left is to create your catalog. It's quick and easy." },
+        menuCreationMethod: { fr: 'Méthodes de création de catalogue', en: 'Catalog Creation Methods' },
         method1Title: { fr: 'Import de fichier', en: 'File Import' },
-        method1Desc: { fr: 'Importez votre menu depuis un fichier Excel ou une simple photo.', en: 'Import your menu from an Excel file or a simple photo.' },
+        method1Desc: { fr: 'Importez votre catalogue depuis un fichier Excel ou une simple photo.', en: 'Import your catalog from an Excel file or a simple photo.' },
         method2Title: { fr: 'Création manuelle', en: 'Manual Creation' },
-        method2Desc: { fr: 'Utilisez notre éditeur complet pour créer vos articles et menus pas à pas.', en: 'Use our comprehensive editor to create your items and menus step-by-step.' },
+        method2Desc: { fr: 'Utilisez notre éditeur complet pour créer vos articles et services pas à pas.', en: 'Use our comprehensive editor to create your items and services step-by-step.' },
         cancel: { fr: "Annuler", en: "Cancel" },
         previous: { fr: 'Précédent', en: 'Previous' },
         next: { fr: 'Suivant', en: 'Next' },
-        finishAndCreateMenu: { fr: 'Terminer et créer ma carte', en: 'Finish and Create Menu' },
+        finishAndCreateMenu: { fr: 'Terminer et créer mon catalogue', en: 'Finish and Create Catalog' },
     };
 
     return (
@@ -335,6 +344,20 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                     )}
                     {wizardStep === 1 && (
                         <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="businessType">{t(translations.businessType)}</Label>
+                                <Select name="businessType" value={editableStore.businessType} onValueChange={(value: BusinessType) => handleInputChange('businessType', value)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={t({ fr: 'Sélectionnez un type', en: 'Select a type' })} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="restaurant"><Utensils className="mr-2 h-4 w-4" />{t(translations.restaurant)}</SelectItem>
+                                        <SelectItem value="coffeeshop"><Coffee className="mr-2 h-4 w-4" />{t(translations.coffeeshop)}</SelectItem>
+                                        <SelectItem value="event_hall"><Building className="mr-2 h-4 w-4" />{t(translations.eventHall)}</SelectItem>
+                                        <SelectItem value="car_rental"><Car className="mr-2 h-4 w-4" />{t(translations.carRental)}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="name">{t(translations.restaurantName)}</Label>
                                 <Input id="name" name="name" value={editableStore.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} required />
@@ -750,7 +773,7 @@ export default function StoresPage() {
 
     const translations = {
         title: { fr: "Gestion des Boutiques", en: "Store Management" },
-        description: { fr: "Gérez vos points de vente et les menus associés.", en: "Manage your points of sale and associated menus." },
+        description: { fr: "Gérez vos points de vente et les catalogues associés.", en: "Manage your points of sale and associated catalogs." },
         addStore: { fr: "Ajouter une boutique", en: "Add store" },
         name: { fr: "Nom", en: "Name" },
         status: { fr: "Statut", en: "Status" },
@@ -764,7 +787,7 @@ export default function StoresPage() {
         edit: { fr: "Modifier", en: "Edit" },
         delete: { fr: "Supprimer", en: "Delete" },
         areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
-        deleteConfirmation: { fr: "Cette action est irréversible. La boutique, son menu et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The store, its menu, and all associated data will be permanently deleted." },
+        deleteConfirmation: { fr: "Cette action est irréversible. La boutique, son catalogue et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The store, its catalog, and all associated data will be permanently deleted." },
         cancel: { fr: "Annuler", en: "Cancel" },
     };
 

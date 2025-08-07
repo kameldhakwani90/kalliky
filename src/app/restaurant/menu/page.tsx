@@ -526,11 +526,8 @@ export default function MenuPage() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedStore, setSelectedStore] = useState<string>('all');
+  const [selectedStore, setSelectedStore] = useState<string>(availableStores[0]?.id || 'all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  
-  const [dialogSelectedStoreId, setDialogSelectedStoreId] = useState<string>(availableStores[0]?.id || 'all');
-
 
   const [compositionHistory, setCompositionHistory] = useState<CompositionView[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -575,6 +572,10 @@ export default function MenuPage() {
   };
 
   const handleCreateNewItem = () => {
+    if (selectedStore === 'all') {
+      // Maybe show a toast to select a store first
+      return;
+    }
     const newItem: MenuItem = {
       id: `item-${Date.now()}`,
       name: t({fr: "Nouvel article", en: "New Item"}),
@@ -584,7 +585,7 @@ export default function MenuPage() {
       imageHint: 'new item',
       tags: [],
       variations: [{ id: `var_${Date.now()}`, name: 'Taille unique', prices: {} }],
-      storeIds: dialogSelectedStoreId === 'all' ? availableStores.map(s => s.id) : [dialogSelectedStoreId],
+      storeIds: [selectedStore],
       status: 'inactive',
       availability: defaultAvailability,
     };
@@ -752,10 +753,10 @@ export default function MenuPage() {
   }
 
   const translations = {
-    title: { fr: "Gestion du Menu", en: "Menu Management" },
-    description: { fr: "Gérez votre menu, ajoutez de nouveaux plats et synchronisez avec l'IA.", en: "Manage your menu, add new items, and sync with AI." },
-    yourMenu: { fr: "Votre Menu", en: "Your Menu" },
-    yourMenuDescription: { fr: "Consultez, modifiez et gérez la disponibilité de vos articles.", en: "View, edit, and manage the availability of your items." },
+    title: { fr: "Gestion du Catalogue", en: "Catalog Management" },
+    description: { fr: "Gérez le catalogue de la boutique sélectionnée.", en: "Manage the catalog for the selected store." },
+    yourCatalog: { fr: "Votre Catalogue", en: "Your Catalog" },
+    yourCatalogDescription: { fr: "Consultez et gérez les articles pour la boutique sélectionnée.", en: "View and manage items for the selected store." },
     addSync: { fr: "Ajouter / Synchroniser", en: "Add / Sync" },
     searchByName: { fr: "Rechercher par nom...", en: "Search by name..." },
     allCategories: { fr: "Toutes les catégories", en: "All categories" },
@@ -770,7 +771,7 @@ export default function MenuPage() {
     action: { fr: "Action", en: "Action" },
     always: { fr: "Toujours", en: "Always" },
     creationTools: { fr: "Outils de création et synchronisation", en: "Creation and Synchronization Tools" },
-    selectStoreAction: { fr: "Sélectionnez une boutique puis choisissez une action.", en: "Select a store then choose an action." },
+    selectStoreAction: { fr: "Sélectionnez une boutique pour effectuer une action.", en: "Select a store to perform an action." },
     applyToStore: { fr: "Appliquer à la boutique", en: "Apply to store" },
     selectStore: { fr: "Sélectionner une boutique", en: "Select a store" },
     item: { fr: "Article", en: "Item" },
@@ -813,7 +814,6 @@ export default function MenuPage() {
     inactive: { fr: "Inactif", en: "Inactive" },
     confirmVariationDeletion: { fr: "Êtes-vous sûr de vouloir supprimer cette variation ?", en: "Are you sure you want to delete this variation?" },
     variationDeletionDescription: { fr: "Toutes les données de prix et de disponibilité pour cette taille seront perdues.", en: "All price and availability data for this size will be lost." },
-
   };
 
   return (
@@ -826,8 +826,8 @@ export default function MenuPage() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div className="flex-1">
-            <CardTitle>{t(translations.yourMenu)}</CardTitle>
-            <CardDescription>{t(translations.yourMenuDescription)}</CardDescription>
+            <CardTitle>{t(translations.yourCatalog)}</CardTitle>
+            <CardDescription>{t(translations.yourCatalogDescription)}</CardDescription>
           </div>
            <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
              <DialogTrigger asChild>
@@ -845,12 +845,11 @@ export default function MenuPage() {
                 </DialogHeader>
                  <div className="space-y-2 py-2">
                     <Label>{t(translations.applyToStore)}</Label>
-                    <Select value={dialogSelectedStoreId} onValueChange={setDialogSelectedStoreId}>
+                    <Select value={selectedStore} onValueChange={setSelectedStore}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder={t(translations.selectStore)} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">{t(translations.allStores)}</SelectItem>
                             {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
@@ -865,7 +864,7 @@ export default function MenuPage() {
                        <p className="text-sm text-muted-foreground">
                         {t(translations.createItemManually)}
                        </p>
-                       <Button className="w-full" onClick={handleCreateNewItem}><PlusCircle className="mr-2 h-4 w-4"/>{t(translations.createNewItem)}</Button>
+                       <Button className="w-full" onClick={handleCreateNewItem} disabled={selectedStore === 'all'}><PlusCircle className="mr-2 h-4 w-4"/>{t(translations.createNewItem)}</Button>
                     </TabsContent>
                     <TabsContent value="category" className="pt-4 space-y-4">
                         <div className="space-y-2">
@@ -889,6 +888,12 @@ export default function MenuPage() {
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="flex flex-col md:flex-row gap-4">
+                 <Select value={selectedStore} onValueChange={setSelectedStore}>
+                    <SelectTrigger className="md:w-64 w-full"><Store className="h-4 w-4 mr-2" /><SelectValue placeholder={t({fr: "Boutique", en: "Store"})} /></SelectTrigger>
+                    <SelectContent>
+                        {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input placeholder={t(translations.searchByName)} className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -899,13 +904,6 @@ export default function MenuPage() {
                         <SelectContent>
                             <SelectItem value="all">{t(translations.allCategories)}</SelectItem>
                             {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedStore} onValueChange={setSelectedStore}>
-                        <SelectTrigger className="md:w-48 w-full"><Store className="h-4 w-4 mr-2" /><SelectValue placeholder={t({fr: "Boutique", en: "Store"})} /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t(translations.allStores)}</SelectItem>
-                            {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
