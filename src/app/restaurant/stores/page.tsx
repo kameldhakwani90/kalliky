@@ -141,8 +141,8 @@ const businessTemplates: Record<BusinessType, { taxRates: Omit<TaxRate, 'id'>[],
             { name: 'Alcool', rate: 20, isDefault: false },
         ],
         printers: [
-            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network' },
-            { name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm', connectionType: 'network' },
+            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network', ipAddress: '', port: '' },
+            { name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm', connectionType: 'network', ipAddress: '', port: '' },
         ]
     },
     coffeeshop: {
@@ -150,7 +150,7 @@ const businessTemplates: Record<BusinessType, { taxRates: Omit<TaxRate, 'id'>[],
             { name: 'TVA Standard', rate: 5.5, isDefault: true },
         ],
         printers: [
-            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network' },
+            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network', ipAddress: '', port: '' },
         ]
     },
     event_hall: {
@@ -191,7 +191,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         const finalStore = {
             ...editableStore,
             id: editableStore.id || `store-${Date.now()}`,
-            telnyxNumber: editableStore.telnyxNumber || `+339${Math.floor(10000000 + Math.random() * 90000000)}`,
+            telnyxNumber: editableStore.telnyxNumber || `+339${Math.floor(10000000 + Math.random() * 90000000).toString().padStart(8, '0')}`,
         } as Store;
         onSave(finalStore);
         router.push(`/restaurant/menu?storeId=${finalStore.id}&action=add`);
@@ -213,7 +213,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
             taxRates: template.taxRates.map(t => ({...t, id: `tax_${Date.now()}_${Math.random()}`})),
             printers: template.printers.map(p => ({...p, id: `printer_${Date.now()}_${Math.random()}`})),
         }));
-        nextStep();
+        setWizardStep(3); // Skip to taxes step after applying template
     };
 
     const handleTaxRateChange = (index: number, field: keyof TaxRate, value: string | number | boolean) => {
@@ -377,7 +377,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                 </div>
             }
 
-            <form onSubmit={(e) => e.preventDefault()} className="flex-1 overflow-y-auto space-y-6">
+            <div className="flex-1 overflow-y-auto space-y-6">
                 <div className="px-1">
                     {wizardStep === 0 && (
                         <div className="text-center space-y-6 py-8">
@@ -437,8 +437,8 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                     <div key={day} className="grid grid-cols-3 items-center gap-4">
                                         <Label htmlFor={`hours-${day}`} className="col-span-1">{day}</Label>
                                         <div className="col-span-2 grid grid-cols-2 gap-2">
-                                             <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" />
-                                             <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" />
+                                             <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" defaultValue="09:00" />
+                                             <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" defaultValue="22:00" />
                                         </div>
                                     </div>
                                 ))}
@@ -689,11 +689,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         </div>
                     )}
                 </div>
-            </form>
+            </div>
              <DialogFooter className="pt-4 border-t">
                     <Button type="button" variant="outline" onClick={onCancel}>{t(translations.cancel)}</Button>
                     <div className="flex-grow" />
-                    {wizardStep > 1 && wizardStep < WIZARD_STEPS.length - 1 && (
+                    {wizardStep > 0 && wizardStep < WIZARD_STEPS.length - 1 && (
                         <Button type="button" variant="ghost" onClick={prevStep}>{t(translations.previous)}</Button>
                     )}
                     
@@ -705,7 +705,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
                     )}
 
-                    {wizardStep > 1 && wizardStep < 5 && (
+                    {wizardStep > 1 && wizardStep < 5 && wizardStep !== 1 && (
                         <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
                     )}
                     
@@ -715,6 +715,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                             {t(translations.configureLater)}
                         </Button>
                         <Button type="button" onClick={() => { handleInputChange('telnyxConfigured', true); nextStep(); }}>
+                            <PhoneForwarded className="mr-2 h-4 w-4" />
                             {t(translations.telnyxConfirm)}
                         </Button>
                        </>
