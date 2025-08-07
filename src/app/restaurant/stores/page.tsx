@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -133,6 +133,40 @@ const WIZARD_STEPS = [
 
 const currentUserPlan = 'pro'; // Should be dynamic in a real app
 
+const businessTemplates: Record<BusinessType, { taxRates: Omit<TaxRate, 'id'>[], printers: Omit<PrinterDevice, 'id'>[] }> = {
+    restaurant: {
+        taxRates: [
+            { name: 'À emporter / Réduit', rate: 5.5, isDefault: false },
+            { name: 'Sur place / Intermédiaire', rate: 10, isDefault: true },
+            { name: 'Alcool', rate: 20, isDefault: false },
+        ],
+        printers: [
+            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network' },
+            { name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm', connectionType: 'network' },
+        ]
+    },
+    coffeeshop: {
+        taxRates: [
+            { name: 'TVA Standard', rate: 5.5, isDefault: true },
+        ],
+        printers: [
+            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network' },
+        ]
+    },
+    event_hall: {
+        taxRates: [
+            { name: 'Prestation de service', rate: 20, isDefault: true },
+        ],
+        printers: []
+    },
+    car_rental: {
+        taxRates: [
+            { name: 'TVA Standard', rate: 20, isDefault: true },
+        ],
+        printers: []
+    }
+};
+
 function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave: (store: Store) => void, onCancel: () => void }) {
     const router = useRouter();
     const { toast } = useToast();
@@ -144,7 +178,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
             status: 'active',
             stripeStatus: 'disconnected',
             currency: 'EUR',
-            taxRates: [{ id: `tax_${Date.now()}`, name: t({ fr: 'TVA par défaut', en: 'Default VAT' }), rate: 0, isDefault: true }],
+            taxRates: [],
             printers: [],
             kdsConnections: [],
             telnyxConfigured: false,
@@ -152,16 +186,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     );
 
     const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
-
-    const handleSaveStore = () => {
-        const finalStore = {
-            ...editableStore,
-            id: editableStore.id || `store-${Date.now()}`,
-            telnyxNumber: editableStore.telnyxNumber || `+339${Math.floor(10000000 + Math.random() * 90000000)}`,
-        } as Store;
-
-        onSave(finalStore);
-    };
 
     const handleFinalize = () => {
         const finalStore = {
@@ -175,6 +199,21 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
 
     const handleInputChange = (field: keyof Store, value: any) => {
         setEditableStore(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleBusinessTypeChange = (value: BusinessType) => {
+        setEditableStore(prev => ({...prev, businessType: value}));
+    };
+
+    const applyTemplate = () => {
+        if (!editableStore.businessType) return;
+        const template = businessTemplates[editableStore.businessType];
+        setEditableStore(prev => ({
+            ...prev,
+            taxRates: template.taxRates.map(t => ({...t, id: `tax_${Date.now()}_${Math.random()}`})),
+            printers: template.printers.map(p => ({...p, id: `printer_${Date.now()}_${Math.random()}`})),
+        }));
+        nextStep();
     };
 
     const handleTaxRateChange = (index: number, field: keyof TaxRate, value: string | number | boolean) => {
@@ -315,6 +354,10 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         previous: { fr: 'Précédent', en: 'Previous' },
         next: { fr: 'Suivant', en: 'Next' },
         finishAndCreateMenu: { fr: 'Terminer et créer mon catalogue', en: 'Finish and Create Catalog' },
+        configTemplate: { fr: 'Modèle de configuration', en: 'Configuration Template' },
+        configTemplateDesc: { fr: "Pour vous faire gagner du temps, nous pouvons pré-remplir la configuration de votre boutique avec des paramètres standards pour votre type d'activité.", en: "To save you time, we can pre-fill your store's configuration with standard settings for your business type." },
+        applyTemplate: { fr: 'Appliquer le modèle et continuer', en: 'Apply template and continue' },
+        manualConfig: { fr: 'Configurer manuellement', en: 'Configure manually' },
     };
 
     return (
@@ -346,7 +389,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="businessType">{t(translations.businessType)}</Label>
-                                <Select name="businessType" value={editableStore.businessType} onValueChange={(value: BusinessType) => handleInputChange('businessType', value)}>
+                                <Select name="businessType" value={editableStore.businessType} onValueChange={(value: BusinessType) => handleBusinessTypeChange(value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder={t({ fr: 'Sélectionnez un type', en: 'Select a type' })} />
                                     </SelectTrigger>
@@ -370,6 +413,21 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                 <Label htmlFor="phone">{t(translations.landline)}</Label>
                                 <Input id="phone" name="phone" type="tel" value={editableStore.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} required />
                             </div>
+                            {!store && ( // Show template option only on creation
+                                <Card className="mt-6 bg-primary/5 border-primary/20">
+                                    <CardHeader>
+                                        <CardTitle className="text-base flex items-center gap-2">
+                                            <Sparkles className="h-4 w-4 text-primary" />
+                                            {t(translations.configTemplate)}
+                                        </CardTitle>
+                                        <CardDescription>{t(translations.configTemplateDesc)}</CardDescription>
+                                    </CardHeader>
+                                    <CardFooter className="gap-4">
+                                        <Button className="flex-1" variant="outline" onClick={() => nextStep()}>{t(translations.manualConfig)}</Button>
+                                        <Button className="flex-1" onClick={applyTemplate}>{t(translations.applyTemplate)}</Button>
+                                    </CardFooter>
+                                </Card>
+                            )}
                         </div>
                     )}
                      {wizardStep === 2 && (
@@ -635,7 +693,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
              <DialogFooter className="pt-4 border-t">
                     <Button type="button" variant="outline" onClick={onCancel}>{t(translations.cancel)}</Button>
                     <div className="flex-grow" />
-                    {wizardStep > 0 && wizardStep < WIZARD_STEPS.length - 1 && (
+                    {wizardStep > 1 && wizardStep < WIZARD_STEPS.length - 1 && (
                         <Button type="button" variant="ghost" onClick={prevStep}>{t(translations.previous)}</Button>
                     )}
                     
@@ -643,7 +701,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         <Button type="button" onClick={nextStep}>{t(translations.startConfig)}</Button>
                     )}
 
-                    {wizardStep > 0 && wizardStep < 5 && (
+                    {wizardStep === 1 && store && (
+                        <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
+                    )}
+
+                    {wizardStep > 1 && wizardStep < 5 && (
                         <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
                     )}
                     
