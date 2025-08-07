@@ -48,7 +48,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -120,6 +120,8 @@ type Variation = {
   prices: PricesByChannel;
 };
 
+type ItemManagementType = 'stock' | 'reservation';
+
 type MenuItem = {
   id: string;
   categoryId: string;
@@ -133,6 +135,8 @@ type MenuItem = {
   storeIds: string[];
   status: 'active' | 'out-of-stock' | 'inactive';
   availability: Availability;
+  managementType: ItemManagementType;
+  stockQuantity?: number;
 };
 
 type Category = {
@@ -179,6 +183,8 @@ const initialMenuItems: MenuItem[] = [
         storeIds: ["store-1", "store-2"],
         status: 'active',
         availability: defaultAvailability,
+        managementType: 'stock',
+        stockQuantity: 100,
         variations: [{ id: 'var-1-1', name: 'Taille unique', prices: { 'dine-in': 16.50, 'takeaway': 16.50, 'delivery': 18.00 } }],
         composition: [
             {
@@ -254,8 +260,10 @@ const initialMenuItems: MenuItem[] = [
         tags: ['Léger', 'Midi', 'Froid'],
         storeIds: ["store-1", "store-3"],
         status: 'active',
-        variations: [{ id: 'var-2-1', name: 'Taille unique', prices: { 'dine-in': 12.50 } }],
         availability: {...defaultAvailability, type: 'scheduled' },
+        managementType: 'stock',
+        stockQuantity: 50,
+        variations: [{ id: 'var-2-1', name: 'Taille unique', prices: { 'dine-in': 12.50 } }],
     },
     {
         id: 'item-3',
@@ -267,6 +275,8 @@ const initialMenuItems: MenuItem[] = [
         storeIds: ["store-3"],
         status: 'out-of-stock',
         availability: defaultAvailability,
+        managementType: 'stock',
+        stockQuantity: 0,
         variations: [{ id: 'var-3-1', name: 'Taille unique', prices: { 'takeaway': 18.00 } }],
         composition: [
              {
@@ -302,6 +312,7 @@ const initialMenuItems: MenuItem[] = [
         storeIds: ["store-1", "store-2", "store-3"],
         status: 'inactive',
         availability: defaultAvailability,
+        managementType: 'stock',
         variations: [{ id: 'var-4-1', name: 'Taille unique', prices: { 'dine-in': 8.50, 'takeaway': 8.50 } }],
     },
 ];
@@ -588,6 +599,8 @@ export default function MenuPage() {
       storeIds: [selectedStore],
       status: 'inactive',
       availability: defaultAvailability,
+      managementType: 'stock',
+      stockQuantity: 0,
     };
     setEditedItem(newItem);
     setCompositionHistory([]);
@@ -766,7 +779,7 @@ export default function MenuPage() {
     name: { fr: "Nom", en: "Name" },
     category: { fr: "Catégorie", en: "Category" },
     price: { fr: "Prix", en: "Price" },
-    availability: { fr: "Disponibilité", en: "Availability" },
+    availability: { fr: "Dispo.", en: "Avail." },
     outOfStock: { fr: "En rupture", en: "Out of stock" },
     action: { fr: "Action", en: "Action" },
     always: { fr: "Toujours", en: "Always" },
@@ -814,6 +827,15 @@ export default function MenuPage() {
     inactive: { fr: "Inactif", en: "Inactive" },
     confirmVariationDeletion: { fr: "Êtes-vous sûr de vouloir supprimer cette variation ?", en: "Are you sure you want to delete this variation?" },
     variationDeletionDescription: { fr: "Toutes les données de prix et de disponibilité pour cette taille seront perdues.", en: "All price and availability data for this size will be lost." },
+    management: { fr: 'Gestion', en: 'Management' },
+    itemManagement: { fr: "Gestion de l'article", en: "Item Management" },
+    itemManagementDescription: { fr: "Choisissez comment cet article est géré.", en: "Choose how this item is managed." },
+    byStock: { fr: "Par Stock", en: "By Stock" },
+    byReservation: { fr: "Par Réservation", en: "By Reservation" },
+    availableStock: { fr: "Stock disponible", en: "Available stock" },
+    unlimited: { fr: "Illimité", en: "Unlimited" },
+    reservable: { fr: "Réservable", en: "Reservable" },
+    stock: { fr: "Stock", en: "Stock" },
   };
 
   return (
@@ -950,13 +972,9 @@ export default function MenuPage() {
                         </TableCell>
                         <TableCell>{getPriceDisplay(item)}</TableCell>
                          <TableCell>
-                            {item.availability.type === 'scheduled' ? (
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Clock className="h-4 w-4" />
-                                </div>
-                            ) : (
-                                <span className="text-xs text-muted-foreground italic">{t(translations.always)}</span>
-                            )}
+                            <Badge variant="secondary" className="text-xs font-normal">
+                                {item.managementType === 'reservation' ? t(translations.reservable) : `${t(translations.stock)}: ${item.stockQuantity ?? t(translations.unlimited)}`}
+                            </Badge>
                         </TableCell>
                         <TableCell>
                             <Switch
@@ -1125,6 +1143,40 @@ export default function MenuPage() {
                                 </div>
                             ))}
                             <Button variant="outline" size="sm" className="w-full" onClick={handleAddVariation}><Plus className="mr-2 h-4 w-4" />{t(translations.addSize)}</Button>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base font-headline">{t(translations.itemManagement)}</CardTitle>
+                            <CardDescription>{t(translations.itemManagementDescription)}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <Select value={editedItem.managementType} onValueChange={(value: ItemManagementType) => setEditedItem({...editedItem, managementType: value})}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="stock">
+                                        <div className="flex items-center gap-2">
+                                            <Box className="h-4 w-4" />
+                                            <span>{t(translations.byStock)}</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="reservation">
+                                        <div className="flex items-center gap-2">
+                                            <CalendarDays className="h-4 w-4" />
+                                            <span>{t(translations.byReservation)}</span>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {editedItem.managementType === 'stock' && (
+                                <div>
+                                    <Label htmlFor="stock-quantity">{t(translations.availableStock)}</Label>
+                                    <Input id="stock-quantity" type="number" value={editedItem.stockQuantity ?? ''} onChange={(e) => setEditedItem({...editedItem, stockQuantity: parseInt(e.target.value) || undefined})} placeholder={t(translations.unlimited)} />
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
