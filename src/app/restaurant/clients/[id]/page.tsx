@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar, Ticket, ArrowRight, User } from 'lucide-react';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar, Ticket, ArrowRight, User, Check, Ban, BrainCircuit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/contexts/language-context';
 import { translateText } from '@/ai/flows/translate-flow';
+import { Progress } from '@/components/ui/progress';
 
 
 type OrderItemCustomization = {
@@ -79,6 +80,13 @@ type HistoryReservation = {
     pricingDetails: ReservationPricingDetail[];
 };
 
+type ConsultationAnalysis = {
+    score: number; // 0-100
+    summary: string;
+    positivePoints: string[];
+    negativePoints: string[];
+}
+
 type HistoryConsultation = {
     type: 'consultation';
     id: string;
@@ -88,6 +96,8 @@ type HistoryConsultation = {
     storeId: string;
     taxRate: number;
     pricingDetails: ReservationPricingDetail[]; // Can be empty
+    transcript: string;
+    analysis: ConsultationAnalysis;
 };
 
 type HistoryItem = DetailedOrder | HistoryReservation | HistoryConsultation;
@@ -197,8 +207,8 @@ const mockHistory: HistoryItem[] = [
     { type: 'order', id: "#1023", date: "29/05/2024", storeId: 'store-1', items: [], total: 55.20 },
     { type: 'reservation', id: "#R87", date: "30/05/2024", serviceName: "Location Porsche 911 (2 jours)", total: 1900, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Porsche 911 (2 jours x 950.00€)", amount: 1900 }] },
     { type: 'reservation', id: "#R86", date: "31/05/2024", serviceName: "Location Ferrari F8", total: 950, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Ferrari F8 (1 jour x 950.00€)", amount: 950 }] },
-    { type: 'consultation', id: "#C12", date: "30/05/2024", serviceName: "Consultation Droit des sociétés", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [] },
-    { type: 'consultation', id: "#C11", date: "29/05/2024", serviceName: "Consultation Création d'entreprise", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [] },
+    { type: 'consultation', id: "#C12", date: "30/05/2024", serviceName: "Consultation Droit des sociétés", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [], transcript: "Bonjour, je suis en train de créer une startup dans le domaine de la tech et j'aurais besoin de conseils pour rédiger les statuts et un pacte d'actionnaires. J'ai vu que vous étiez spécialisé en droit des affaires.", analysis: { score: 85, summary: "Le prospect est hautement qualifié. Son besoin (statuts, pacte d'actionnaires) est au coeur de l'expertise de l'avocat et il mentionne des mots-clés pertinents (startup, tech).", positivePoints: ["Création de startup", "Pacte d'actionnaires", "Droit des affaires"], negativePoints: [] } },
+    { type: 'consultation', id: "#C11", date: "29/05/2024", serviceName: "Consultation Création d'entreprise", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [], transcript: "Bonjour, je voudrais savoir comment faire pour une garde d'enfant après un divorce. C'est bien vous qui vous occupez du droit de la famille ?", analysis: { score: 10, summary: "Le prospect n'est pas qualifié. Sa demande concerne le droit de la famille, un domaine explicitement exclu de l'expertise de l'avocat.", positivePoints: [], negativePoints: ["Garde d'enfant", "Divorce", "Droit de la famille"] } },
     { type: 'reservation', id: "#S33", date: "31/05/2024", serviceName: "Forfait 'Détente Absolue'", total: 250, storeId: 'store-spa', taxRate: 20, pricingDetails: [{ description: "Forfait 'Détente Absolue'", amount: 250 }] },
 ];
 
@@ -353,7 +363,7 @@ export default function ClientProfilePage() {
         ticketTitle: { fr: "Ticket", en: "Ticket" },
         orderTicket: { fr: "Ticket de commande", en: "Order Ticket" },
         reservationTicket: { fr: "Billet de réservation", en: "Reservation Ticket" },
-        consultationTicket: { fr: "Fiche de consultation", en: "Consultation Form" },
+        consultationTicket: { fr: "Demande de Rendez-vous", en: "Appointment Request" },
         orderFor: { fr: "Détail de la commande {orderId} pour {storeName}.", en: "Details for order {orderId} for {storeName}." },
         reservationFor: { fr: "Détail de la réservation {reservationId} pour {storeName}.", en: "Details for reservation {reservationId} for {storeName}." },
         taxDetails: { fr: "Détail TVA incluse :", en: "Included tax details:" },
@@ -364,6 +374,14 @@ export default function ClientProfilePage() {
         translate: { fr: "Traduire", en: "Translate" },
         showOriginal: { fr: "Voir l'original", en: "Show Original" },
         prestationDetails: { fr: "Détail de la prestation", en: "Service Details" },
+        consultationFor: { fr: "Demande de RDV {consultationId} pour {storeName}.", en: "Appointment request {consultationId} for {storeName}." },
+        consultationSubject: { fr: "Objet de la demande", en: "Subject of the request" },
+        callTranscript: { fr: "Transcription de l'appel", en: "Call Transcript" },
+        aiAnalysis: { fr: "Analyse & Score IA", en: "AI Analysis & Score" },
+        relevanceScore: { fr: "Score de pertinence", en: "Relevance Score" },
+        aiSummary: { fr: "Résumé de l'IA", en: "AI Summary" },
+        positivePoints: { fr: "Points positifs", en: "Positive points" },
+        negativePoints: { fr: "Freins / Vigilance", en: "Negative points / Caution" },
     };
 
     if (!customer || !editedCustomer) {
@@ -468,7 +486,7 @@ export default function ClientProfilePage() {
             );
         }
 
-        if (selectedHistoryItem.type === 'reservation' || selectedHistoryItem.type === 'consultation') {
+        if (selectedHistoryItem.type === 'reservation') {
             const totalTTC = selectedHistoryItem.total;
             const taxAmount = totalTTC - (totalTTC / (1 + selectedHistoryItem.taxRate / 100));
 
@@ -477,7 +495,7 @@ export default function ClientProfilePage() {
                      <div className="text-center space-y-2 mb-4">
                         <h2 className="text-lg font-bold">{storeInfo?.name}</h2>
                         <p className="text-xs">{storeInfo?.address}</p>
-                        <p className="text-xs">{selectedHistoryItem.type === 'reservation' ? t(translations.reservation) : t(translations.consultation)} {selectedHistoryItem.id} - {selectedHistoryItem.date}</p>
+                        <p className="text-xs">{t(translations.reservation)} {selectedHistoryItem.id} - {selectedHistoryItem.date}</p>
                         <p className="text-xs">Client: {customer.firstName} {customer.lastName}</p>
                     </div>
                     <Separator className="border-dashed border-black" />
@@ -508,6 +526,68 @@ export default function ClientProfilePage() {
                 </div>
             );
         }
+
+        if (selectedHistoryItem.type === 'consultation') {
+            const scoreColor = selectedHistoryItem.analysis.score > 75 ? 'text-green-600' : selectedHistoryItem.analysis.score > 40 ? 'text-yellow-600' : 'text-red-600';
+
+            return (
+                <div className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">{t(translations.consultationSubject)}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm font-semibold">{selectedHistoryItem.serviceName}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">{t(translations.callTranscript)}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground italic">"{selectedHistoryItem.transcript}"</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2"><BrainCircuit className="h-4 w-4" /> {t(translations.aiAnalysis)}</CardTitle>
+                        </CardHeader>
+                         <CardContent className="space-y-4">
+                             <div>
+                                <Label>{t(translations.relevanceScore)}</Label>
+                                <div className="flex items-center gap-2">
+                                    <Progress value={selectedHistoryItem.analysis.score} className="w-full" />
+                                    <span className={cn("font-bold text-lg", scoreColor)}>{selectedHistoryItem.analysis.score}%</span>
+                                </div>
+                             </div>
+                             <div>
+                                <Label>{t(translations.aiSummary)}</Label>
+                                <p className="text-sm text-muted-foreground">{selectedHistoryItem.analysis.summary}</p>
+                             </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label>{t(translations.positivePoints)}</Label>
+                                    <ul className="text-sm list-none space-y-1 mt-1">
+                                    {selectedHistoryItem.analysis.positivePoints.map((point, i) => (
+                                        <li key={i} className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500"/> {point}</li>
+                                    ))}
+                                    </ul>
+                                </div>
+                                 <div>
+                                    <Label>{t(translations.negativePoints)}</Label>
+                                     <ul className="text-sm list-none space-y-1 mt-1">
+                                    {selectedHistoryItem.analysis.negativePoints.map((point, i) => (
+                                        <li key={i} className="flex items-center gap-2"><Ban className="h-4 w-4 text-red-500"/> {point}</li>
+                                    ))}
+                                    </ul>
+                                </div>
+                             </div>
+                         </CardContent>
+                    </Card>
+                </div>
+            );
+        }
+
         return null;
     }
     
@@ -776,16 +856,17 @@ export default function ClientProfilePage() {
         </div>
         {selectedHistoryItem && (
             <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className={cn("sm:max-w-md", selectedHistoryItem.type === 'consultation' && 'sm:max-w-2xl')}>
                    <DialogHeader>
                         <DialogTitle className="text-center font-headline text-lg flex items-center justify-center gap-2">
-                           {selectedHistoryItem.type === 'order' ? <Receipt className="h-5 w-5"/> : <Ticket className="h-5 w-5"/>}
+                           {selectedHistoryItem.type === 'order' ? <Receipt className="h-5 w-5"/> : (selectedHistoryItem.type === 'reservation' ? <Ticket className="h-5 w-5"/> : <User className="h-5 w-5"/>)}
                            {selectedHistoryItem.type === 'order' ? t(translations.orderTicket) : (selectedHistoryItem.type === 'reservation' ? t(translations.reservationTicket) : t(translations.consultationTicket))}
                         </DialogTitle>
                         <DialogDescription className="sr-only">
                            {selectedHistoryItem.type === 'order' 
                                ? t(translations.orderFor).replace('{orderId}', selectedHistoryItem.id).replace('{storeName}', getStoreInfo(selectedHistoryItem.storeId)?.name || '')
-                               : t(translations.reservationFor).replace('{reservationId}', selectedHistoryItem.id).replace('{storeName}', getStoreInfo(selectedHistoryItem.storeId)?.name || '')
+                               : selectedHistoryItem.type === 'reservation' ? t(translations.reservationFor).replace('{reservationId}', selectedHistoryItem.id).replace('{storeName}', getStoreInfo(selectedHistoryItem.storeId)?.name || '')
+                               : t(translations.consultationFor).replace('{consultationId}', selectedHistoryItem.id).replace('{storeName}', getStoreInfo(selectedHistoryItem.storeId)?.name || '')
                            }
                         </DialogDescription>
                     </DialogHeader>
@@ -807,3 +888,4 @@ export default function ClientProfilePage() {
         </>
     );
 }
+
