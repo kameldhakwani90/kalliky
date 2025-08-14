@@ -10,16 +10,11 @@ import {
   User,
   Store,
   Flag,
-  CookingPot, 
   Home,
-  Zap,
-  XCircle,
-  PlusCircle,
-  Bell,
   Receipt,
-  BookCopy,
-  ConciergeBell,
-  BookOpen
+  XCircle,
+  Bell,
+  LayoutGrid,
 } from "lucide-react"
 
 import {
@@ -46,10 +41,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -86,31 +79,7 @@ const notifications = [
       time: 'il y a 3 heures',
       link: '/restaurant/clients/cust-2'
     },
-    {
-      id: 'notif-4',
-      type: 'order',
-      title: 'Nouvelle commande #1023',
-      description: 'Client anonyme - 4 articles - 55,20€',
-      time: 'hier',
-      link: '/restaurant/dashboard'
-    },
-    {
-      id: 'notif-5',
-      type: 'report',
-      title: 'Nouveau signalement',
-      description: 'Alice Martin - Retard de livraison',
-      time: 'hier',
-      link: '/restaurant/reports#rep-1'
-    },
-    {
-      id: 'notif-6',
-      type: 'order',
-      title: 'Nouvelle commande #1022',
-      description: 'Client anonyme - 1 article - 9,50€',
-      time: 'hier',
-      link: '/restaurant/dashboard'
-    },
-]
+];
 
 export default function RestaurantLayout({
   children,
@@ -123,24 +92,15 @@ export default function RestaurantLayout({
 
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
-    { href: "/restaurant/activity", label: {fr: "Activité", en: "Activity"}, icon: Receipt },
+    { href: "/restaurant/activity", label: {fr: "Activité", en: "Activity"}, icon: LayoutGrid },
     { href: "/restaurant/clients", label: {fr: "Clients", en: "Customers"}, icon: User },
     { href: "/restaurant/reports", label: {fr: "Signalements", en: "Reports"}, icon: Flag },
+    { href: "/restaurant/stores", label: {fr: "Configuration", en: "Settings"}, icon: Settings },
   ];
   
-  const settingsItems = [
-    { href: "/restaurant/stores", label: {fr: "Boutiques", en: "Stores"}, icon: Store },
-    { href: "/restaurant/users", label: {fr: "Utilisateurs", en: "Users"}, icon: User },
-    { href: "/restaurant/billing", label: {fr: "Facturation", en: "Billing"}, icon: CreditCard },
-  ];
-
-  // A settings path is active if the current path starts with one of the settings items' hrefs,
-  // or if it's the service detail page.
-  const isSettingsPathActive = settingsItems.some(item => pathname.startsWith(item.href)) || pathname.startsWith('/restaurant/services/');
-
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" variant="sidebar" side="left">
+      <Sidebar collapsible="icon" variant="floating" side="left">
         <SidebarHeader>
            <KallikyLogo />
         </SidebarHeader>
@@ -150,53 +110,22 @@ export default function RestaurantLayout({
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
+                  size="lg"
                   isActive={pathname.startsWith(item.href)}
                   tooltip={t(item.label)}
                   className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold"
                 >
                   <Link href={item.href}>
                     <item.icon />
-                    <span>{t(item.label)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-            <Collapsible defaultOpen={isSettingsPathActive}>
-                <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                            tooltip={t({fr: "Configuration", en: "Settings"})}
-                            className={cn(
-                                "data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold",
-                                "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                             )}
-                            isActive={isSettingsPathActive}
-                        >
-                            <Settings />
-                            <span>{t({fr: "Configuration", en: "Settings"})}</span>
-                        </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                </SidebarMenuItem>
-                <CollapsibleContent asChild>
-                    <SidebarMenuSub>
-                        {settingsItems.map((item) => (
-                            <SidebarMenuSubItem key={item.href}>
-                                <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href) || (item.href === "/restaurant/stores" && pathname.startsWith("/restaurant/services"))}>
-                                    <Link href={item.href}>
-                                        <item.icon />
-                                        <span>{t(item.label)}</span>
-                                    </Link>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                        ))}
-                    </SidebarMenuSub>
-                </CollapsibleContent>
-            </Collapsible>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-16 items-center gap-4 border-b bg-card px-6">
+        <header className="flex h-16 items-center gap-4 border-b bg-card/50 px-6 backdrop-blur-md">
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
                 {/* Optional Header Content */}
@@ -278,6 +207,12 @@ export default function RestaurantLayout({
                             <span>{t({fr: "Profil", en: "Profile"})}</span>
                         </Link>
                     </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                        <Link href="/restaurant/billing">
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            <span>{t({fr: "Facturation", en: "Billing"})}</span>
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem asChild className="text-destructive">
                         <Link href="/login">
@@ -288,13 +223,10 @@ export default function RestaurantLayout({
                 </DropdownMenuContent>
             </DropdownMenu>
         </header>
-        <main className="p-4 sm:p-6 lg:p-8 bg-muted/30 flex-1">
+        <main className="p-4 sm:p-6 lg:p-8 bg-transparent flex-1">
             {children}
         </main>
       </SidebarInset>
     </SidebarProvider>
   )
 }
-    
-
-    
