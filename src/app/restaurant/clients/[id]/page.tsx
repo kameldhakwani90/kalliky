@@ -564,7 +564,7 @@ export default function ClientProfilePage() {
     return (
         <>
         <div className="space-y-6">
-            <header className="flex items-start justify-between">
+            <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="flex items-center gap-4">
                      <Avatar className="h-16 w-16">
                         <AvatarFallback className="text-xl">
@@ -576,7 +576,7 @@ export default function ClientProfilePage() {
                         <p className="text-muted-foreground">{editedCustomer.phone}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     {isEditing ? (
                         <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/>{t(translations.save)}</Button>
                     ) : (
@@ -600,7 +600,7 @@ export default function ClientProfilePage() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                     <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.status)}</CardTitle></CardHeader>
                     <CardContent><p className="text-lg font-semibold flex items-center gap-2"><Star className="text-yellow-500"/> {translateStatus(customer.status)}</p></CardContent>
@@ -619,7 +619,7 @@ export default function ClientProfilePage() {
                 </Card>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-1">
                     <Card>
                         <CardHeader>
@@ -837,5 +837,3 @@ export default function ClientProfilePage() {
         </>
     );
 }
-
-    
