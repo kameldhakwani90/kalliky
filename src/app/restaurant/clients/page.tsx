@@ -13,9 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
 
 type Customer = {
     id: string;
@@ -45,7 +42,6 @@ export default function ClientsPage() {
     const { t } = useLanguage();
     const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
     const [searchTerm, setSearchTerm] = useState('');
-    const [date, setDate] = useState<Date | undefined>(undefined);
     const [currentPage, setCurrentPage] = useState(1);
     const router = useRouter();
 
@@ -124,17 +120,6 @@ export default function ClientsPage() {
                                    onChange={(e) => setSearchTerm(e.target.value)}
                                />
                            </div>
-                           <Popover>
-                               <PopoverTrigger asChild>
-                                   <Button variant={"outline"} className="w-full sm:w-[240px] justify-start text-left font-normal">
-                                       <CalendarIcon className="mr-2 h-4 w-4" />
-                                       {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
-                                   </Button>
-                               </PopoverTrigger>
-                               <PopoverContent className="w-auto p-0" align="start">
-                                   <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                               </PopoverContent>
-                           </Popover>
                         </div>
                     </div>
                 </CardHeader>
