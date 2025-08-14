@@ -123,6 +123,7 @@ export default function RestaurantLayout({
 
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
+    { href: "/restaurant/activity", label: {fr: "Activité", en: "Activity"}, icon: Receipt },
     { href: "/restaurant/clients", label: {fr: "Clients", en: "Customers"}, icon: User },
     { href: "/restaurant/reports", label: {fr: "Signalements", en: "Reports"}, icon: Flag },
   ];
