@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, CheckCircle, ArrowRight, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Download, CheckCircle, ArrowRight, Info, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,8 @@ const invoices = [
     { id: "INV-2024-005", date: new Date("2024-05-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
     { id: "INV-2024-004", date: new Date("2024-04-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
     { id: "INV-2024-003", date: new Date("2024-03-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
+    { id: "INV-2024-002", date: new Date("2024-02-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
+    { id: "INV-2024-001", date: new Date("2024-01-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
 ];
 
 const starterFeatures = [
@@ -104,7 +106,7 @@ const plans = [
 
 
 const currentPlanName = "Pro";
-
+const ITEMS_PER_PAGE = 5;
 
 export default function BillingPage() {
     const { t } = useLanguage();
@@ -112,6 +114,14 @@ export default function BillingPage() {
     const [selectedPlanName, setSelectedPlanName] = useState<string>(currentPlanName);
     const [isUpdatePaymentOpen, setIsUpdatePaymentOpen] = useState(false);
     const [isChangePlanOpen, setIsChangePlanOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(invoices.length / ITEMS_PER_PAGE);
+
+    const paginatedInvoices = invoices.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     const handleSavePayment = (e: React.FormEvent) => {
         e.preventDefault();
@@ -175,7 +185,11 @@ export default function BillingPage() {
         cvc: { fr: "CVC", en: "CVC" },
         securePayments: { fr: "Paiements sécurisés par", en: "Secure payments by" },
         save: { fr: "Enregistrer", en: "Save" },
-        paid: { fr: "Payée", en: "Paid" }
+        paid: { fr: "Payée", en: "Paid" },
+        previous: { fr: "Précédent", en: "Previous" },
+        next: { fr: "Suivant", en: "Next" },
+        pageOf: { fr: "Page {current} sur {total}", en: "Page {current} of {total}" },
+        searchPlaceholder: { fr: "Rechercher par N°...", en: "Search by No...." },
     };
 
 
@@ -361,30 +375,30 @@ export default function BillingPage() {
             </div>
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>{t(translations.invoicesHistory)}</CardTitle>
-                        <CardDescription>{t(translations.invoicesDescription)}</CardDescription>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <CardTitle>{t(translations.invoicesHistory)}</CardTitle>
+                            <CardDescription>{t(translations.invoicesDescription)}</CardDescription>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                           <div className="relative flex-1 w-full">
+                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder={t(translations.searchPlaceholder)} className="pl-10" />
+                           </div>
+                           <Popover>
+                               <PopoverTrigger asChild>
+                                   <Button variant={"outline"} className="w-full sm:w-[240px] justify-start text-left font-normal">
+                                       <CalendarIcon className="mr-2 h-4 w-4" />
+                                       {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
+                                   </Button>
+                               </PopoverTrigger>
+                               <PopoverContent className="w-auto p-0" align="start">
+                                   <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                               </PopoverContent>
+                           </Popover>
+                        </div>
                     </div>
-                     <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant={"outline"}
-                            className="w-[240px] justify-start text-left font-normal"
-                            >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -398,7 +412,7 @@ export default function BillingPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {invoices.map((invoice) => (
+                            {paginatedInvoices.map((invoice) => (
                                 <TableRow key={invoice.id}>
                                     <TableCell className="font-medium">{invoice.id}</TableCell>
                                     <TableCell>{format(invoice.date, "dd/MM/yyyy")}</TableCell>
@@ -420,6 +434,21 @@ export default function BillingPage() {
                         </TableBody>
                     </Table>
                 </CardContent>
+                <CardFooter>
+                    <div className="flex items-center justify-between w-full">
+                        <div className="text-xs text-muted-foreground">
+                             {t(translations.pageOf).replace('{current}', currentPage.toString()).replace('{total}', totalPages.toString())}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                                {t(translations.previous)}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                                {t(translations.next)}
+                            </Button>
+                        </div>
+                    </div>
+                </CardFooter>
             </Card>
         </div>
     )

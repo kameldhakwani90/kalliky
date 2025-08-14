@@ -2,14 +2,14 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit, Phone, PlayCircle, Printer, Receipt, FileImage, Send } from 'lucide-react';
+import { Search, Filter, Eye, MessageSquare, User, Store, Calendar, Edit, Phone, PlayCircle, Printer, Receipt, FileImage, Send, Calendar as CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -28,6 +28,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as ShadcnCalendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 
 type ReportStatus = 'Ouvert' | 'En cours' | 'Résolu';
@@ -74,7 +77,7 @@ type DetailedOrder = {
 
 type Report = {
     id: string;
-    date: string;
+    date: Date;
     reason: string;
     status: ReportStatus;
     details: string;
@@ -105,6 +108,9 @@ type PrinterDevice = {
     name: string;
     role: 'kitchen' | 'receipt';
     width: '58mm' | '80mm';
+    connectionType: 'network' | 'usb';
+    ipAddress?: string;
+    port?: string;
 };
 
 type StoreInfo = {
@@ -189,7 +195,7 @@ const mockOrders: DetailedOrder[] = [
 const initialReports: Report[] = [
     {
         id: 'rep-1',
-        date: '16/05/2024',
+        date: new Date(2024, 4, 16),
         reason: 'Retard de livraison',
         status: 'Résolu',
         details: 'La commande a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.',
@@ -200,7 +206,7 @@ const initialReports: Report[] = [
     },
     {
         id: 'rep-2',
-        date: '29/05/2024',
+        date: new Date(2024, 4, 29),
         reason: 'Erreur dans la commande',
         status: 'Ouvert',
         details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages.',
@@ -218,7 +224,7 @@ const initialReports: Report[] = [
     },
     {
         id: 'rep-3',
-        date: '30/05/2024',
+        date: new Date(2024, 4, 30),
         reason: 'Problème de paiement',
         status: 'En cours',
         details: 'Le paiement par lien n\'a pas fonctionné. Le client a dû payer en espèces à la livraison.',
@@ -279,12 +285,23 @@ const isMobilePhone = (phone: string): boolean => {
     return mobilePrefixes.some(prefix => cleanedPhone.startsWith(prefix));
 }
 
+const ITEMS_PER_PAGE = 10;
 
 export default function ReportsPage() {
     const [reports, setReports] = useState<Report[]>(initialReports);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+    
+    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(reports.length / ITEMS_PER_PAGE);
+
+    const paginatedReports = reports.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
     
     const ticketRef = useRef<HTMLDivElement>(null);
     
@@ -328,6 +345,12 @@ export default function ReportsPage() {
     const currentStoreForTicket = currentOrderForTicket ? getStoreInfo(currentOrderForTicket.storeId) : null;
     const currentCalculatedTotals = currentOrderForTicket ? calculateOrderTotals(currentOrderForTicket) : null;
 
+    const translations = {
+        previous: { fr: "Précédent", en: "Previous" },
+        next: { fr: "Suivant", en: "Next" },
+        pageOf: { fr: "Page {current} sur {total}", en: "Page {current} of {total}" },
+    };
+
 
     return (
         <div className="space-y-8">
@@ -336,33 +359,31 @@ export default function ReportsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Gestion des Signalements</h1>
                     <p className="text-muted-foreground">Consultez et traitez les réclamations et retours de vos clients.</p>
                 </div>
-                 <div className="flex flex-col sm:flex-row items-center gap-2">
-                     <div className="relative flex-1 w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Rechercher un signalement..." className="pl-10" />
-                    </div>
-                     <Select>
-                        <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Toutes les boutiques" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Toutes les boutiques</SelectItem>
-                            {availableStoresSummary.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <Select>
-                        <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Tous les statuts" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Tous les statuts</SelectItem>
-                            <SelectItem value="Ouvert">Ouvert</SelectItem>
-                            <SelectItem value="En cours">En cours</SelectItem>
-                            <SelectItem value="Résolu">Résolu</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                 
             </header>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Liste des signalements</CardTitle>
+                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                     <CardTitle>Liste des signalements</CardTitle>
+                      <div className="flex flex-col sm:flex-row items-center gap-2">
+                         <div className="relative flex-1 w-full">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Rechercher un signalement..." className="pl-10" />
+                        </div>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className="w-full sm:w-[240px] justify-start text-left font-normal">
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, "PPP") : <span>Choisir une date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <ShadcnCalendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                   </div>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-x-auto">
@@ -378,7 +399,7 @@ export default function ReportsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {reports.map((report) => (
+                                {paginatedReports.map((report) => (
                                     <TableRow key={report.id} className="cursor-pointer" onClick={() => handleViewReport(report)}>
                                         <TableCell className="font-medium">
                                             <p>{report.customer.name}</p>
@@ -386,7 +407,7 @@ export default function ReportsPage() {
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">{getStoreName(report.storeId)}</TableCell>
                                         <TableCell>{report.reason}</TableCell>
-                                        <TableCell className="hidden sm:table-cell">{report.date}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{format(report.date, "dd/MM/yyyy")}</TableCell>
                                         <TableCell>
                                             <Badge className={statusStyles[report.status]}>{report.status}</Badge>
                                         </TableCell>
@@ -401,6 +422,21 @@ export default function ReportsPage() {
                         </Table>
                     </div>
                 </CardContent>
+                <CardFooter>
+                    <div className="flex items-center justify-between w-full">
+                        <div className="text-xs text-muted-foreground">
+                            {translations.pageOf.fr.replace('{current}', currentPage.toString()).replace('{total}', totalPages.toString())}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                                {translations.previous.fr}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                                {translations.next.fr}
+                            </Button>
+                        </div>
+                    </div>
+                </CardFooter>
             </Card>
             
             {selectedReport && (
@@ -517,7 +553,7 @@ export default function ReportsPage() {
                                         <CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4"/> Date</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <p className="text-sm font-medium">{selectedReport.date}</p>
+                                        <p className="text-sm font-medium">{format(selectedReport.date, 'dd/MM/yyyy')}</p>
                                     </CardContent>
                                 </Card>
                            </div>

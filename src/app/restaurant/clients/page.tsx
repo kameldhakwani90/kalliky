@@ -5,14 +5,17 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Filter, Eye } from 'lucide-react';
+import { PlusCircle, Search, Filter, Eye, Calendar as CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 type Customer = {
     id: string;
@@ -36,10 +39,14 @@ const initialCustomers: Customer[] = [
     { id: 'cust-9', phone: "07 55 66 77 88", firstName: "Claire", lastName: "Chazal", status: "Nouveau", totalSpent: "250.00€", lastSeen: "31/05/2024" },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function ClientsPage() {
     const { t } = useLanguage();
     const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
     const [searchTerm, setSearchTerm] = useState('');
+    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [currentPage, setCurrentPage] = useState(1);
     const router = useRouter();
 
     const handleViewCustomer = (customerId: string) => {
@@ -55,11 +62,19 @@ export default function ClientsPage() {
         );
     }, [customers, searchTerm]);
 
+    const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
+
+    const paginatedCustomers = filteredCustomers.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+
     const translations = {
         title: { fr: "Fichier Clients", en: "Customer File" },
         description: { fr: "Consultez et gérez les informations de vos clients.", en: "View and manage your customer information." },
         searchPlaceholder: { fr: "Rechercher par nom, tél...", en: "Search by name, phone..." },
-        filters: { fr: "Filtres", en: "Filters" },
+        chooseDate: { fr: "Choisir une date", en: "Choose a date" },
         clientList: { fr: "Liste de vos clients", en: "Your customer list" },
         client: { fr: "Client", en: "Customer" },
         contact: { fr: "Contact", en: "Contact" },
@@ -71,6 +86,9 @@ export default function ClientsPage() {
         loyal: { fr: "Fidèle", en: "Loyal" },
         new: { fr: "Nouveau", en: "New" },
         vip: { fr: "VIP", en: "VIP" },
+        previous: { fr: "Précédent", en: "Previous" },
+        next: { fr: "Suivant", en: "Next" },
+        pageOf: { fr: "Page {current} sur {total}", en: "Page {current} of {total}" },
     };
     
     const translateStatus = (status: Customer['status']) => {
@@ -90,26 +108,35 @@ export default function ClientsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
                     <p className="text-muted-foreground">{t(translations.description)}</p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                     <div className="relative flex-1 w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder={t(translations.searchPlaceholder)} 
-                            className="pl-10"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <Button variant="outline" className="w-full sm:w-auto">
-                        <Filter className="mr-2 h-4 w-4" />
-                        {t(translations.filters)}
-                    </Button>
-                </div>
             </header>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>{t(translations.clientList)}</CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <CardTitle>{t(translations.clientList)}</CardTitle>
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                           <div className="relative flex-1 w-full">
+                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input 
+                                   placeholder={t(translations.searchPlaceholder)} 
+                                   className="pl-10"
+                                   value={searchTerm}
+                                   onChange={(e) => setSearchTerm(e.target.value)}
+                               />
+                           </div>
+                           <Popover>
+                               <PopoverTrigger asChild>
+                                   <Button variant={"outline"} className="w-full sm:w-[240px] justify-start text-left font-normal">
+                                       <CalendarIcon className="mr-2 h-4 w-4" />
+                                       {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
+                                   </Button>
+                               </PopoverTrigger>
+                               <PopoverContent className="w-auto p-0" align="start">
+                                   <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                               </PopoverContent>
+                           </Popover>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-x-auto">
@@ -125,7 +152,7 @@ export default function ClientsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredCustomers.map((customer) => (
+                                {paginatedCustomers.map((customer) => (
                                     <TableRow key={customer.id} className="cursor-pointer" onClick={() => handleViewCustomer(customer.id)}>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-3">
@@ -157,6 +184,21 @@ export default function ClientsPage() {
                         </Table>
                     </div>
                 </CardContent>
+                <CardFooter>
+                    <div className="flex items-center justify-between w-full">
+                        <div className="text-xs text-muted-foreground">
+                            {t(translations.pageOf).replace('{current}', currentPage.toString()).replace('{total}', totalPages.toString())}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                                {t(translations.previous)}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                                {t(translations.next)}
+                            </Button>
+                        </div>
+                    </div>
+                </CardFooter>
             </Card>
         </div>
     );

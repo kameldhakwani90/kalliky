@@ -2,13 +2,18 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BookOpen, BrainCircuit, Calendar, Car, ConciergeBell, Eye, Phone, Receipt, Sparkles, User, Utensils } from 'lucide-react';
+import { ArrowLeft, BookOpen, BrainCircuit, Calendar as CalendarIcon, Car, ConciergeBell, Eye, Phone, Receipt, Search, Sparkles, User, Utensils } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 type ServiceType = 'products' | 'reservations' | 'consultation';
 
@@ -34,27 +39,15 @@ type ActivityLog = {
     customer: string;
     customerId: string;
     phone: string;
-    date: string;
+    date: Date;
     amount: string;
 };
 
 const mockActivities: Record<string, ActivityLog[]> = {
-    "store-1": [
-        { id: "#1025", type: 'Commande', customer: 'Alice Martin', customerId: 'cust-1', phone: '0612345678', date: 'il y a 5 min', amount: '24,50€' },
-        { id: "#1024", type: 'Commande', customer: 'Bob Dupont', customerId: 'cust-2', phone: '0787654321', date: 'il y a 1h', amount: '18,00€' },
-        { id: "#1023", type: 'Commande', customer: 'Client Anonyme', customerId: 'cust-4', phone: '0699887766', date: 'hier', amount: '55,20€' },
-    ],
-    "store-loc": [
-        { id: "#R87", type: 'Réservation', customer: 'Carlos Sainz', customerId: 'cust-5', phone: '0611223344', date: 'aujourd\'hui', amount: '1900,00€' },
-        { id: "#R86", type: 'Réservation', customer: 'Lando Norris', customerId: 'cust-6', phone: '0688776655', date: 'demain', amount: '950,00€' },
-    ],
-    "store-4": [
-        { id: "#C12", type: 'Consultation', customer: 'Mme. Lefevre', customerId: 'cust-7', phone: '0123456789', date: 'il y a 2h', amount: 'N/A' },
-        { id: "#C11", type: "Consultation", customer: 'M. Bernard', customerId: 'cust-8', phone: '0198765432', date: 'hier', amount: 'N/A' },
-    ],
-    "store-spa": [
-         { id: "#S33", type: 'Réservation', customer: 'Claire Chazal', customerId: 'cust-9', phone: '0755667788', date: 'demain', amount: '250,00€' },
-    ]
+    "store-1": Array.from({ length: 25 }, (_, i) => ({ id: `#${1025 - i}`, type: 'Commande', customer: `Alice Martin ${i}`, customerId: `cust-${i+1}`, phone: `06123456${78-i}`, date: new Date(2024, 4, 30 - i), amount: `${(24.50 + i * 2).toFixed(2)}€` })),
+    "store-loc": Array.from({ length: 8 }, (_, i) => ({ id: `#R${87 - i}`, type: 'Réservation', customer: `Carlos Sainz ${i}`, customerId: `cust-${30+i}`, phone: `06112233${44-i}`, date: new Date(2024, 4, 30 - i*2), amount: `${(1900 - i * 150).toFixed(2)}€` })),
+    "store-4": Array.from({ length: 12 }, (_, i) => ({ id: `#C${12 - i}`, type: 'Consultation', customer: `Mme. Lefevre ${i}`, customerId: `cust-${40+i}`, phone: `01234567${89-i}`, date: new Date(2024, 4, 30 - i*3), amount: 'N/A' })),
+    "store-spa": Array.from({ length: 5 }, (_, i) => ({ id: `#S${33-i}`, type: 'Réservation', customer: `Claire Chazal ${i}`, customerId: `cust-${55+i}`, phone: `07556677${88-i}`, date: new Date(2024, 4, 30 - i*5), amount: `${(250 + i * 10).toFixed(2)}€` })),
 };
 
 const serviceTypeInfo: Record<ServiceType, { icon: React.ElementType, label: Record<'fr'|'en', string>, activityLabel: ActivityType }> = {
@@ -69,13 +62,25 @@ const getServiceIcon = (serviceType: ServiceType, storeName: string) => {
     return serviceTypeInfo[serviceType].icon;
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export default function StoreActivityPage() {
     const params = useParams();
     const router = useRouter();
     const { t } = useLanguage();
     const storeId = params.storeId as string;
     const store = initialStores.find(s => s.id === storeId);
+    
+    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [currentPage, setCurrentPage] = useState(1);
+    
     const activities = mockActivities[storeId] || [];
+    const totalPages = Math.ceil(activities.length / ITEMS_PER_PAGE);
+
+    const paginatedActivities = activities.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     if (!store) {
         return <div>Boutique non trouvée.</div>;
@@ -93,6 +98,11 @@ export default function StoreActivityPage() {
         amount: { fr: "Montant", en: "Amount" },
         actions: { fr: "Actions", en: "Actions" },
         view: { fr: "Voir", en: "View" },
+        searchPlaceholder: { fr: "Rechercher...", en: "Search..." },
+        chooseDate: { fr: "Choisir une date", en: "Choose a date" },
+        previous: { fr: "Précédent", en: "Previous" },
+        next: { fr: "Suivant", en: "Next" },
+        pageOf: { fr: "Page {current} sur {total}", en: "Page {current} of {total}" },
     };
 
     return (
@@ -108,7 +118,26 @@ export default function StoreActivityPage() {
 
              <Card>
                 <CardHeader>
-                    <CardTitle>Dernières activités</CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <CardTitle>Dernières activités</CardTitle>
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                           <div className="relative flex-1 w-full">
+                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder={t(translations.searchPlaceholder)} className="pl-10" />
+                           </div>
+                           <Popover>
+                               <PopoverTrigger asChild>
+                                   <Button variant={"outline"} className="w-full sm:w-[240px] justify-start text-left font-normal">
+                                       <CalendarIcon className="mr-2 h-4 w-4" />
+                                       {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
+                                   </Button>
+                               </PopoverTrigger>
+                               <PopoverContent className="w-auto p-0" align="start">
+                                   <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                               </PopoverContent>
+                           </Popover>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-x-auto">
@@ -123,7 +152,7 @@ export default function StoreActivityPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {activities.map((activity) => (
+                                {paginatedActivities.map((activity) => (
                                     <TableRow key={activity.id}>
                                         <TableCell>
                                             <Badge variant="outline" className="flex items-center gap-2 w-fit">
@@ -135,7 +164,7 @@ export default function StoreActivityPage() {
                                             <p className="font-medium">{activity.customer}</p>
                                             <p className="text-xs text-muted-foreground">{activity.phone}</p>
                                         </TableCell>
-                                        <TableCell className="hidden sm:table-cell">{activity.date}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{format(activity.date, "dd/MM/yyyy")}</TableCell>
                                         <TableCell className="hidden md:table-cell">{activity.amount}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="sm" onClick={(e) => {
@@ -153,6 +182,21 @@ export default function StoreActivityPage() {
                         </Table>
                     </div>
                 </CardContent>
+                 <CardFooter>
+                    <div className="flex items-center justify-between w-full">
+                        <div className="text-xs text-muted-foreground">
+                            {t(translations.pageOf).replace('{current}', currentPage.toString()).replace('{total}', totalPages.toString())}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                                {t(translations.previous)}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                                {t(translations.next)}
+                            </Button>
+                        </div>
+                    </div>
+                </CardFooter>
              </Card>
 
         </div>
