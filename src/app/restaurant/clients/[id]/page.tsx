@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar, Ticket, ArrowRight } from 'lucide-react';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar, Ticket, ArrowRight, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -371,7 +371,7 @@ export default function ClientProfilePage() {
         avgBasket: { fr: "Panier Moyen", en: "Average Basket" },
         totalSpent: { fr: "Total Dépensé", en: "Total Spent" },
         lastVisit: { fr: "Dernière Visite", en: "Last Visit" },
-        personalInfo: { fr: "Informations Personnelles", en: "Personal Information" },
+        personalInfo: { fr: "Informations", en: "Information" },
         firstName: { fr: "Prénom", en: "First Name" },
         lastName: { fr: "Nom", en: "Last Name" },
         email: { fr: "Email", en: "Email" },
@@ -619,20 +619,28 @@ export default function ClientProfilePage() {
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1">
+            <Tabs defaultValue="info">
+                <TabsList className="mb-4">
+                    <TabsTrigger value="info"><User className="mr-2 h-4 w-4"/>{t(translations.personalInfo)}</TabsTrigger>
+                    <TabsTrigger value="history"><Receipt className="mr-2 h-4 w-4"/>{t(translations.orderHistory)}</TabsTrigger>
+                    <TabsTrigger value="calls"><Phone className="mr-2 h-4 w-4"/>{t(translations.callHistory)}</TabsTrigger>
+                    <TabsTrigger value="reports"><Flag className="mr-2 h-4 w-4"/>{t(translations.reportHistory)}</TabsTrigger>
+                </TabsList>
+                 <TabsContent value="info">
                     <Card>
                         <CardHeader>
                             <CardTitle>{t(translations.personalInfo)}</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>{t(translations.firstName)}</Label>
-                                <Input value={editedCustomer.firstName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('firstName', e.target.value)} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>{t(translations.lastName)}</Label>
-                                <Input value={editedCustomer.lastName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('lastName', e.target.value)} />
+                        <CardContent className="space-y-4 max-w-2xl">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>{t(translations.firstName)}</Label>
+                                    <Input value={editedCustomer.firstName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('firstName', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t(translations.lastName)}</Label>
+                                    <Input value={editedCustomer.lastName || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('lastName', e.target.value)} />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>{t(translations.email)}</Label>
@@ -642,167 +650,160 @@ export default function ClientProfilePage() {
                                 <Label>{t(translations.address)}</Label>
                                 <Input value={editedCustomer.address || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('address', e.target.value)} />
                             </div>
-                             <div className="space-y-2">
-                                <Label>{t(translations.birthDate)}</Label>
-                                <Input type="date" value={editedCustomer.birthDate || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('birthDate', e.target.value)} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>{t(translations.gender)}</Label>
-                                <Select value={editedCustomer.gender || ''} disabled={!isEditing} onValueChange={(value) => handleInputChange('gender', value)}>
-                                    <SelectTrigger><SelectValue placeholder={t(translations.unspecified)} /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Homme">{t(translations.male)}</SelectItem>
-                                        <SelectItem value="Femme">{t(translations.female)}</SelectItem>
-                                        <SelectItem value="Autre">{t(translations.other)}</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>{t(translations.birthDate)}</Label>
+                                    <Input type="date" value={editedCustomer.birthDate || ''} readOnly={!isEditing} onChange={(e) => handleInputChange('birthDate', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t(translations.gender)}</Label>
+                                    <Select value={editedCustomer.gender || ''} disabled={!isEditing} onValueChange={(value) => handleInputChange('gender', value)}>
+                                        <SelectTrigger><SelectValue placeholder={t(translations.unspecified)} /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Homme">{t(translations.male)}</SelectItem>
+                                            <SelectItem value="Femme">{t(translations.female)}</SelectItem>
+                                            <SelectItem value="Autre">{t(translations.other)}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
-                </div>
-                <div className="lg:col-span-2">
-                     <Tabs defaultValue="history">
-                        <TabsList className="mb-4">
-                            <TabsTrigger value="history"><Receipt className="mr-2 h-4 w-4"/>{t(translations.orderHistory)}</TabsTrigger>
-                            <TabsTrigger value="calls"><Phone className="mr-2 h-4 w-4"/>{t(translations.callHistory)}</TabsTrigger>
-                            <TabsTrigger value="reports"><Flag className="mr-2 h-4 w-4"/>{t(translations.reportHistory)}</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="history">
-                            <Card>
-                                <CardContent className="p-0">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{t({fr: "Type", en: "Type"})}</TableHead>
-                                                <TableHead>{t({fr: "Détail", en: "Detail"})}</TableHead>
-                                                <TableHead>{t(translations.date)}</TableHead>
-                                                <TableHead>{t(translations.amountTTC)}</TableHead>
-                                                <TableHead className="text-right">{t(translations.action)}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {customer.history.map(item => (
-                                                <TableRow key={item.id}>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="flex items-center gap-2">
-                                                            {item.type === 'order' ? <Receipt className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
-                                                            <span>{item.type === 'order' ? t(translations.order) : t(translations.reservation)}</span>
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="font-medium">
-                                                        {item.type === 'order' ? `${item.id} (${item.items.length} ${t(translations.items)})` : item.serviceName}
-                                                    </TableCell>
-                                                    <TableCell>{item.date}</TableCell>
-                                                    <TableCell>{item.total.toFixed(2)}€</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewHistoryItem(item)}>
-                                                            <Eye className="h-4 w-4"/>
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="calls">
-                            <Card>
-                                <CardContent className="p-4 space-y-4">
-                                    {customer.callHistory.map(call => (
-                                        <div key={call.id} className="text-sm p-3 bg-muted/50 rounded-lg">
-                                            <div className="flex items-center justify-between font-medium">
-                                                <p>{call.date}</p>
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="secondary">{call.type}</Badge>
-                                                    <p className="text-xs text-muted-foreground">{call.duration}</p>
-                                                    <Dialog onOpenChange={(open) => !open && handleCloseCallDialog()}>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="outline" size="sm" className="h-8" onClick={() => handleOpenCallDialog(call)}>
-                                                                <PlayCircle className="mr-2 h-4 w-4"/> {t(translations.readCall)}
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>{t(translations.callDetails)}</DialogTitle>
-                                                                <DialogDescription>{activeCall?.date} - {activeCall?.duration}</DialogDescription>
-                                                            </DialogHeader>
-                                                            {activeCall?.audioUrl && (
-                                                                <div className="my-4">
-                                                                    <audio controls className="w-full">
-                                                                        <source src={activeCall.audioUrl} type="audio/mpeg" />
-                                                                        Your browser does not support the audio element.
-                                                                    </audio>
-                                                                </div>
-                                                            )}
-                                                            <div className="my-4 p-4 bg-muted rounded-md text-sm max-h-64 overflow-y-auto">
-                                                                <div className="flex justify-between items-center mb-2">
-                                                                    <p className="font-semibold">{t(translations.transcript)}</p>
-                                                                    <Button variant="ghost" size="sm" onClick={handleTranslate} disabled={isTranslating}>
-                                                                        {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
-                                                                        {translatedTranscript ? t(translations.showOriginal) : t(translations.translate)}
-                                                                    </Button>
-                                                                </div>
-                                                                <p className="whitespace-pre-wrap leading-relaxed">
-                                                                    {translatedTranscript || activeCall?.transcript}
-                                                                </p>
-                                                            </div>
-                                                            <DialogFooter>
-                                                                <Button variant="outline" onClick={handleCloseCallDialog}>{t(translations.close)}</Button>
-                                                            </DialogFooter>
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                </div>
-                                            </div>
-                                        </div>
+                </TabsContent>
+                <TabsContent value="history">
+                    <Card>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t({fr: "Type", en: "Type"})}</TableHead>
+                                        <TableHead>{t({fr: "Détail", en: "Detail"})}</TableHead>
+                                        <TableHead>{t(translations.date)}</TableHead>
+                                        <TableHead>{t(translations.amountTTC)}</TableHead>
+                                        <TableHead className="text-right">{t(translations.action)}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {customer.history.map(item => (
+                                        <TableRow key={item.id}>
+                                            <TableCell>
+                                                <Badge variant="outline" className="flex items-center gap-2">
+                                                    {item.type === 'order' ? <Receipt className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
+                                                    <span>{item.type === 'order' ? t(translations.order) : t(translations.reservation)}</span>
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-medium">
+                                                {item.type === 'order' ? `${item.id} (${item.items.length} ${t(translations.items)})` : item.serviceName}
+                                            </TableCell>
+                                            <TableCell>{item.date}</TableCell>
+                                            <TableCell>{item.total.toFixed(2)}€</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewHistoryItem(item)}>
+                                                    <Eye className="h-4 w-4"/>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="reports">
-                            <Card>
-                                <CardContent className="p-0">
-                                        <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{t(translations.date)}</TableHead>
-                                                <TableHead>{t(translations.reason)}</TableHead>
-                                                <TableHead>{t(translations.statusLabel)}</TableHead>
-                                                <TableHead className="text-right">{t(translations.action)}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                                {customer.reportHistory.map(report => (
-                                                <TableRow key={report.id}>
-                                                    <TableCell>{report.date}</TableCell>
-                                                    <TableCell className="font-medium">{report.reason}</TableCell>
-                                                    <TableCell><Badge variant={report.status === 'Résolu' ? 'default' : 'secondary'} className={report.status === 'Résolu' ? 'bg-green-100 text-green-700' : ''}>{report.status === 'Résolu' ? t(translations.resolved) : (report.status === 'Ouvert' ? t(translations.open) : t(translations.inProgress))}</Badge></TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Dialog>
-                                                            <DialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4"/></Button>
-                                                            </DialogTrigger>
-                                                            <DialogContent>
-                                                                <DialogHeader>
-                                                                    <DialogTitle>{t(translations.reportDetails)}</DialogTitle>
-                                                                    <DialogDescription>{report.reason} - {report.date}</DialogDescription>
-                                                                </DialogHeader>
-                                                                <div className="my-4 p-4 bg-muted rounded-md text-sm">
-                                                                    <p>{report.details}</p>
-                                                                </div>
-                                                            </DialogContent>
-                                                        </Dialog>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                </div>
-            </div>
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="calls">
+                    <Card>
+                        <CardContent className="p-4 space-y-4">
+                            {customer.callHistory.map(call => (
+                                <div key={call.id} className="text-sm p-3 bg-muted/50 rounded-lg">
+                                    <div className="flex items-center justify-between font-medium">
+                                        <p>{call.date}</p>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="secondary">{call.type}</Badge>
+                                            <p className="text-xs text-muted-foreground">{call.duration}</p>
+                                            <Dialog onOpenChange={(open) => !open && handleCloseCallDialog()}>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="outline" size="sm" className="h-8" onClick={() => handleOpenCallDialog(call)}>
+                                                        <PlayCircle className="mr-2 h-4 w-4"/> {t(translations.readCall)}
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>{t(translations.callDetails)}</DialogTitle>
+                                                        <DialogDescription>{activeCall?.date} - {activeCall?.duration}</DialogDescription>
+                                                    </DialogHeader>
+                                                    {activeCall?.audioUrl && (
+                                                        <div className="my-4">
+                                                            <audio controls className="w-full">
+                                                                <source src={activeCall.audioUrl} type="audio/mpeg" />
+                                                                Your browser does not support the audio element.
+                                                            </audio>
+                                                        </div>
+                                                    )}
+                                                    <div className="my-4 p-4 bg-muted rounded-md text-sm max-h-64 overflow-y-auto">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <p className="font-semibold">{t(translations.transcript)}</p>
+                                                            <Button variant="ghost" size="sm" onClick={handleTranslate} disabled={isTranslating}>
+                                                                {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
+                                                                {translatedTranscript ? t(translations.showOriginal) : t(translations.translate)}
+                                                            </Button>
+                                                        </div>
+                                                        <p className="whitespace-pre-wrap leading-relaxed">
+                                                            {translatedTranscript || activeCall?.transcript}
+                                                        </p>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button variant="outline" onClick={handleCloseCallDialog}>{t(translations.close)}</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="reports">
+                    <Card>
+                        <CardContent className="p-0">
+                                <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t(translations.date)}</TableHead>
+                                        <TableHead>{t(translations.reason)}</TableHead>
+                                        <TableHead>{t(translations.statusLabel)}</TableHead>
+                                        <TableHead className="text-right">{t(translations.action)}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                        {customer.reportHistory.map(report => (
+                                        <TableRow key={report.id}>
+                                            <TableCell>{report.date}</TableCell>
+                                            <TableCell className="font-medium">{report.reason}</TableCell>
+                                            <TableCell><Badge variant={report.status === 'Résolu' ? 'default' : 'secondary'} className={report.status === 'Résolu' ? 'bg-green-100 text-green-700' : ''}>{report.status === 'Résolu' ? t(translations.resolved) : (report.status === 'Ouvert' ? t(translations.open) : t(translations.inProgress))}</Badge></TableCell>
+                                            <TableCell className="text-right">
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4"/></Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent>
+                                                        <DialogHeader>
+                                                            <DialogTitle>{t(translations.reportDetails)}</DialogTitle>
+                                                            <DialogDescription>{report.reason} - {report.date}</DialogDescription>
+                                                        </DialogHeader>
+                                                        <div className="my-4 p-4 bg-muted rounded-md text-sm">
+                                                            <p>{report.details}</p>
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
         {selectedHistoryItem && (
             <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
