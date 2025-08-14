@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -41,7 +42,7 @@ const mockActivities: Record<string, ActivityLog[]> = {
     "store-1": [
         { id: "#1025", type: 'Commande', customer: 'Alice Martin', customerId: 'cust-1', phone: '0612345678', date: 'il y a 5 min', amount: '24,50€' },
         { id: "#1024", type: 'Commande', customer: 'Bob Dupont', customerId: 'cust-2', phone: '0787654321', date: 'il y a 1h', amount: '18,00€' },
-        { id: "#1023", type: 'Commande', customer: 'Anonyme', customerId: 'cust-4', phone: '0699887766', date: 'hier', amount: '55,20€' },
+        { id: "#1023", type: 'Commande', customer: 'Client Anonyme', customerId: 'cust-4', phone: '0699887766', date: 'hier', amount: '55,20€' },
     ],
     "store-loc": [
         { id: "#R87", type: 'Réservation', customer: 'Carlos Sainz', customerId: 'cust-5', phone: '0611223344', date: 'aujourd\'hui', amount: '1900,00€' },
@@ -123,7 +124,7 @@ export default function StoreActivityPage() {
                             </TableHeader>
                             <TableBody>
                                 {activities.map((activity) => (
-                                    <TableRow key={activity.id} className="cursor-pointer" onClick={() => router.push(`/restaurant/clients/${activity.customerId}`)}>
+                                    <TableRow key={activity.id}>
                                         <TableCell>
                                             <Badge variant="outline" className="flex items-center gap-2 w-fit">
                                                 <Icon className="h-4 w-4" />
@@ -137,7 +138,11 @@ export default function StoreActivityPage() {
                                         <TableCell className="hidden sm:table-cell">{activity.date}</TableCell>
                                         <TableCell className="hidden md:table-cell">{activity.amount}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" onClick={(e) => {e.stopPropagation(); router.push(`/restaurant/clients/${activity.customerId}`)}}>
+                                            <Button variant="ghost" size="sm" onClick={(e) => {
+                                                e.stopPropagation();
+                                                const url = `/restaurant/clients/${activity.customerId}?historyId=${encodeURIComponent(activity.id)}`;
+                                                router.push(url);
+                                            }}>
                                                 <Eye className="mr-2 h-4 w-4" />
                                                 {t(translations.view)}
                                             </Button>

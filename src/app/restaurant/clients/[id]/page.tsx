@@ -2,8 +2,8 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
-import { notFound, useParams } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { notFound, useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -249,6 +249,7 @@ const calculateOrderTotals = (order: DetailedOrder): OrderTotals => {
 export default function ClientProfilePage() {
     const { language, t } = useLanguage();
     const params = useParams();
+    const searchParams = useSearchParams();
     const customerId = params.id as string;
     const customer = mockCustomers.find(c => c.id === customerId);
 
@@ -261,6 +262,18 @@ export default function ClientProfilePage() {
     const [activeCall, setActiveCall] = useState<Call | null>(null);
     const [translatedTranscript, setTranslatedTranscript] = useState<string | null>(null);
     const [isTranslating, setIsTranslating] = useState(false);
+
+    useEffect(() => {
+        if (!customer) return;
+
+        const historyId = searchParams.get('historyId');
+        if (historyId) {
+            const item = customer.history.find(h => h.id === historyId);
+            if (item) {
+                handleViewHistoryItem(item);
+            }
+        }
+    }, [searchParams, customer]);
 
     const handleTranslate = async () => {
         if (!activeCall) return;
