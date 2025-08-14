@@ -191,11 +191,13 @@ const initialCatalogItems: CatalogItem[] = [
 
 //======= RESERVATIONS-SPECIFIC DATA STRUCTURES =======//
 type PricingModel = 'fixed' | 'per_hour' | 'per_day' | 'per_unit';
+type OptionPricingModel = 'fixed' | 'per_hour' | 'per_day';
 
 type PriceOption = {
   id: string;
   name: string;
   price: number;
+  pricingModel: OptionPricingModel;
 };
 
 type Pricing = {
@@ -233,7 +235,7 @@ const initialReservations: Reservation[] = [
 ];
 
 const initialReservableItems: ReservableItem[] = [
-    { id: 'res-item-1', name: 'Location Salle "Prestige"', description: 'Notre plus grande salle pour vos événements corporatifs ou privés. Capacité 100 personnes.', duration: 240, pricing: { model: 'fixed', basePrice: 500, options: [{id: 'opt-1', name: 'Nettoyage inclus', price: 150}] }, availability: defaultAvailability, status: 'active' },
+    { id: 'res-item-1', name: 'Location Salle "Prestige"', description: 'Notre plus grande salle pour vos événements corporatifs ou privés. Capacité 100 personnes.', duration: 240, pricing: { model: 'fixed', basePrice: 500, options: [{id: 'opt-1', name: 'Nettoyage inclus', price: 150, pricingModel: 'fixed'}] }, availability: defaultAvailability, status: 'active' },
     { id: 'res-item-2', name: 'Consultation Décorateur', description: 'Une heure de consultation avec notre décorateur floral pour votre événement.', duration: 60, pricing: { model: 'per_hour', basePrice: 80 }, availability: defaultAvailability, status: 'active' },
     { id: 'res-item-3', name: 'Location Porsche 911', description: 'Vivez une expérience inoubliable au volant d\'une voiture de légende.', duration: 1440, pricing: { model: 'per_day', basePrice: 950 }, availability: defaultAvailability, status: 'active' },
     { id: 'res-item-4', name: 'Trajet VTC', description: 'Service de transport avec chauffeur.', pricing: { model: 'per_unit', unitName: 'km', perUnitPrice: 2.5, basePrice: 10 }, availability: defaultAvailability, status: 'active' },
@@ -443,7 +445,7 @@ const ReservationsView: React.FC = () => {
         });
     };
     
-    const handleOptionChange = (index: number, field: keyof PriceOption, value: string | number) => {
+    const handleOptionChange = (index: number, field: keyof PriceOption, value: any) => {
         setEditedItem(prev => {
             if (!prev || !prev.pricing || !prev.pricing.options) return prev;
             const newOptions = [...prev.pricing.options];
@@ -455,7 +457,7 @@ const ReservationsView: React.FC = () => {
     const addOption = () => {
         setEditedItem(prev => {
             if (!prev || !prev.pricing) return prev;
-            const newOption: PriceOption = { id: `opt-${Date.now()}`, name: '', price: 0 };
+            const newOption: PriceOption = { id: `opt-${Date.now()}`, name: '', price: 0, pricingModel: 'fixed' };
             const options = [...(prev.pricing.options || []), newOption];
             return { ...prev, pricing: { ...prev.pricing, options } };
         });
@@ -599,7 +601,7 @@ const ReservationsView: React.FC = () => {
             </Tabs>
 
             <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>{editedItem?.id ? 'Modifier la prestation' : 'Nouvelle prestation réservable'}</DialogTitle>
                     </DialogHeader>
@@ -662,10 +664,26 @@ const ReservationsView: React.FC = () => {
                                     <Label>Options supplémentaires (facultatif)</Label>
                                     <div className="space-y-2 mt-2">
                                         {editedItem?.pricing?.options?.map((opt, index) => (
-                                            <div key={opt.id} className="flex items-center gap-2">
-                                                <Input placeholder="Nom de l'option" value={opt.name} onChange={(e) => handleOptionChange(index, 'name', e.target.value)} className="flex-1" />
-                                                <Input type="number" placeholder="Prix" value={opt.price} onChange={(e) => handleOptionChange(index, 'price', parseFloat(e.target.value) || 0)} className="w-24" />
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeOption(index)}><Trash className="h-4 w-4" /></Button>
+                                            <div key={opt.id} className="grid grid-cols-12 gap-2 items-center">
+                                                <div className="col-span-5">
+                                                    <Input placeholder="Nom de l'option" value={opt.name} onChange={(e) => handleOptionChange(index, 'name', e.target.value)} />
+                                                </div>
+                                                <div className="col-span-3">
+                                                    <Input type="number" placeholder="Prix" value={opt.price} onChange={(e) => handleOptionChange(index, 'price', parseFloat(e.target.value) || 0)} />
+                                                </div>
+                                                <div className="col-span-3">
+                                                    <Select value={opt.pricingModel} onValueChange={(v: OptionPricingModel) => handleOptionChange(index, 'pricingModel', v)}>
+                                                        <SelectTrigger className="text-xs h-9"><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="fixed">Forfait</SelectItem>
+                                                            <SelectItem value="per_hour">/ heure</SelectItem>
+                                                            <SelectItem value="per_day">/ jour</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="col-span-1 text-right">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeOption(index)}><Trash className="h-4 w-4" /></Button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -713,13 +731,13 @@ export default function ServiceDetailPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-8">
       <header className="mb-4">
         <Button variant="ghost" onClick={() => router.push('/restaurant/services')} className="mb-2 -ml-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour aux services
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
                  <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
                 <p className="text-muted-foreground">{service.description}</p>
