@@ -140,16 +140,9 @@ export default function ClientsPage() {
                                 {paginatedCustomers.map((customer) => (
                                     <TableRow key={customer.id} className="cursor-pointer" onClick={() => handleViewCustomer(customer.id)}>
                                         <TableCell className="font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar>
-                                                    <AvatarFallback>
-                                                        {(customer.firstName ? customer.firstName.charAt(0) : '') + (customer.lastName ? customer.lastName.charAt(0) : '') || 'CL'}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p>{customer.firstName} {customer.lastName || t(translations.anonymousClient)}</p>
-                                                    <p className="text-xs text-muted-foreground md:hidden">{customer.email || customer.phone}</p>
-                                                </div>
+                                            <div>
+                                                <p>{customer.firstName} {customer.lastName || t(translations.anonymousClient)}</p>
+                                                <p className="text-xs text-muted-foreground md:hidden">{customer.email || customer.phone}</p>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">{customer.email || customer.phone}</TableCell>
