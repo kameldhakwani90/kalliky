@@ -205,6 +205,8 @@ export default function RestaurantDashboard() {
     setSelectedOrder(order);
     setOrderTicketOpen(true);
   }
+  
+  const hasStores = mockStores.length > 0;
 
   const translations = {
       dashboardTitle: { fr: "Tableau de Bord", en: "Dashboard" },
@@ -246,9 +248,10 @@ export default function RestaurantDashboard() {
       tax: { fr: "TVA", en: "TAX" },
       total: { fr: "TOTAL", en: "TOTAL" },
       thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
-      addStoreTitle: { fr: "Créez votre première boutique", en: "Create your first store" },
-      addStoreDescription: { fr: "Commencez à configurer votre point de vente pour recevoir vos premières commandes avec Kalliky.ai.", en: "Start configuring your point of sale to receive your first orders with Kalliky.ai." },
-      addStoreButton: { fr: "Ajouter une boutique", en: "Add a store" },
+      
+      addFirstStoreTitle: { fr: "Créez votre premier point de vente", en: "Create your first point of sale" },
+      addFirstStoreDescription: { fr: "Commencez à configurer votre activité pour recevoir vos premières demandes avec Kalliky.ai.", en: "Start configuring your business to receive your first requests with Kalliky.ai." },
+      addStoreButton: { fr: "Ajouter un point de vente", en: "Add a point of sale" },
   }
     
   return (
@@ -260,35 +263,48 @@ export default function RestaurantDashboard() {
               <p className="text-muted-foreground">{t(translations.dashboardSubtitle)}</p>
             </div>
             <div className="flex items-center space-x-2">
-                <Button variant="outline" className="h-9">
-                    <Filter className="mr-2 h-4 w-4" />
-                    {t(translations.filter)}
-                </Button>
-                <Button className="h-9">
-                    {t(translations.export)}
-                </Button>
+                 {hasStores && (
+                    <Button variant="outline" className="h-9">
+                        <Filter className="mr-2 h-4 w-4" />
+                        {t(translations.filter)}
+                    </Button>
+                 )}
+                 {hasStores ? (
+                    <Button asChild>
+                       <Link href="/restaurant/stores?action=new">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            {t(translations.addStoreButton)}
+                        </Link>
+                    </Button>
+                 ) : (
+                    <Button className="h-9">
+                        {t(translations.export)}
+                    </Button>
+                 )}
             </div>
         </div>
 
-        <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer">
-            <Link href="/restaurant/stores?action=new" className="block">
-                <CardHeader className="flex flex-col md:flex-row md:items-center gap-4 space-y-0">
-                    <div className="p-4 bg-primary/10 rounded-full w-fit">
-                        <Store className="h-8 w-8 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                        <CardTitle>{t(translations.addStoreTitle)}</CardTitle>
-                        <CardDescription>{t(translations.addStoreDescription)}</CardDescription>
-                    </div>
-                    <div className="ml-auto">
-                        <Button>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {t(translations.addStoreButton)}
-                        </Button>
-                    </div>
-                </CardHeader>
-            </Link>
-        </Card>
+        {!hasStores && (
+             <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer">
+                <Link href="/restaurant/stores?action=new" className="block">
+                    <CardHeader className="flex flex-col md:flex-row md:items-center gap-4 space-y-0">
+                        <div className="p-4 bg-primary/10 rounded-full w-fit">
+                            <Store className="h-8 w-8 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <CardTitle>{t(translations.addFirstStoreTitle)}</CardTitle>
+                            <CardDescription>{t(translations.addFirstStoreDescription)}</CardDescription>
+                        </div>
+                        <div className="ml-auto">
+                            <Button>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                {t(translations.addStoreButton)}
+                            </Button>
+                        </div>
+                    </CardHeader>
+                </Link>
+            </Card>
+        )}
 
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
