@@ -119,13 +119,16 @@ export default function ServicesPage() {
         irreversible: { fr: "Cette action est irréversible et supprimera tout le catalogue associé.", en: "This action is irreversible and will delete the entire associated catalog." },
         cancel: { fr: "Annuler", en: "Cancel" },
         save: { fr: "Enregistrer", en: "Save" },
-        newServiceTitle: { fr: "Créer un nouveau service", en: "Create a new service" },
+        newServiceTitle: { fr: "Que proposez-vous ?", en: "What do you offer?" },
         editServiceTitle: { fr: "Modifier le service", en: "Edit the service" },
-        serviceName: { fr: "Nom du service", en: "Service name" },
+        serviceName: { fr: "Nom de l'offre ou du catalogue", en: "Offer or catalog name" },
+        serviceNamePlaceholder: { fr: "Ex: Menu du restaurant, Location de véhicules, Prestations de coiffure...", en: "E.g.: Restaurant menu, Vehicle rental, Hairdressing services..." },
         serviceDesc: { fr: "Description (facultatif)", en: "Description (optional)" },
-        serviceType: { fr: "Type de service", en: "Service type" },
-        productManagement: { fr: "Gestion de produits (stock, prix, etc.)", en: "Product management (stock, prices, etc.)" },
-        reservationManagement: { fr: "Gestion de réservations (calendrier, disponibilités)", en: "Reservation management (calendar, availability)" },
+        serviceType: { fr: "Comment souhaitez-vous gérer cette offre ?", en: "How do you want to manage this offer?" },
+        productManagement: { fr: "Catalogue de produits", en: "Product Catalog" },
+        productManagementDesc: { fr: "Vente d'articles avec gestion de stock.", en: "Sale of items with stock management." },
+        reservationManagement: { fr: "Service de réservation", en: "Reservation Service" },
+        reservationManagementDesc: { fr: "Prise de rendez-vous ou location sur calendrier.", en: "Appointment booking or calendar-based rental." },
         noServices: { fr: "Aucun service défini pour cette boutique.", en: "No services defined for this store." },
         createFirstService: { fr: "Créez votre premier service pour commencer.", en: "Create your first service to get started." },
     };
@@ -238,6 +241,7 @@ export default function ServicesPage() {
                             <Label htmlFor="service-name">{t(translations.serviceName)}</Label>
                             <Input
                                 id="service-name"
+                                placeholder={t(translations.serviceNamePlaceholder)}
                                 value={editedService?.name || ''}
                                 onChange={(e) => setEditedService(prev => ({ ...prev, name: e.target.value }))}
                             />
@@ -262,14 +266,14 @@ export default function ServicesPage() {
                                 <SelectContent>
                                     <SelectItem value="products">
                                         <div className="flex flex-col">
-                                            <span>{t(translations.products)}</span>
-                                            <span className="text-xs text-muted-foreground">{t(translations.productManagement)}</span>
+                                            <span>{t(translations.productManagement)}</span>
+                                            <span className="text-xs text-muted-foreground">{t(translations.productManagementDesc)}</span>
                                         </div>
                                     </SelectItem>
                                     <SelectItem value="reservations">
                                         <div className="flex flex-col">
-                                            <span>{t(translations.reservations)}</span>
-                                            <span className="text-xs text-muted-foreground">{t(translations.reservationManagement)}</span>
+                                            <span>{t(translations.reservationManagement)}</span>
+                                            <span className="text-xs text-muted-foreground">{t(translations.reservationManagementDesc)}</span>
                                         </div>
                                     </SelectItem>
                                 </SelectContent>
