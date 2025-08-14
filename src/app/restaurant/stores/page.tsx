@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building, Sparkles } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building, Sparkles, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -833,6 +833,10 @@ export default function StoresPage() {
         setSelectedStore(store);
         setIsTelnyxPopupOpen(true);
     }
+    
+    const handleManageCatalog = (storeId: string) => {
+        router.push(`/restaurant/menu?storeId=${storeId}`);
+    };
 
     const translations = {
         title: { fr: "Gestion des Boutiques", en: "Store Management" },
@@ -852,6 +856,7 @@ export default function StoresPage() {
         areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
         deleteConfirmation: { fr: "Cette action est irréversible. La boutique, son catalogue et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The store, its catalog, and all associated data will be permanently deleted." },
         cancel: { fr: "Annuler", en: "Cancel" },
+        manageCatalog: { fr: "Gérer le catalogue", en: "Manage Catalog" },
     };
 
     return (
@@ -867,78 +872,76 @@ export default function StoresPage() {
                 </Button>
             </header>
 
-             <Card>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t(translations.name)}</TableHead>
-                                <TableHead className="hidden sm:table-cell">{t(translations.status)}</TableHead>
-                                <TableHead className="hidden md:table-cell">{t(translations.connections)}</TableHead>
-                                <TableHead className="text-right">{t(translations.actions)}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {stores.map((store) => (
-                                <TableRow key={store.id}>
-                                    <TableCell className="font-medium">
-                                        <p>{store.name}</p>
-                                        <p className="text-xs text-muted-foreground">{store.address}</p>
-                                    </TableCell>
-                                    <TableCell className="hidden sm:table-cell">
-                                        <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className={cn(store.status === 'active' ? 'bg-green-100 text-green-700' : '')}>{store.status === 'active' ? t(translations.active) : t(translations.inactive)}</Badge>
-                                    </TableCell>
-                                    <TableCell className="hidden md:table-cell">
-                                        <div className="flex items-center gap-4">
-                                            <Badge variant="outline" className={cn("cursor-pointer", !store.telnyxConfigured && "border-amber-400 text-amber-700 hover:bg-amber-50")} onClick={() => !store.telnyxConfigured && handleConfigureTelnyxClick(store)}>
-                                                <PhoneCall className="mr-2 h-3 w-3" />
-                                                {store.telnyxConfigured ? t(translations.connected) : t(translations.configure)}
-                                            </Badge>
-                                            <Badge variant="outline" className={cn(store.stripeStatus !== 'connected' && "text-muted-foreground")}>
-                                                <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06.136-.09.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
-                                                Stripe
-                                            </Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleOpenWizard(store)}>
-                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                    {t(translations.edit)}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {stores.map((store) => (
+                    <Card key={store.id} className="flex flex-col">
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <CardTitle>{store.name}</CardTitle>
+                                 <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleOpenWizard(store)}>
+                                            <Pencil className="mr-2 h-4 w-4" />
+                                            {t(translations.edit)}
+                                        </DropdownMenuItem>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    {t(translations.delete)}
                                                 </DropdownMenuItem>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            {t(translations.delete)}
-                                                        </DropdownMenuItem>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
-                                                            <AlertDialogDescription>{t(translations.deleteConfirmation)}</AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => deleteStore(store.id)}>{t(translations.delete)}</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
+                                                    <AlertDialogDescription>{t(translations.deleteConfirmation)}</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => deleteStore(store.id)}>{t(translations.delete)}</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                            <CardDescription>{store.address}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                             <div className="flex items-center gap-2 mb-4">
+                                <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className={cn(store.status === 'active' ? 'bg-green-100 text-green-700' : '')}>{store.status === 'active' ? t(translations.active) : t(translations.inactive)}</Badge>
+                             </div>
+                             <div className="text-sm text-muted-foreground space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className={cn("cursor-pointer", !store.telnyxConfigured && "border-amber-400 text-amber-700 hover:bg-amber-50")} onClick={() => !store.telnyxConfigured && handleConfigureTelnyxClick(store)}>
+                                        <PhoneCall className="mr-2 h-3 w-3" />
+                                        {store.telnyxConfigured ? t(translations.connected) : t(translations.configure)}
+                                    </Badge>
+                                    <span>Prise de commande vocale</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <Badge variant="outline" className={cn(store.stripeStatus !== 'connected' && "text-muted-foreground")}>
+                                        <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06.136-.09.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                        <span>Paiement en ligne</span>
+                                    </Badge>
+                                </div>
+                             </div>
+                        </CardContent>
+                         <CardFooter>
+                            <Button className="w-full" onClick={() => handleManageCatalog(store.id)}>
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                {t(translations.manageCatalog)}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+
 
             <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
                 {isWizardOpen && <StoreWizard store={selectedStore} onSave={handleSaveStore} onCancel={() => setIsWizardOpen(false)} />}

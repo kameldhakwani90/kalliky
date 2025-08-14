@@ -18,7 +18,8 @@ import {
   Bell,
   Receipt,
   BookCopy,
-  ConciergeBell
+  ConciergeBell,
+  BookOpen
 } from "lucide-react"
 
 import {
@@ -123,6 +124,7 @@ export default function RestaurantLayout({
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
     { href: "/restaurant/clients", label: {fr: "Clients", en: "Customers"}, icon: User },
+    { href: "/restaurant/menu", label: {fr: "Catalogue", en: "Catalog"}, icon: BookOpen },
     { href: "/restaurant/reports", label: {fr: "Signalements", en: "Reports"}, icon: Flag },
   ];
   
@@ -291,5 +293,4 @@ export default function RestaurantLayout({
     </SidebarProvider>
   )
 }
-
     
