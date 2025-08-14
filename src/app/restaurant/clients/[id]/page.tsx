@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar } from 'lucide-react';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar, Ticket } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -194,6 +194,7 @@ const mockHistory: HistoryItem[] = [
     },
     { type: 'reservation', id: "#resa-1", date: "25/05/2024", serviceName: "Location Salle 'Prestige'", total: 500, storeId: 'store-1' },
      { type: 'order', id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
+     { type: 'reservation', id: "#resa-2", date: "12/05/2024", serviceName: "Consultation Décorateur", total: 80, storeId: 'store-1' },
      {
         type: 'order',
         id: "#1028",
@@ -205,6 +206,7 @@ const mockHistory: HistoryItem[] = [
         ],
         total: 25.00,
     },
+    { type: 'reservation', id: "#resa-3", date: "01/04/2024", serviceName: "Location Salle 'Prestige'", total: 500, storeId: 'store-1' },
 ];
 
 
@@ -223,7 +225,7 @@ const mockCustomers: Customer[] = [
         totalSpent: "870.00€",
         firstSeen: "12/01/2024",
         lastSeen: "28/05/2024",
-        history: mockHistory.filter(h => ['#1024', '#987', '#resa-1'].includes(h.id)),
+        history: mockHistory.filter(h => ['#1024', '#987', '#resa-1', '#resa-2', '#resa-3'].includes(h.id)),
         callHistory: [
             { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Hello, I would like to order a custom burger with bacon and egg, no onions. And also a Caesar salad please. It will be for a delivery to 123 Rue de la Paix. Thank you.", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
             { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
@@ -307,7 +309,7 @@ export default function ClientProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [editedCustomer, setEditedCustomer] = useState<Customer | null>(customer ? { ...customer } : null);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
-    const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
+    const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
     const ticketRef = useRef<HTMLDivElement>(null);
 
     const [activeCall, setActiveCall] = useState<Call | null>(null);
@@ -388,8 +390,11 @@ export default function ClientProfilePage() {
         open: { fr: "Ouvert", en: "Open" },
         inProgress: { fr: "En cours", en: "In Progress" },
         reportDetails: { fr: "Détails du Signalement", en: "Report Details" },
+        ticketTitle: { fr: "Ticket", en: "Ticket" },
         orderTicket: { fr: "Ticket de commande", en: "Order Ticket" },
+        reservationTicket: { fr: "Billet de réservation", en: "Reservation Ticket" },
         orderFor: { fr: "Détail de la commande {orderId} pour {storeName}.", en: "Details for order {orderId} for {storeName}." },
+        reservationFor: { fr: "Détail de la réservation {reservationId} pour {storeName}.", en: "Details for reservation {reservationId} for {storeName}." },
         taxDetails: { fr: "Détail TVA incluse :", en: "Included tax details:" },
         tax: { fr: "TVA", en: "VAT" },
         thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
@@ -420,40 +425,109 @@ export default function ClientProfilePage() {
 
     const handleViewHistoryItem = (item: HistoryItem) => {
         setSelectedHistoryItem(item);
-        if (item.type === 'order') {
-            setOrderTicketOpen(true);
-        }
-        // Add logic for reservation view later
+        setIsTicketDialogOpen(true);
     }
     
     const handlePrint = () => {
-        const ticketElement = ticketRef.current;
-        if (!ticketElement || !selectedHistoryItem || selectedHistoryItem.type !== 'order') return;
+        if (!selectedHistoryItem || selectedHistoryItem.type !== 'order') return;
 
+        const ticketElement = ticketRef.current;
         const storePrinters = getStoreInfo(selectedHistoryItem.storeId)?.printers;
         const receiptPrinter = storePrinters?.find(p => p.role === 'receipt');
-        const printerToUse = receiptPrinter || storePrinters?.[0]; // Fallback to the first printer if no receipt printer is found
+        const printerToUse = receiptPrinter || storePrinters?.[0];
 
-        if (!printerToUse) {
+        if (!ticketElement || !printerToUse) {
             console.error("No printer configured for this store.");
-            // Optionally, show a toast to the user
             return;
         }
 
-        // Remove any existing width classes
         ticketElement.classList.remove('width-58mm', 'width-80mm');
-        
-        // Add the desired width class
         ticketElement.classList.add(`width-${printerToUse.width}`);
-
-        // Trigger print
         window.print();
     };
 
 
-    const selectedOrder = selectedHistoryItem?.type === 'order' ? selectedHistoryItem : null;
-    const calculatedTotals = selectedOrder ? calculateOrderTotals(selectedOrder) : null;
-    const storePrinters = selectedOrder ? getStoreInfo(selectedOrder.storeId)?.printers : [];
+    const renderTicketContent = () => {
+        if (!selectedHistoryItem) return null;
+
+        const storeInfo = getStoreInfo(selectedHistoryItem.storeId);
+
+        if (selectedHistoryItem.type === 'order') {
+            const calculatedTotals = calculateOrderTotals(selectedHistoryItem);
+            return (
+                <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
+                    <div className="text-center space-y-2 mb-4">
+                        <h2 className="text-lg font-bold">{storeInfo?.name}</h2>
+                        <p className="text-xs">{storeInfo?.address}</p>
+                        <p className="text-xs">{t(translations.order)} {selectedHistoryItem.id} - {selectedHistoryItem.date}</p>
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                    <div className="space-y-2 my-2 text-xs">
+                        {selectedHistoryItem.items.map((item, index) => (
+                            <div key={item.id + index}>
+                                <div className="flex justify-between">
+                                    <span className="font-bold">{item.quantity}x {item.name}</span>
+                                    <span className="font-bold">{(item.finalPrice * item.quantity).toFixed(2)}€</span>
+                                </div>
+                                {item.customizations.length > 0 && (
+                                    <div className="pl-4 mt-1 space-y-1">
+                                        {item.customizations.map((cust, cIndex) => (
+                                            <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
+                                                <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
+                                                {cust.price && <span>{cust.price.toFixed(2)}€</span>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                    <div className="flex justify-between font-bold text-base my-2">
+                        <span>TOTAL TTC</span>
+                        <span>{calculatedTotals.totalTTC.toFixed(2)}€</span>
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                    <div className="space-y-1 my-2 text-xs">
+                       <p className="font-bold">{t(translations.taxDetails)}</p>
+                       {calculatedTotals.taxDetails.map(tax => (
+                            <div key={tax.rate} className="flex justify-between">
+                                <span>{t(translations.tax)} ({tax.rate.toFixed(2)}%)</span>
+                                <span>{tax.amount.toFixed(2)}€</span>
+                            </div>
+                        ))}
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                    <div className="text-center text-xs pt-2">{t(translations.thankYou)}</div>
+                </div>
+            );
+        }
+
+        if (selectedHistoryItem.type === 'reservation') {
+            return (
+                <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
+                     <div className="text-center space-y-2 mb-4">
+                        <h2 className="text-lg font-bold">{storeInfo?.name}</h2>
+                        <p className="text-xs">{storeInfo?.address}</p>
+                        <p className="text-xs">{t(translations.reservation)} {selectedHistoryItem.id} - {selectedHistoryItem.date}</p>
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                    <div className="my-4 space-y-2 text-sm">
+                        <p><span className="font-bold">Service:</span> {selectedHistoryItem.serviceName}</p>
+                        <p><span className="font-bold">Client:</span> {customer.firstName} {customer.lastName}</p>
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                    <div className="flex justify-between font-bold text-base my-2">
+                        <span>TOTAL</span>
+                        <span>{selectedHistoryItem.total.toFixed(2)}€</span>
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                    <div className="text-center text-xs pt-2">{t(translations.thankYou)}</div>
+                </div>
+            );
+        }
+        return null;
+    }
 
     return (
         <>
@@ -698,78 +772,30 @@ export default function ClientProfilePage() {
                 </div>
             </div>
         </div>
-        {selectedOrder && calculatedTotals && (
-            <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
+        {selectedHistoryItem && (
+            <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                    <DialogHeader>
-                        <DialogTitle className="sr-only">{t(translations.orderTicket)} {selectedOrder.id}</DialogTitle>
+                        <DialogTitle className="text-center font-headline text-lg flex items-center justify-center gap-2">
+                           {selectedHistoryItem.type === 'order' ? <Receipt className="h-5 w-5"/> : <Ticket className="h-5 w-5"/>}
+                           {selectedHistoryItem.type === 'order' ? t(translations.orderTicket) : t(translations.reservationTicket)}
+                        </DialogTitle>
                         <DialogDescription className="sr-only">
-                           {t(translations.orderFor).replace('{orderId}', selectedOrder.id).replace('{storeName}', getStoreInfo(selectedOrder.storeId)?.name || '')}
+                           {selectedHistoryItem.type === 'order' 
+                               ? t(translations.orderFor).replace('{orderId}', selectedHistoryItem.id).replace('{storeName}', getStoreInfo(selectedHistoryItem.storeId)?.name || '')
+                               : t(translations.reservationFor).replace('{reservationId}', selectedHistoryItem.id).replace('{storeName}', getStoreInfo(selectedHistoryItem.storeId)?.name || '')
+                           }
                         </DialogDescription>
                     </DialogHeader>
-                   <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
-                        <div className="text-center space-y-2 mb-4">
-                            <h2 className="text-lg font-bold">{getStoreInfo(selectedOrder.storeId)?.name}</h2>
-                            <p className="text-xs">{getStoreInfo(selectedOrder.storeId)?.address}</p>
-                            <p className="text-xs">{t(translations.order)} {selectedOrder.id} - {selectedOrder.date}</p>
-                        </div>
-                        
-                        <Separator className="border-dashed border-black" />
-
-                        <div className="space-y-2 my-2 text-xs">
-                            {selectedOrder.items.map((item, index) => (
-                                <div key={item.id + index}>
-                                    <div className="flex justify-between">
-                                        <span className="font-bold">{item.quantity}x {item.name}</span>
-                                        <span className="font-bold">{(item.finalPrice * item.quantity).toFixed(2)}€</span>
-                                    </div>
-                                    {item.customizations.length > 0 && (
-                                        <div className="pl-4 mt-1 space-y-1">
-                                            {item.customizations.map((cust, cIndex) => (
-                                                <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
-                                                    <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
-                                                    {cust.price && <span>{cust.price.toFixed(2)}€</span>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        
-                        <Separator className="border-dashed border-black" />
-
-                        <div className="flex justify-between font-bold text-base my-2">
-                            <span>TOTAL TTC</span>
-                            <span>{calculatedTotals.totalTTC.toFixed(2)}€</span>
-                        </div>
-
-                        <Separator className="border-dashed border-black" />
-
-                        <div className="space-y-1 my-2 text-xs">
-                           <p className="font-bold">{t(translations.taxDetails)}</p>
-                           {calculatedTotals.taxDetails.map(tax => (
-                                <div key={tax.rate} className="flex justify-between">
-                                    <span>{t(translations.tax)} ({tax.rate.toFixed(2)}%)</span>
-                                    <span>{tax.amount.toFixed(2)}€</span>
-                                </div>
-                            ))}
-                        </div>
-
-                         <Separator className="border-dashed border-black" />
-
-                         <div className="text-center text-xs pt-2">
-                            {t(translations.thankYou)}
-                         </div>
-                    </div>
+                   {renderTicketContent()}
                     <DialogFooter className="print-hide mt-4">
-                        {(storePrinters && storePrinters.length > 0) ? (
+                        {(selectedHistoryItem.type === 'order' && getStoreInfo(selectedHistoryItem.storeId)?.printers?.length || 0 > 0) ? (
                             <Button className="w-full font-sans" onClick={handlePrint}>
                                 <Printer className="mr-2 h-4 w-4" /> {t(translations.print)}
                             </Button>
                         ) : (
                              <Button className="w-full font-sans" disabled>
-                                <Printer className="mr-2 h-4 w-4" /> {t(translations.noPrinter)}
+                                <Printer className="mr-2 h-4 w-4" /> {selectedHistoryItem.type === 'order' ? t(translations.noPrinter) : t(translations.print)}
                             </Button>
                         )}
                     </DialogFooter>
