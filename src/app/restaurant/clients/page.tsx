@@ -26,35 +26,14 @@ type Customer = {
 };
 
 const initialCustomers: Customer[] = [
-    {
-        id: 'cust-1',
-        phone: "06 12 34 56 78",
-        firstName: "Alice",
-        lastName: "Martin",
-        email: "alice.martin@email.com",
-        status: "Fidèle",
-        totalSpent: "870.00€",
-        lastSeen: "28/05/2024",
-    },
-     {
-        id: 'cust-2',
-        phone: "07 87 65 43 21",
-        firstName: "Bob",
-        lastName: "Dupont",
-        status: "Nouveau",
-        totalSpent: "57.90€",
-        lastSeen: "27/05/2024",
-    },
-    {
-        id: 'cust-3',
-        phone: "06 11 22 33 44",
-        firstName: "Carole",
-        lastName: "Leblanc",
-        email: "carole.leblanc@email.com",
-        status: "Nouveau",
-        totalSpent: "25.00€",
-        lastSeen: "29/05/2024",
-    },
+    { id: 'cust-1', phone: "06 12 34 56 78", firstName: "Alice", lastName: "Martin", email: "alice.martin@email.com", status: "Fidèle", totalSpent: "54.50€", lastSeen: "30/05/2024" },
+    { id: 'cust-2', phone: "07 87 65 43 21", firstName: "Bob", lastName: "Dupont", status: "Nouveau", totalSpent: "18.00€", lastSeen: "30/05/2024" },
+    { id: 'cust-4', phone: "06 99 88 77 66", firstName: "Client", lastName: "Anonyme", status: "Nouveau", totalSpent: "55.20€", lastSeen: "29/05/2024" },
+    { id: 'cust-5', phone: "06 11 22 33 44", firstName: "Carlos", lastName: "Sainz", status: "Nouveau", totalSpent: "1900.00€", lastSeen: "30/05/2024" },
+    { id: 'cust-6', phone: "06 88 77 66 55", firstName: "Lando", lastName: "Norris", status: "Nouveau", totalSpent: "950.00€", lastSeen: "31/05/2024" },
+    { id: 'cust-7', phone: "01 23 45 67 89", firstName: "Mme.", lastName: "Lefevre", status: "Nouveau", totalSpent: "0€", lastSeen: "30/05/2024" },
+    { id: 'cust-8', phone: "01 98 76 54 32", firstName: "M.", lastName: "Bernard", status: "Nouveau", totalSpent: "0€", lastSeen: "29/05/2024" },
+    { id: 'cust-9', phone: "07 55 66 77 88", firstName: "Claire", lastName: "Chazal", status: "Nouveau", totalSpent: "250.00€", lastSeen: "31/05/2024" },
 ];
 
 export default function ClientsPage() {
@@ -161,7 +140,7 @@ export default function ClientsPage() {
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="hidden md:table-cell">{customer.email || '-'}</TableCell>
+                                        <TableCell className="hidden md:table-cell">{customer.email || customer.phone}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className={customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}>{translateStatus(customer.status)}</Badge>
                                         </TableCell>

@@ -79,7 +79,18 @@ type HistoryReservation = {
     pricingDetails: ReservationPricingDetail[];
 };
 
-type HistoryItem = DetailedOrder | HistoryReservation;
+type HistoryConsultation = {
+    type: 'consultation';
+    id: string;
+    date: string;
+    serviceName: string;
+    total: number; // Often 0 for first contact
+    storeId: string;
+    taxRate: number;
+    pricingDetails: ReservationPricingDetail[]; // Can be empty
+};
+
+type HistoryItem = DetailedOrder | HistoryReservation | HistoryConsultation;
 
 
 type Report = {
@@ -94,7 +105,7 @@ type Call = {
     id: string;
     date: string;
     duration: string;
-    type: 'Commande' | 'Info' | 'Signalement';
+    type: 'Commande' | 'Info' | 'Signalement' | 'Consultation';
     transcript: string;
     audioUrl?: string;
 };
@@ -181,102 +192,26 @@ const mockStores: Store[] = [
 ];
 
 const mockHistory: HistoryItem[] = [
-    {
-        type: 'order',
-        id: "#1024",
-        date: "28/05/2024",
-        storeId: "store-1",
-        items: [
-            { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, taxRate: 10, customizations: [ { type: 'add', name: 'Bacon grillé', price: 2.00 }, { type: 'add', name: 'Oeuf au plat', price: 1.00 }, { type: 'remove', name: 'Oignons' } ], finalPrice: 19.50 },
-            { id: "item-2", name: 'Bière Blonde', quantity: 1, basePrice: 6.00, taxRate: 20, customizations: [], finalPrice: 6.00 },
-            { id: "item-3", name: 'Eau (bouteille)', quantity: 1, basePrice: 2.50, taxRate: 5.5, customizations: [], finalPrice: 2.50 },
-        ],
-        total: 28.00,
-    },
-    { type: 'reservation', id: "#resa-1", date: "25/05/2024", serviceName: "Location Salle 'Prestige'", total: 500, storeId: 'store-1', taxRate: 20, pricingDetails: [{ description: "Forfait journée", amount: 500 }] },
-    { type: 'order', id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
-    { type: 'reservation', id: "#resa-2", date: "12/05/2024", serviceName: "Consultation Décorateur", total: 80, storeId: 'store-1', taxRate: 20, pricingDetails: [{ description: "Consultation (1 heure x 80.00€)", amount: 80 }] },
-    {
-        type: 'order',
-        id: "#1028",
-        date: "29/05/2024",
-        storeId: "store-3",
-        items: [ { id: "item-pza-4f", name: 'Pizza 4 Fromages', quantity: 1, basePrice: 15.00, taxRate: 10, customizations: [], finalPrice: 15.00 }, { id: "item-coke", name: 'Coca-cola', quantity: 2, basePrice: 5.00, taxRate: 5.5, customizations: [], finalPrice: 5.00 } ],
-        total: 25.00,
-    },
-    { 
-        type: 'reservation', 
-        id: "#resa-3", 
-        date: "01/04/2024", 
-        serviceName: "Location Porsche 911 (2 jours)", 
-        total: 2050, 
-        storeId: 'store-1',
-        taxRate: 20,
-        pricingDetails: [
-            { description: "Location Porsche 911 (2 jours x 950.00€)", amount: 1900 },
-            { description: "Option: Siège bébé (2 jours x 40.00€)", amount: 80 },
-            { description: "Option: Service livraison (Forfait)", amount: 70 },
-        ]
-    },
+    { type: 'order', id: "#1025", date: "30/05/2024", storeId: 'store-1', items: [{ id: "item-sn", name: 'Salade Niçoise', quantity: 1, basePrice: 24.50, customizations: [], finalPrice: 24.50, taxRate: 10 }], total: 24.50 },
+    { type: 'order', id: "#1024", date: "30/05/2024", storeId: 'store-1', items: [{ id: "item-pm", name: 'Pizza Margherita', quantity: 1, basePrice: 18.00, customizations: [], finalPrice: 18.00, taxRate: 10 }], total: 18.00 },
+    { type: 'order', id: "#1023", date: "29/05/2024", storeId: 'store-1', items: [], total: 55.20 },
+    { type: 'reservation', id: "#R87", date: "30/05/2024", serviceName: "Location Porsche 911 (2 jours)", total: 1900, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Porsche 911 (2 jours x 950.00€)", amount: 1900 }] },
+    { type: 'reservation', id: "#R86", date: "31/05/2024", serviceName: "Location Ferrari F8", total: 950, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Ferrari F8 (1 jour x 950.00€)", amount: 950 }] },
+    { type: 'consultation', id: "#C12", date: "30/05/2024", serviceName: "Consultation Droit des sociétés", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [] },
+    { type: 'consultation', id: "#C11", date: "29/05/2024", serviceName: "Consultation Création d'entreprise", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [] },
+    { type: 'reservation', id: "#S33", date: "31/05/2024", serviceName: "Forfait 'Détente Absolue'", total: 250, storeId: 'store-spa', taxRate: 20, pricingDetails: [{ description: "Forfait 'Détente Absolue'", amount: 250 }] },
 ];
 
 
 const mockCustomers: Customer[] = [
-    {
-        id: 'cust-1',
-        phone: "06 12 34 56 78",
-        firstName: "Alice",
-        lastName: "Martin",
-        email: "alice.martin@email.com",
-        address: "123 Rue de la Paix, 75001 Paris",
-        birthDate: '1990-05-15',
-        gender: 'Femme',
-        status: "Fidèle",
-        avgBasket: "72.50€",
-        totalSpent: "870.00€",
-        firstSeen: "12/01/2024",
-        lastSeen: "28/05/2024",
-        history: mockHistory.filter(h => ['#1024', '#987', '#resa-1', '#resa-2', '#resa-3'].includes(h.id)),
-        callHistory: [
-            { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Hello, I would like to order a custom burger with bacon and egg, no onions. And also a Caesar salad please. It will be for a delivery to 123 Rue de la Paix. Thank you.", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-            { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-        ],
-        reportHistory: [
-            {id: 'rep-1', date: '16/05/2024', reason: 'Retard de livraison', status: 'Résolu', details: 'La commande #987 a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.'}
-        ]
-    },
-     {
-        id: 'cust-2',
-        phone: "07 87 65 43 21",
-        firstName: "Bob",
-        lastName: "Dupont",
-        status: "Nouveau",
-        avgBasket: "57.90€",
-        totalSpent: "57.90€",
-        firstSeen: "27/05/2024",
-        lastSeen: "27/05/2024",
-        history: [],
-        callHistory: [
-            { id: 'call-3', date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande', transcript: "Salut, je voudrais deux burgers personnalisés. Viande bien cuite pour les deux s'il vous plait. À emporter. C'est tout !", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
-        ],
-        reportHistory: []
-    },
-    {
-        id: 'cust-3',
-        phone: "06 11 22 33 44",
-        firstName: "Carole",
-        lastName: "Leblanc",
-        status: "Nouveau",
-        avgBasket: "25.00€",
-        totalSpent: "25.00€",
-        firstSeen: "29/05/2024",
-        lastSeen: "29/05/2024",
-        history: mockHistory.filter(h => h.id === '#1028'),
-        callHistory: [],
-        reportHistory: [
-            {id: 'rep-2', date: '29/05/2024', reason: 'Erreur dans la commande', status: 'Ouvert', details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages. Commande #1028.'}
-        ]
-    },
+    { id: 'cust-1', phone: "06 12 34 56 78", firstName: "Alice", lastName: "Martin", status: "Fidèle", avgBasket: "30.00€", totalSpent: "54.50€", firstSeen: "28/05/2024", lastSeen: "30/05/2024", history: mockHistory.filter(h => h.id === "#1025"), callHistory: [], reportHistory: [] },
+    { id: 'cust-2', phone: "07 87 65 43 21", firstName: "Bob", lastName: "Dupont", status: "Nouveau", avgBasket: "18.00€", totalSpent: "18.00€", firstSeen: "30/05/2024", lastSeen: "30/05/2024", history: mockHistory.filter(h => h.id === "#1024"), callHistory: [], reportHistory: [] },
+    { id: 'cust-4', phone: "06 99 88 77 66", firstName: "Client", lastName: "Anonyme", status: "Nouveau", avgBasket: "55.20€", totalSpent: "55.20€", firstSeen: "29/05/2024", lastSeen: "29/05/2024", history: mockHistory.filter(h => h.id === "#1023"), callHistory: [], reportHistory: [] },
+    { id: 'cust-5', phone: "06 11 22 33 44", firstName: "Carlos", lastName: "Sainz", status: "Nouveau", avgBasket: "1900.00€", totalSpent: "1900.00€", firstSeen: "30/05/2024", lastSeen: "30/05/2024", history: mockHistory.filter(h => h.id === "#R87"), callHistory: [], reportHistory: [] },
+    { id: 'cust-6', phone: "06 88 77 66 55", firstName: "Lando", lastName: "Norris", status: "Nouveau", avgBasket: "950.00€", totalSpent: "950.00€", firstSeen: "31/05/2024", lastSeen: "31/05/2024", history: mockHistory.filter(h => h.id === "#R86"), callHistory: [], reportHistory: [] },
+    { id: 'cust-7', phone: "01 23 45 67 89", firstName: "Mme.", lastName: "Lefevre", status: "Nouveau", avgBasket: "0€", totalSpent: "0€", firstSeen: "30/05/2024", lastSeen: "30/05/2024", history: mockHistory.filter(h => h.id === "#C12"), callHistory: [], reportHistory: [] },
+    { id: 'cust-8', phone: "01 98 76 54 32", firstName: "M.", lastName: "Bernard", status: "Nouveau", avgBasket: "0€", totalSpent: "0€", firstSeen: "29/05/2024", lastSeen: "29/05/2024", history: mockHistory.filter(h => h.id === "#C11"), callHistory: [], reportHistory: [] },
+    { id: 'cust-9', phone: "07 55 66 77 88", firstName: "Claire", lastName: "Chazal", status: "Nouveau", avgBasket: "250.00€", totalSpent: "250.00€", firstSeen: "31/05/2024", lastSeen: "31/05/2024", history: mockHistory.filter(h => h.id === "#S33"), callHistory: [], reportHistory: [] },
 ];
 
 const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
@@ -387,6 +322,7 @@ export default function ClientProfilePage() {
         reportHistory: { fr: "Historique des Signalements", en: "Report History" },
         order: { fr: "Commande", en: "Order" },
         reservation: { fr: "Réservation", en: "Reservation" },
+        consultation: { fr: 'Consultation', en: 'Consultation' },
         date: { fr: "Date", en: "Date" },
         amountTTC: { fr: "Montant (TTC)", en: "Amount (incl. tax)" },
         action: { fr: "Action", en: "Action" },
@@ -404,6 +340,7 @@ export default function ClientProfilePage() {
         ticketTitle: { fr: "Ticket", en: "Ticket" },
         orderTicket: { fr: "Ticket de commande", en: "Order Ticket" },
         reservationTicket: { fr: "Billet de réservation", en: "Reservation Ticket" },
+        consultationTicket: { fr: "Fiche de consultation", en: "Consultation Form" },
         orderFor: { fr: "Détail de la commande {orderId} pour {storeName}.", en: "Details for order {orderId} for {storeName}." },
         reservationFor: { fr: "Détail de la réservation {reservationId} pour {storeName}.", en: "Details for reservation {reservationId} for {storeName}." },
         taxDetails: { fr: "Détail TVA incluse :", en: "Included tax details:" },
@@ -518,7 +455,7 @@ export default function ClientProfilePage() {
             );
         }
 
-        if (selectedHistoryItem.type === 'reservation') {
+        if (selectedHistoryItem.type === 'reservation' || selectedHistoryItem.type === 'consultation') {
             const totalTTC = selectedHistoryItem.total;
             const taxAmount = totalTTC - (totalTTC / (1 + selectedHistoryItem.taxRate / 100));
 
@@ -527,7 +464,7 @@ export default function ClientProfilePage() {
                      <div className="text-center space-y-2 mb-4">
                         <h2 className="text-lg font-bold">{storeInfo?.name}</h2>
                         <p className="text-xs">{storeInfo?.address}</p>
-                        <p className="text-xs">{t(translations.reservation)} {selectedHistoryItem.id} - {selectedHistoryItem.date}</p>
+                        <p className="text-xs">{selectedHistoryItem.type === 'reservation' ? t(translations.reservation) : t(translations.consultation)} {selectedHistoryItem.id} - {selectedHistoryItem.date}</p>
                         <p className="text-xs">Client: {customer.firstName} {customer.lastName}</p>
                     </div>
                     <Separator className="border-dashed border-black" />
@@ -560,6 +497,25 @@ export default function ClientProfilePage() {
         }
         return null;
     }
+    
+    const getHistoryItemIcon = (item: HistoryItem) => {
+        switch (item.type) {
+            case 'order': return <Receipt className="h-4 w-4" />;
+            case 'reservation': return <Calendar className="h-4 w-4" />;
+            case 'consultation': return <User className="h-4 w-4" />;
+            default: return <Ticket className="h-4 w-4" />;
+        }
+    };
+    
+    const getHistoryItemLabel = (item: HistoryItem) => {
+         switch (item.type) {
+            case 'order': return t(translations.order);
+            case 'reservation': return t(translations.reservation);
+            case 'consultation': return t(translations.consultation);
+            default: return "Ticket";
+        }
+    }
+
 
     return (
         <>
@@ -688,8 +644,8 @@ export default function ClientProfilePage() {
                                         <TableRow key={item.id}>
                                             <TableCell>
                                                 <Badge variant="outline" className="flex items-center gap-2">
-                                                    {item.type === 'order' ? <Receipt className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
-                                                    <span>{item.type === 'order' ? t(translations.order) : t(translations.reservation)}</span>
+                                                    {getHistoryItemIcon(item)}
+                                                    <span>{getHistoryItemLabel(item)}</span>
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="font-medium">
@@ -811,7 +767,7 @@ export default function ClientProfilePage() {
                    <DialogHeader>
                         <DialogTitle className="text-center font-headline text-lg flex items-center justify-center gap-2">
                            {selectedHistoryItem.type === 'order' ? <Receipt className="h-5 w-5"/> : <Ticket className="h-5 w-5"/>}
-                           {selectedHistoryItem.type === 'order' ? t(translations.orderTicket) : t(translations.reservationTicket)}
+                           {selectedHistoryItem.type === 'order' ? t(translations.orderTicket) : (selectedHistoryItem.type === 'reservation' ? t(translations.reservationTicket) : t(translations.consultationTicket))}
                         </DialogTitle>
                         <DialogDescription className="sr-only">
                            {selectedHistoryItem.type === 'order' 
