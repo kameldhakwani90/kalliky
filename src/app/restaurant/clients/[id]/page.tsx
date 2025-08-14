@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar, Ticket } from 'lucide-react';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar, Ticket, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,7 +53,6 @@ type OrderTotals = {
     taxDetails: { rate: number; amount: number }[];
 };
 
-
 type DetailedOrder = {
     type: 'order';
     id: string;
@@ -63,6 +62,12 @@ type DetailedOrder = {
     storeId: string;
 };
 
+// Structures for reservation ticket
+type ReservationPricingDetail = {
+    description: string; // e.g., "Location Porsche 911 (2 jours x 950.00€)"
+    amount: number;
+};
+
 type HistoryReservation = {
     type: 'reservation';
     id: string;
@@ -70,6 +75,8 @@ type HistoryReservation = {
     serviceName: string;
     total: number;
     storeId: string;
+    taxRate: number;
+    pricingDetails: ReservationPricingDetail[];
 };
 
 type HistoryItem = DetailedOrder | HistoryReservation;
@@ -180,33 +187,37 @@ const mockHistory: HistoryItem[] = [
         date: "28/05/2024",
         storeId: "store-1",
         items: [
-            {
-                id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, taxRate: 10, customizations: [
-                    { type: 'add', name: 'Bacon grillé', price: 2.00 },
-                    { type: 'add', name: 'Oeuf au plat', price: 1.00 },
-                    { type: 'remove', name: 'Oignons' }
-                ], finalPrice: 19.50
-            },
+            { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, taxRate: 10, customizations: [ { type: 'add', name: 'Bacon grillé', price: 2.00 }, { type: 'add', name: 'Oeuf au plat', price: 1.00 }, { type: 'remove', name: 'Oignons' } ], finalPrice: 19.50 },
             { id: "item-2", name: 'Bière Blonde', quantity: 1, basePrice: 6.00, taxRate: 20, customizations: [], finalPrice: 6.00 },
             { id: "item-3", name: 'Eau (bouteille)', quantity: 1, basePrice: 2.50, taxRate: 5.5, customizations: [], finalPrice: 2.50 },
         ],
         total: 28.00,
     },
-    { type: 'reservation', id: "#resa-1", date: "25/05/2024", serviceName: "Location Salle 'Prestige'", total: 500, storeId: 'store-1' },
-     { type: 'order', id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
-     { type: 'reservation', id: "#resa-2", date: "12/05/2024", serviceName: "Consultation Décorateur", total: 80, storeId: 'store-1' },
-     {
+    { type: 'reservation', id: "#resa-1", date: "25/05/2024", serviceName: "Location Salle 'Prestige'", total: 500, storeId: 'store-1', taxRate: 20, pricingDetails: [{ description: "Forfait journée", amount: 500 }] },
+    { type: 'order', id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
+    { type: 'reservation', id: "#resa-2", date: "12/05/2024", serviceName: "Consultation Décorateur", total: 80, storeId: 'store-1', taxRate: 20, pricingDetails: [{ description: "Consultation (1 heure x 80.00€)", amount: 80 }] },
+    {
         type: 'order',
         id: "#1028",
         date: "29/05/2024",
         storeId: "store-3",
-        items: [
-            { id: "item-pza-4f", name: 'Pizza 4 Fromages', quantity: 1, basePrice: 15.00, taxRate: 10, customizations: [], finalPrice: 15.00 },
-            { id: "item-coke", name: 'Coca-cola', quantity: 2, basePrice: 5.00, taxRate: 5.5, customizations: [], finalPrice: 5.00 },
-        ],
+        items: [ { id: "item-pza-4f", name: 'Pizza 4 Fromages', quantity: 1, basePrice: 15.00, taxRate: 10, customizations: [], finalPrice: 15.00 }, { id: "item-coke", name: 'Coca-cola', quantity: 2, basePrice: 5.00, taxRate: 5.5, customizations: [], finalPrice: 5.00 } ],
         total: 25.00,
     },
-    { type: 'reservation', id: "#resa-3", date: "01/04/2024", serviceName: "Location Salle 'Prestige'", total: 500, storeId: 'store-1' },
+    { 
+        type: 'reservation', 
+        id: "#resa-3", 
+        date: "01/04/2024", 
+        serviceName: "Location Porsche 911 (2 jours)", 
+        total: 2050, 
+        storeId: 'store-1',
+        taxRate: 20,
+        pricingDetails: [
+            { description: "Location Porsche 911 (2 jours x 950.00€)", amount: 1900 },
+            { description: "Option: Siège bébé (2 jours x 40.00€)", amount: 80 },
+            { description: "Option: Service livraison (Forfait)", amount: 70 },
+        ]
+    },
 ];
 
 
@@ -402,6 +413,7 @@ export default function ClientProfilePage() {
         noPrinter: { fr: "Aucune imprimante configurée", en: "No printer configured" },
         translate: { fr: "Traduire", en: "Translate" },
         showOriginal: { fr: "Voir l'original", en: "Show Original" },
+        prestationDetails: { fr: "Détail de la prestation", en: "Service Details" },
     };
 
     if (!customer || !editedCustomer) {
@@ -429,14 +441,17 @@ export default function ClientProfilePage() {
     }
     
     const handlePrint = () => {
-        if (!selectedHistoryItem || selectedHistoryItem.type !== 'order') return;
+        if (!selectedHistoryItem) return;
 
         const ticketElement = ticketRef.current;
-        const storePrinters = getStoreInfo(selectedHistoryItem.storeId)?.printers;
+        const storeInfo = getStoreInfo(selectedHistoryItem.storeId);
+        if (!ticketElement || !storeInfo) return;
+        
+        const storePrinters = storeInfo.printers;
         const receiptPrinter = storePrinters?.find(p => p.role === 'receipt');
         const printerToUse = receiptPrinter || storePrinters?.[0];
 
-        if (!ticketElement || !printerToUse) {
+        if (!printerToUse) {
             console.error("No printer configured for this store.");
             return;
         }
@@ -504,22 +519,39 @@ export default function ClientProfilePage() {
         }
 
         if (selectedHistoryItem.type === 'reservation') {
+            const totalTTC = selectedHistoryItem.total;
+            const taxAmount = totalTTC - (totalTTC / (1 + selectedHistoryItem.taxRate / 100));
+
             return (
                 <div ref={ticketRef} className="printable-ticket font-mono p-2 bg-white text-black">
                      <div className="text-center space-y-2 mb-4">
                         <h2 className="text-lg font-bold">{storeInfo?.name}</h2>
                         <p className="text-xs">{storeInfo?.address}</p>
                         <p className="text-xs">{t(translations.reservation)} {selectedHistoryItem.id} - {selectedHistoryItem.date}</p>
+                        <p className="text-xs">Client: {customer.firstName} {customer.lastName}</p>
                     </div>
                     <Separator className="border-dashed border-black" />
-                    <div className="my-4 space-y-2 text-sm">
-                        <p><span className="font-bold">Service:</span> {selectedHistoryItem.serviceName}</p>
-                        <p><span className="font-bold">Client:</span> {customer.firstName} {customer.lastName}</p>
+                     <div className="space-y-2 my-2 text-xs">
+                        <p className="font-bold">{t(translations.prestationDetails)}: {selectedHistoryItem.serviceName}</p>
+                         {selectedHistoryItem.pricingDetails.map((detail, index) => (
+                            <div key={index} className="flex justify-between">
+                                <span>{detail.description}</span>
+                                <span>{detail.amount.toFixed(2)}€</span>
+                            </div>
+                         ))}
                     </div>
                     <Separator className="border-dashed border-black" />
                     <div className="flex justify-between font-bold text-base my-2">
-                        <span>TOTAL</span>
-                        <span>{selectedHistoryItem.total.toFixed(2)}€</span>
+                        <span>TOTAL TTC</span>
+                        <span>{totalTTC.toFixed(2)}€</span>
+                    </div>
+                    <Separator className="border-dashed border-black" />
+                     <div className="space-y-1 my-2 text-xs">
+                       <p className="font-bold">{t(translations.taxDetails)}</p>
+                       <div className="flex justify-between">
+                            <span>{t(translations.tax)} ({selectedHistoryItem.taxRate.toFixed(2)}%)</span>
+                            <span>{taxAmount.toFixed(2)}€</span>
+                        </div>
                     </div>
                     <Separator className="border-dashed border-black" />
                     <div className="text-center text-xs pt-2">{t(translations.thankYou)}</div>
@@ -789,13 +821,13 @@ export default function ClientProfilePage() {
                     </DialogHeader>
                    {renderTicketContent()}
                     <DialogFooter className="print-hide mt-4">
-                        {(selectedHistoryItem.type === 'order' && getStoreInfo(selectedHistoryItem.storeId)?.printers?.length || 0 > 0) ? (
+                        {(getStoreInfo(selectedHistoryItem.storeId)?.printers?.length || 0) > 0 ? (
                             <Button className="w-full font-sans" onClick={handlePrint}>
                                 <Printer className="mr-2 h-4 w-4" /> {t(translations.print)}
                             </Button>
                         ) : (
                              <Button className="w-full font-sans" disabled>
-                                <Printer className="mr-2 h-4 w-4" /> {selectedHistoryItem.type === 'order' ? t(translations.noPrinter) : t(translations.print)}
+                                <Printer className="mr-2 h-4 w-4" /> {t(translations.noPrinter)}
                             </Button>
                         )}
                     </DialogFooter>
