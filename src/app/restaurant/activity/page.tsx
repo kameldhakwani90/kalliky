@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, Utensils, ConciergeBell, BrainCircuit, Car, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
@@ -95,18 +95,18 @@ export default function ActivityPage() {
                                 <CardTitle>{store.name}</CardTitle>
                                 <CardDescription>{store.address}</CardDescription>
                             </CardHeader>
-                            <CardContent className="flex-grow">
+                            <CardContent className="flex-grow min-h-[50px]">
                                 <Badge variant="outline" className="flex items-center gap-2 w-fit">
                                     <Icon className="h-4 w-4" />
                                     <span>{t(typeInfo.label)}</span>
                                 </Badge>
                             </CardContent>
-                            <CardContent>
+                            <CardFooter>
                                 <Button className="w-full" onClick={() => handleViewActivity(store.id)}>
                                     <BookOpen className="mr-2 h-4 w-4" />
                                     {t(translations.viewActivity)}
                                 </Button>
-                            </CardContent>
+                            </CardFooter>
                         </Card>
                     );
                 })}
@@ -114,3 +114,4 @@ export default function ActivityPage() {
         </div>
     );
 }
+
