@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Utensils, ConciergeBell, BrainCircuit } from 'lucide-react';
+import { BookOpen, Utensils, ConciergeBell, BrainCircuit, Car, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 
 type ServiceType = 'products' | 'reservations' | 'consultation';
@@ -26,9 +26,9 @@ const initialStores: Store[] = [
         serviceType: 'products'
     },
     { 
-        id: "store-3", 
-        name: "Pizzeria Bella - Bastille", 
-        address: "3 Rue de la Roquette, 75011 Paris", 
+        id: "store-loc", 
+        name: "Prestige Cars - Location", 
+        address: "25 Avenue Montaigne, 75008 Paris", 
         serviceType: 'reservations'
     },
      { 
@@ -37,6 +37,12 @@ const initialStores: Store[] = [
         address: "1 Avenue des Champs-Élysées, 75008 Paris", 
         serviceType: 'consultation'
     },
+     { 
+        id: "store-spa", 
+        name: "Spa & Bien-être 'Zen'", 
+        address: "7 Rue du Faubourg Saint-Honoré, 75008 Paris", 
+        serviceType: 'reservations'
+    },
 ];
 
 const serviceTypeInfo: Record<ServiceType, { icon: React.ElementType, label: Record<'fr'|'en', string> }> = {
@@ -44,6 +50,18 @@ const serviceTypeInfo: Record<ServiceType, { icon: React.ElementType, label: Rec
     reservations: { icon: ConciergeBell, label: { fr: 'Réservations', en: 'Reservations' } },
     consultation: { icon: BrainCircuit, label: { fr: 'Consultations', en: 'Consultations' } },
 };
+
+
+const getServiceIcon = (serviceType: ServiceType, storeName: string) => {
+    if (storeName.toLowerCase().includes('car') || storeName.toLowerCase().includes('location')) {
+        return Car;
+    }
+    if (storeName.toLowerCase().includes('spa')) {
+        return Sparkles;
+    }
+    return serviceTypeInfo[serviceType].icon;
+};
+
 
 export default function ActivityPage() {
     const { t } = useLanguage();
@@ -56,7 +74,6 @@ export default function ActivityPage() {
     };
 
     const handleViewActivity = (storeId: string) => {
-        // This will navigate to a new page that shows the activity list
         router.push(`/restaurant/activity/${storeId}`);
     };
 
@@ -67,14 +84,14 @@ export default function ActivityPage() {
                 <p className="text-muted-foreground">{t(translations.description)}</p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {initialStores.map((store) => {
                     const typeInfo = serviceTypeInfo[store.serviceType];
-                    const Icon = typeInfo.icon;
+                    const Icon = getServiceIcon(store.serviceType, store.name);
 
                     return (
                         <Card key={store.id} className="flex flex-col">
-                            <CardHeader>
+                            <CardHeader className="flex-grow">
                                 <CardTitle>{store.name}</CardTitle>
                                 <CardDescription>{store.address}</CardDescription>
                             </CardHeader>
