@@ -45,6 +45,16 @@ const initialCustomers: Customer[] = [
         totalSpent: "57.90€",
         lastSeen: "27/05/2024",
     },
+    {
+        id: 'cust-3',
+        phone: "06 11 22 33 44",
+        firstName: "Carole",
+        lastName: "Leblanc",
+        email: "carole.leblanc@email.com",
+        status: "Nouveau",
+        totalSpent: "25.00€",
+        lastSeen: "29/05/2024",
+    },
 ];
 
 export default function ClientsPage() {
@@ -76,7 +86,7 @@ export default function ClientsPage() {
         contact: { fr: "Contact", en: "Contact" },
         status: { fr: "Statut", en: "Status" },
         totalSpent: { fr: "Total Dépensé", en: "Total Spent" },
-        lastOrder: { fr: "Dernière Commande", en: "Last Order" },
+        lastOrder: { fr: "Dernière Visite", en: "Last Visit" },
         actions: { fr: "Actions", en: "Actions" },
         anonymousClient: { fr: "Client Anonyme", en: "Anonymous Customer" },
         loyal: { fr: "Fidèle", en: "Loyal" },

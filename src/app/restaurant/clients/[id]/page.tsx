@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2 } from 'lucide-react';
+import { Eye, Receipt, Phone, Flag, Star, Edit, Save, PlayCircle, MessageSquare, Printer, Languages, Loader2, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -55,12 +55,24 @@ type OrderTotals = {
 
 
 type DetailedOrder = {
+    type: 'order';
     id: string;
     date: string;
     items: DetailedOrderItem[];
     total: number;
     storeId: string;
 };
+
+type HistoryReservation = {
+    type: 'reservation';
+    id: string;
+    date: string;
+    serviceName: string;
+    total: number;
+    storeId: string;
+};
+
+type HistoryItem = DetailedOrder | HistoryReservation;
 
 
 type Report = {
@@ -97,7 +109,7 @@ type Customer = {
     totalSpent: string;
     firstSeen: string;
     lastSeen: string;
-    orderHistory: DetailedOrder[];
+    history: HistoryItem[];
     callHistory: Call[];
     reportHistory: Report[];
 };
@@ -161,8 +173,9 @@ const mockStores: Store[] = [
     },
 ];
 
-const mockOrders: DetailedOrder[] = [
+const mockHistory: HistoryItem[] = [
     {
+        type: 'order',
         id: "#1024",
         date: "28/05/2024",
         storeId: "store-1",
@@ -179,8 +192,10 @@ const mockOrders: DetailedOrder[] = [
         ],
         total: 28.00,
     },
-     { id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
+    { type: 'reservation', id: "#resa-1", date: "25/05/2024", serviceName: "Location Salle 'Prestige'", total: 500, storeId: 'store-1' },
+     { type: 'order', id: "#987", date: "15/05/2024", storeId: "store-1", items: [], total: 90.75 },
      {
+        type: 'order',
         id: "#1028",
         date: "29/05/2024",
         storeId: "store-3",
@@ -208,7 +223,7 @@ const mockCustomers: Customer[] = [
         totalSpent: "870.00€",
         firstSeen: "12/01/2024",
         lastSeen: "28/05/2024",
-        orderHistory: mockOrders.filter(o => ['#1024', '#987'].includes(o.id)),
+        history: mockHistory.filter(h => ['#1024', '#987', '#resa-1'].includes(h.id)),
         callHistory: [
             { id: 'call-1', date: "28/05/2024 - 19:30", duration: "3m 45s", type: 'Commande', transcript: "Hello, I would like to order a custom burger with bacon and egg, no onions. And also a Caesar salad please. It will be for a delivery to 123 Rue de la Paix. Thank you.", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
             { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
@@ -227,7 +242,7 @@ const mockCustomers: Customer[] = [
         totalSpent: "57.90€",
         firstSeen: "27/05/2024",
         lastSeen: "27/05/2024",
-        orderHistory: [],
+        history: [],
         callHistory: [
             { id: 'call-3', date: "27/05/2024 - 20:15", duration: "2m 30s", type: 'Commande', transcript: "Salut, je voudrais deux burgers personnalisés. Viande bien cuite pour les deux s'il vous plait. À emporter. C'est tout !", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
         ],
@@ -243,7 +258,7 @@ const mockCustomers: Customer[] = [
         totalSpent: "25.00€",
         firstSeen: "29/05/2024",
         lastSeen: "29/05/2024",
-        orderHistory: mockOrders.filter(o => o.id === '#1028'),
+        history: mockHistory.filter(h => h.id === '#1028'),
         callHistory: [],
         reportHistory: [
             {id: 'rep-2', date: '29/05/2024', reason: 'Erreur dans la commande', status: 'Ouvert', details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages. Commande #1028.'}
@@ -291,7 +306,7 @@ export default function ClientProfilePage() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [editedCustomer, setEditedCustomer] = useState<Customer | null>(customer ? { ...customer } : null);
-    const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
+    const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
     const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
     const ticketRef = useRef<HTMLDivElement>(null);
 
@@ -354,10 +369,11 @@ export default function ClientProfilePage() {
         male: { fr: "Homme", en: "Male" },
         female: { fr: "Femme", en: "Female" },
         other: { fr: "Autre", en: "Other" },
-        orderHistory: { fr: "Historique des Commandes", en: "Order History" },
+        orderHistory: { fr: "Historique", en: "History" },
         callHistory: { fr: "Historique des Appels", en: "Call History" },
         reportHistory: { fr: "Historique des Signalements", en: "Report History" },
         order: { fr: "Commande", en: "Order" },
+        reservation: { fr: "Réservation", en: "Reservation" },
         date: { fr: "Date", en: "Date" },
         amountTTC: { fr: "Montant (TTC)", en: "Amount (incl. tax)" },
         action: { fr: "Action", en: "Action" },
@@ -402,15 +418,19 @@ export default function ClientProfilePage() {
         setIsEditing(false);
     };
 
-    const handleViewOrderTicket = (order: DetailedOrder) => {
-        setSelectedOrder(order);
-        setOrderTicketOpen(true);
+    const handleViewHistoryItem = (item: HistoryItem) => {
+        setSelectedHistoryItem(item);
+        if (item.type === 'order') {
+            setOrderTicketOpen(true);
+        }
+        // Add logic for reservation view later
     }
     
     const handlePrint = () => {
         const ticketElement = ticketRef.current;
-        if (!ticketElement) return;
+        if (!ticketElement || !selectedHistoryItem || selectedHistoryItem.type !== 'order') return;
 
+        const storePrinters = getStoreInfo(selectedHistoryItem.storeId)?.printers;
         const receiptPrinter = storePrinters?.find(p => p.role === 'receipt');
         const printerToUse = receiptPrinter || storePrinters?.[0]; // Fallback to the first printer if no receipt printer is found
 
@@ -431,6 +451,7 @@ export default function ClientProfilePage() {
     };
 
 
+    const selectedOrder = selectedHistoryItem?.type === 'order' ? selectedHistoryItem : null;
     const calculatedTotals = selectedOrder ? calculateOrderTotals(selectedOrder) : null;
     const storePrinters = selectedOrder ? getStoreInfo(selectedOrder.storeId)?.printers : [];
 
@@ -534,32 +555,41 @@ export default function ClientProfilePage() {
                     </Card>
                 </div>
                 <div className="lg:col-span-2">
-                     <Tabs defaultValue="orders">
+                     <Tabs defaultValue="history">
                         <TabsList className="mb-4">
-                            <TabsTrigger value="orders"><Receipt className="mr-2 h-4 w-4"/>{t(translations.orderHistory)}</TabsTrigger>
+                            <TabsTrigger value="history"><Receipt className="mr-2 h-4 w-4"/>{t(translations.orderHistory)}</TabsTrigger>
                             <TabsTrigger value="calls"><Phone className="mr-2 h-4 w-4"/>{t(translations.callHistory)}</TabsTrigger>
                             <TabsTrigger value="reports"><Flag className="mr-2 h-4 w-4"/>{t(translations.reportHistory)}</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="orders">
+                        <TabsContent value="history">
                             <Card>
                                 <CardContent className="p-0">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>{t(translations.order)}</TableHead>
+                                                <TableHead>{t({fr: "Type", en: "Type"})}</TableHead>
+                                                <TableHead>{t({fr: "Détail", en: "Detail"})}</TableHead>
                                                 <TableHead>{t(translations.date)}</TableHead>
                                                 <TableHead>{t(translations.amountTTC)}</TableHead>
                                                 <TableHead className="text-right">{t(translations.action)}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {customer.orderHistory.map(order => (
-                                                <TableRow key={order.id}>
-                                                    <TableCell className="font-medium">{order.id} ({order.items.length} {t(translations.items)})</TableCell>
-                                                    <TableCell>{order.date}</TableCell>
-                                                    <TableCell>{calculateOrderTotals(order).totalTTC.toFixed(2)}€</TableCell>
+                                            {customer.history.map(item => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell>
+                                                        <Badge variant="outline" className="flex items-center gap-2">
+                                                            {item.type === 'order' ? <Receipt className="h-4 w-4" /> : <Calendar className="h-4 w-4" />}
+                                                            <span>{item.type === 'order' ? t(translations.order) : t(translations.reservation)}</span>
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">
+                                                        {item.type === 'order' ? `${item.id} (${item.items.length} ${t(translations.items)})` : item.serviceName}
+                                                    </TableCell>
+                                                    <TableCell>{item.date}</TableCell>
+                                                    <TableCell>{item.total.toFixed(2)}€</TableCell>
                                                     <TableCell className="text-right">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewHistoryItem(item)}>
                                                             <Eye className="h-4 w-4"/>
                                                         </Button>
                                                     </TableCell>
