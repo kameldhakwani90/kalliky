@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building, Sparkles, BookOpen } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building, Sparkles, BookOpen, BrainCircuit, ConciergeBell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -56,14 +56,15 @@ type KDSConnection = {
     lastSeen: string;
 }
 
-type BusinessType = 'restaurant' | 'coffeeshop' | 'event_hall' | 'car_rental';
+type BusinessType = 'restaurant' | 'coffeeshop' | 'event_hall' | 'car_rental' | 'consulting' | 'wellness';
+
+type ServiceType = 'products' | 'reservations' | 'consultation';
 
 type Store = {
     id: string;
     name: string;
     address: string;
     phone: string;
-    businessType: BusinessType;
     status: 'active' | 'inactive';
     stripeStatus: 'connected' | 'disconnected';
     whatsappNumber?: string;
@@ -74,49 +75,62 @@ type Store = {
     telnyxNumber?: string;
     telnyxConfigured?: boolean;
     serviceId?: string;
+    serviceType: ServiceType;
 };
 
 const initialStores: Store[] = [
     { 
-        id: "store-1", name: "Le Gourmet Parisien - Centre", address: "12 Rue de la Paix, 75002 Paris", phone: "01 23 45 67 89", businessType: 'restaurant', status: 'active', stripeStatus: 'connected', currency: 'EUR', 
+        id: "store-1", 
+        name: "Le Gourmet Parisien - Centre", 
+        address: "12 Rue de la Paix, 75002 Paris", 
+        phone: "01 23 45 67 89", 
+        status: 'active', 
+        stripeStatus: 'connected', 
+        currency: 'EUR', 
         whatsappNumber: '+33612345678',
-        taxRates: [
-            { id: 'tax-1-1', name: 'Réduit', rate: 5.5, isDefault: false },
-            { id: 'tax-1-2', name: 'Intermédiaire', rate: 10, isDefault: true },
-            { id: 'tax-1-3', name: 'Normal', rate: 20, isDefault: false },
-        ],
-        printers: [
-            { id: 'p1', name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network', ipAddress: '192.168.1.50', port: '9100' },
-            { id: 'p2', name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm', connectionType: 'usb' },
-        ],
-        kdsConnections: [
-            { id: 'kds-1', name: 'Tablette Cuisine 1', connectionCode: 'AB12-CD34', lastSeen: 'il y a 5 minutes'}
-        ],
+        taxRates: [],
+        printers: [],
+        kdsConnections: [],
         telnyxNumber: '+33987654321',
         telnyxConfigured: true,
         serviceId: 'service-1',
+        serviceType: 'products',
     },
     { 
-        id: "store-2", name: "Le Gourmet Parisien - Montmartre", address: "5 Place du Tertre, 75018 Paris", phone: "01 98 76 54 32", businessType: 'restaurant', status: 'active', stripeStatus: 'disconnected', currency: 'EUR', 
-        taxRates: [
-            { id: 'tax-2-1', name: 'Réduit', rate: 5.5, isDefault: false },
-            { id: 'tax-2-2', name: 'Intermédiaire', rate: 10, isDefault: true },
-            { id: 'tax-2-3', name: 'Normal', rate: 20, isDefault: false },
-        ],
-        printers: [],
-        kdsConnections: [],
-        telnyxNumber: '+33912345678',
+        id: "store-loc", 
+        name: "Prestige Cars - Location", 
+        address: "25 Avenue Montaigne, 75008 Paris",
+        phone: "01 98 76 54 32",
+        status: 'active',
+        stripeStatus: 'connected',
+        currency: 'EUR',
+        taxRates: [],
+        serviceType: 'reservations',
+        telnyxConfigured: true,
+    },
+     { 
+        id: "store-4", 
+        name: "Cabinet d'Avocats", 
+        address: "1 Avenue des Champs-Élysées, 75008 Paris",
+        phone: "01 44 55 66 77",
+        status: 'active',
+        stripeStatus: 'disconnected',
+        currency: 'EUR',
+        taxRates: [],
+        serviceType: 'consultation',
         telnyxConfigured: false,
     },
-    { 
-        id: "store-3", name: "Pizzeria Bella - Bastille", address: "3 Rue de la Roquette, 75011 Paris", phone: "01 44 55 66 77", businessType: 'restaurant', status: 'inactive', stripeStatus: 'disconnected', currency: 'EUR', 
-        taxRates: [
-             { id: 'tax-3-1', name: 'À emporter', rate: 5.5, isDefault: true },
-             { id: 'tax-3-2', name: 'Sur place', rate: 10, isDefault: false },
-        ],
-        printers: [],
-        kdsConnections: [],
-        serviceId: 'service-3',
+     { 
+        id: "store-spa", 
+        name: "Spa & Bien-être 'Zen'", 
+        address: "7 Rue du Faubourg Saint-Honoré, 75008 Paris",
+        phone: "01 88 77 66 55",
+        status: 'inactive',
+        stripeStatus: 'disconnected',
+        currency: 'EUR',
+        taxRates: [],
+        serviceType: 'reservations',
+        telnyxConfigured: false,
     },
 ];
 
@@ -167,8 +181,27 @@ const businessTemplates: Record<BusinessType, { taxRates: Omit<TaxRate, 'id'>[],
             { name: 'TVA Standard', rate: 20, isDefault: true },
         ],
         printers: []
+    },
+    consulting: {
+        taxRates: [
+            { name: 'TVA Standard', rate: 20, isDefault: true },
+        ],
+        printers: []
+    },
+    wellness: {
+        taxRates: [
+            { name: 'TVA Standard', rate: 20, isDefault: true },
+        ],
+        printers: []
     }
 };
+
+const businessTypeMapping: Record<ServiceType, BusinessType> = {
+    products: 'restaurant',
+    reservations: 'event_hall',
+    consultation: 'consulting',
+};
+
 
 function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave: (store: Store) => void, onCancel: () => void }) {
     const router = useRouter();
@@ -177,7 +210,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     const [wizardStep, setWizardStep] = useState(store ? 1 : 0);
     const [editableStore, setEditableStore] = useState<Partial<Store>>(
         store || {
-            businessType: 'restaurant',
             status: 'active',
             stripeStatus: 'disconnected',
             currency: 'EUR',
@@ -191,6 +223,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     const daysOfWeek = language === 'fr' ? daysOfWeekFr : daysOfWeekEn;
 
     const handleFinalize = () => {
+        if (!editableStore.serviceType) return;
         const finalStore = {
             ...editableStore,
             id: editableStore.id || `store-${Date.now()}`,
@@ -204,8 +237,9 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         setEditableStore(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleBusinessTypeChange = (value: BusinessType) => {
-        setEditableStore(prev => ({...prev, businessType: value}));
+    const handleServiceTypeSelection = (value: ServiceType) => {
+        const businessType = businessTypeMapping[value] || 'restaurant';
+        setEditableStore(prev => ({...prev, serviceType: value, businessType: businessType}));
     };
 
     const applyTemplate = () => {
@@ -391,20 +425,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                     {wizardStep === 1 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="businessType">{t(translations.businessType)}</Label>
-                                <Select name="businessType" value={editableStore.businessType} onValueChange={(value: BusinessType) => handleBusinessTypeChange(value)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={t({ fr: 'Sélectionnez un type', en: 'Select a type' })} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="restaurant"><Utensils className="mr-2 h-4 w-4" />{t(translations.restaurant)}</SelectItem>
-                                        <SelectItem value="coffeeshop"><Coffee className="mr-2 h-4 w-4" />{t(translations.coffeeshop)}</SelectItem>
-                                        <SelectItem value="event_hall"><Building className="mr-2 h-4 w-4" />{t(translations.eventHall)}</SelectItem>
-                                        <SelectItem value="car_rental"><Car className="mr-2 h-4 w-4" />{t(translations.carRental)}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
                                 <Label htmlFor="name">{t(translations.restaurantName)}</Label>
                                 <Input id="name" name="name" value={editableStore.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} required />
                             </div>
@@ -412,11 +432,25 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                 <Label htmlFor="address">{t(translations.fullAddress)}</Label>
                                 <Input id="address" name="address" value={editableStore.address || ''} onChange={(e) => handleInputChange('address', e.target.value)} required />
                             </div>
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <Label htmlFor="phone">{t(translations.landline)}</Label>
                                 <Input id="phone" name="phone" type="tel" value={editableStore.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} required />
                             </div>
-                            {!store && ( // Show template option only on creation
+                            <div className="space-y-2">
+                                <Label>{t(translations.businessType)}</Label>
+                                 <Select name="serviceType" value={editableStore.serviceType} onValueChange={(value: ServiceType) => handleServiceTypeSelection(value)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={t({ fr: 'Sélectionnez un type', en: 'Select a type' })} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="products"><Utensils className="mr-2 h-4 w-4" />{t({fr: "Vente de Produits", en: "Product Sales"})}</SelectItem>
+                                        <SelectItem value="reservations"><ConciergeBell className="mr-2 h-4 w-4" />{t({fr: "Réservations", en: "Reservations"})}</SelectItem>
+                                        <SelectItem value="consultation"><BrainCircuit className="mr-2 h-4 w-4" />{t({fr: "Consultations", en: "Consultations"})}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                           
+                            {!store && editableStore.serviceType && (
                                 <Card className="mt-6 bg-primary/5 border-primary/20">
                                     <CardHeader>
                                         <CardTitle className="text-base flex items-center gap-2">
@@ -837,8 +871,9 @@ export default function StoresPage() {
         setIsTelnyxPopupOpen(true);
     }
     
-    const handleManageService = (storeId: string) => {
-        router.push(`/restaurant/services/${storeId}`);
+    const handleManageService = (store: Store) => {
+        const path = store.serviceId ? `/restaurant/services/${store.id}` : `/restaurant/services/${store.id}`;
+        router.push(path);
     };
 
     const translations = {
@@ -922,21 +957,21 @@ export default function StoresPage() {
                              <div className="text-sm text-muted-foreground space-y-2">
                                 <div className="flex items-center gap-2">
                                     <Badge variant="outline" className={cn("cursor-pointer", !store.telnyxConfigured && "border-amber-400 text-amber-700 hover:bg-amber-50")} onClick={() => !store.telnyxConfigured && handleConfigureTelnyxClick(store)}>
-                                        <PhoneCall className="mr-2 h-3 w-3" />
+                                        <PhoneCall className="mr-2 h-3 w-3 shrink-0" />
                                         {store.telnyxConfigured ? t(translations.connected) : t(translations.configure)}
                                     </Badge>
                                     <span>Prise de commande vocale</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                      <Badge variant="outline" className={cn(store.stripeStatus !== 'connected' && "text-muted-foreground")}>
-                                        <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                        <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3 shrink-0"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
                                         <span>Paiement en ligne</span>
                                     </Badge>
                                 </div>
                              </div>
                         </CardContent>
                          <CardFooter>
-                            <Button className="w-full" onClick={() => handleManageService(store.id)}>
+                            <Button className="w-full" onClick={() => handleManageService(store)}>
                                 <BookOpen className="mr-2 h-4 w-4" />
                                 {t(translations.manageService)}
                             </Button>
@@ -956,3 +991,5 @@ export default function StoresPage() {
         </div>
     );
 }
+
+    
