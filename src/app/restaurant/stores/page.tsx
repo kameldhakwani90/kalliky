@@ -142,8 +142,8 @@ const WIZARD_STEPS = [
     { id: 'serviceType', title: { fr: "Type d'activité", en: 'Business Type' } },
     { id: 'general', title: { fr: 'Infos Générales', en: 'General Info' } },
     { id: 'opening', title: { fr: 'Horaires', en: 'Opening Hours' } },
-    { id: 'taxes', title: { fr: 'Taxes & Notifications', en: 'Taxes & Notifications' } },
-    { id: 'peripherals', title: { fr: 'Périphériques', en: 'Peripherals' } },
+    { id: 'taxes', title: { fr: 'Taxes', en: 'Taxes' } },
+    { id: 'peripherals', title: { fr: 'Périphériques & Notifications', en: 'Peripherals & Notifications' } },
     { id: 'voice', title: { fr: 'Configuration Vocale', en: 'Voice Setup' } },
     { id: 'finish', title: { fr: 'Finalisation', en: 'Finalization' } },
 ];
@@ -255,8 +255,8 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         startConfig: { fr: 'Commencer la configuration', en: 'Start Configuration' },
         general: { fr: "Général", en: "General" },
         openingHours: { fr: "Horaires", en: "Hours" },
-        taxes: { fr: "Taxes & Notifications", en: "Taxes & Notifications" },
-        peripherals: { fr: "Périphériques", en: "Peripherals" },
+        taxes: { fr: "Taxes", en: "Taxes" },
+        peripherals: { fr: "Périphériques & Notifications", en: "Peripherals & Notifications" },
         activityTypeTitle: { fr: "Quel est le cœur de votre métier ?", en: "What is the core of your business?" },
         activityTypeDescription: { fr: "Ce choix déterminera les outils de configuration disponibles.", en: "This choice will determine the available configuration tools." },
         productsSale: { fr: "Vente de Produits", en: "Product Sales" },
@@ -462,36 +462,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                     </div>
                                 </CardContent>
                             </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base flex items-center gap-2"><MessageCircle className="h-4 w-4"/> {t(translations.notifications)}</CardTitle>
-                                    <CardDescription>{t(translations.notificationsDesc)}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Switch id="notifications-enabled" checked={editableStore.notifications?.enabled} onCheckedChange={(checked) => handleNotificationChange('enabled', checked)} />
-                                        <Label htmlFor="notifications-enabled">{t(translations.enableNotifications)}</Label>
-                                    </div>
-                                    {editableStore.notifications?.enabled && (
-                                        <div className="space-y-4 pl-8">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="notification-email">{t(translations.notificationEmail)}</Label>
-                                                <div className="relative">
-                                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input id="notification-email" type="email" placeholder="contact@mondomaine.com" className="pl-10" value={editableStore.notifications?.email || ''} onChange={(e) => handleNotificationChange('email', e.target.value)} />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="notification-whatsapp">{t(translations.notificationWhatsapp)}</Label>
-                                                <div className="relative">
-                                                    <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input id="notification-whatsapp" type="tel" placeholder="+33612345678" className="pl-10" value={editableStore.notifications?.whatsapp || ''} onChange={(e) => handleNotificationChange('whatsapp', e.target.value)} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
                         </div>
                     )}
                     {wizardStep === 5 && (
@@ -552,6 +522,36 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                   <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addPrinter}>
                                       <Printer className="mr-2 h-4 w-4"/> {t(translations.addPrinter)}
                                   </Button>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2"><MessageCircle className="h-4 w-4"/> {t(translations.notifications)}</CardTitle>
+                                    <CardDescription>{t(translations.notificationsDesc)}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="notifications-enabled" checked={editableStore.notifications?.enabled} onCheckedChange={(checked) => handleNotificationChange('enabled', checked)} />
+                                        <Label htmlFor="notifications-enabled">{t(translations.enableNotifications)}</Label>
+                                    </div>
+                                    {editableStore.notifications?.enabled && (
+                                        <div className="space-y-4 pl-8">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="notification-email">{t(translations.notificationEmail)}</Label>
+                                                <div className="relative">
+                                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <Input id="notification-email" type="email" placeholder="contact@mondomaine.com" className="pl-10" value={editableStore.notifications?.email || ''} onChange={(e) => handleNotificationChange('email', e.target.value)} />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="notification-whatsapp">{t(translations.notificationWhatsapp)}</Label>
+                                                <div className="relative">
+                                                    <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <Input id="notification-whatsapp" type="tel" placeholder="+33612345678" className="pl-10" value={editableStore.notifications?.whatsapp || ''} onChange={(e) => handleNotificationChange('whatsapp', e.target.value)} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
