@@ -145,9 +145,9 @@ export default function ServicesPage() {
                 <p className="text-muted-foreground">{t(translations.description)}</p>
             </header>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <Select value={selectedStore} onValueChange={setSelectedStore}>
-                    <SelectTrigger className="w-72">
+                    <SelectTrigger className="w-full sm:w-72">
                         <SelectValue placeholder={t(translations.selectStore)} />
                     </SelectTrigger>
                     <SelectContent>
@@ -155,7 +155,7 @@ export default function ServicesPage() {
                         {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Button onClick={() => handleOpenDialog()} disabled={selectedStore === 'all'}>
+                <Button onClick={() => handleOpenDialog()} disabled={selectedStore === 'all'} className="w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     {t(translations.createService)}
                 </Button>
