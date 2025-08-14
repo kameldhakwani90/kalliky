@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -12,15 +13,6 @@ import {
   CardFooter
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,273 +24,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { PlusCircle, Utensils, CalendarCheck, MoreHorizontal, Pencil, Trash2, ArrowRight, MessageCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MoreHorizontal, ArrowRight, Utensils, CalendarCheck, MessageCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/contexts/language-context';
-import { Badge } from '@/components/ui/badge';
 
-type ServiceType = 'products' | 'reservations' | 'consultation';
-
-type Service = {
-  id: string;
-  storeId: string;
-  name: string;
-  description: string;
-  type: ServiceType;
-};
-
-const availableStores = [
-    { id: "store-1", name: "Le Gourmet Parisien - Centre" },
-    { id: "store-2", name: "Le Gourmet Parisien - Montmartre"},
-    { id: "store-3", name: "Pizzeria Bella - Bastille" },
-    { id: "store-4", name: "Cabinet Avocat Dupont & Associés" },
-];
-
-const initialServices: Service[] = [
-    { id: 'service-1', storeId: 'store-1', name: 'Restauration sur place', description: 'Le catalogue de tous les produits servis à table.', type: 'products' },
-    { id: 'service-2', storeId: 'store-1', name: 'Vente à emporter', description: 'Le catalogue des produits disponibles à la vente à emporter.', type: 'products' },
-    { id: 'service-3', storeId: 'store-2', name: 'Location de la salle de réception', description: 'Service de réservation pour les événements privés.', type: 'reservations' },
-    { id: 'service-5', storeId: 'store-4', name: 'Consultation Droit des Affaires', description: 'Prise de rendez-vous qualifiée par IA pour les nouveaux clients.', type: 'consultation' },
-];
-
-export default function ServicesPage() {
-    const { t } = useLanguage();
-    const [services, setServices] = useState<Service[]>(initialServices);
-    const [selectedStore, setSelectedStore] = useState<string>(availableStores[0]?.id || 'all');
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editedService, setEditedService] = useState<Partial<Service> | null>(null);
-
-    const handleOpenDialog = (service: Service | null = null) => {
-        const newService: Partial<Service> = service ? {...service} : { storeId: selectedStore, type: 'products' };
-        setEditedService(newService);
-        setIsDialogOpen(true);
-    };
-
-    const handleSaveService = () => {
-        if (!editedService?.name || !editedService.storeId) return;
-        const finalService: Service = {
-            id: editedService.id || `service-${Date.now()}`,
-            name: editedService.name,
-            description: editedService.description || '',
-            storeId: editedService.storeId,
-            type: editedService.type || 'products',
-        };
-
-        setServices(prev => {
-            const exists = prev.some(s => s.id === finalService.id);
-            if (exists) {
-                return prev.map(s => s.id === finalService.id ? finalService : s);
-            }
-            return [...prev, finalService];
-        });
-        setIsDialogOpen(false);
-        setEditedService(null);
-    };
-
-    const handleDeleteService = (serviceId: string) => {
-        setServices(prev => prev.filter(s => s.id !== serviceId));
-    };
-
-    const filteredServices = services.filter(service => selectedStore === 'all' || service.storeId === selectedStore);
-
-    const translations = {
-        title: { fr: "Mes Services", en: "My Services" },
-        description: { fr: "Définissez les différentes offres de votre commerce : catalogues de produits, services de réservation, etc.", en: "Define your business's various offerings: product catalogs, reservation services, etc." },
-        selectStore: { fr: "Sélectionner une boutique", en: "Select a store" },
-        allStores: { fr: "Toutes les boutiques", en: "All stores" },
-        createService: { fr: "Créer un service", en: "Create a service" },
-        manageCatalog: { fr: "Gérer le catalogue", en: "Manage Catalog" },
-        manageReservations: { fr: "Gérer les réservations", en: "Manage Reservations" },
-        configureConsultation: { fr: "Configurer l'IA", en: "Configure AI" },
-        products: { fr: "Produits", en: "Products" },
-        reservations: { fr: "Réservations", en: "Reservations" },
-        consultation: { fr: "Consultation (IA)", en: "Consultation (AI)" },
-        delete: { fr: "Supprimer", en: "Delete" },
-        edit: { fr: "Modifier", en: "Edit" },
-        confirmDelete: { fr: "Êtes-vous sûr de vouloir supprimer ce service ?", en: "Are you sure you want to delete this service?" },
-        irreversible: { fr: "Cette action est irréversible et supprimera tout le catalogue ou la configuration associée.", en: "This action is irreversible and will delete the entire associated catalog or configuration." },
-        cancel: { fr: "Annuler", en: "Cancel" },
-        save: { fr: "Enregistrer", en: "Save" },
-        newServiceTitle: { fr: "Que proposez-vous ?", en: "What do you offer?" },
-        editServiceTitle: { fr: "Modifier le service", en: "Edit the service" },
-        serviceName: { fr: "Nom de l'offre ou du catalogue", en: "Offer or catalog name" },
-        serviceNamePlaceholder: { fr: "Ex: Menu du restaurant, Location de véhicules, Consultation juridique...", en: "E.g.: Restaurant menu, Vehicle rental, Legal consultation..." },
-        serviceDesc: { fr: "Description (facultatif)", en: "Description (optional)" },
-        serviceType: { fr: "Comment souhaitez-vous gérer cette offre ?", en: "How do you want to manage this offer?" },
-        productManagement: { fr: "Catalogue de produits", en: "Product Catalog" },
-        productManagementDesc: { fr: "Vente d'articles avec gestion de stock.", en: "Sale of items with stock management." },
-        reservationManagement: { fr: "Service de réservation", en: "Reservation Service" },
-        reservationManagementDesc: { fr: "Prise de rendez-vous ou location sur calendrier.", en: "Appointment booking or calendar-based rental." },
-        consultationManagement: { fr: "Consultation avec qualification IA", en: "Consultation with AI qualification" },
-        consultationManagementDesc: { fr: "L'IA qualifie le client et vous fournit un compte-rendu avec un score.", en: "The AI qualifies the customer and provides you with a report and a score." },
-        noServices: { fr: "Aucun service défini pour cette boutique.", en: "No services defined for this store." },
-        createFirstService: { fr: "Créez votre premier service pour commencer.", en: "Create your first service to get started." },
-    };
-
-    const serviceIcons: Record<ServiceType, React.ElementType> = {
-        products: Utensils,
-        reservations: CalendarCheck,
-        consultation: MessageCircle,
-    };
-    
-    return(
-        <div className="space-y-8">
-            <header>
-                <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
-                <p className="text-muted-foreground">{t(translations.description)}</p>
-            </header>
-
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <Select value={selectedStore} onValueChange={setSelectedStore}>
-                    <SelectTrigger className="w-full sm:w-72">
-                        <SelectValue placeholder={t(translations.selectStore)} />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">{t(translations.allStores)}</SelectItem>
-                        {availableStores.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <Button onClick={() => handleOpenDialog()} disabled={selectedStore === 'all'} className="w-full sm:w-auto">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    {t(translations.createService)}
-                </Button>
-            </div>
-            
-            {filteredServices.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredServices.map(service => {
-                        const Icon = serviceIcons[service.type];
-                        return (
-                            <Card key={service.id} className="flex flex-col">
-                                <CardHeader>
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-3">
-                                            <Icon className="h-6 w-6 text-primary" />
-                                            <CardTitle className="text-xl">{service.name}</CardTitle>
-                                        </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleOpenDialog(service)}>
-                                                    <Pencil className="mr-2 h-4 w-4" /> {t(translations.edit)}
-                                                </DropdownMenuItem>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" />{t(translations.delete)}
-                                                        </DropdownMenuItem>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>{t(translations.confirmDelete)}</AlertDialogTitle>
-                                                            <AlertDialogDescription>{t(translations.irreversible)}</AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteService(service.id)}>{t(translations.delete)}</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                    <Badge variant="outline" className="mt-2 w-fit">
-                                        {service.type === 'products' ? t(translations.products) : (service.type === 'reservations' ? t(translations.reservations) : t(translations.consultation))}
-                                    </Badge>
-                                </CardHeader>
-                                <CardContent className="flex-1">
-                                    <CardDescription>{service.description}</CardDescription>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button asChild className="w-full">
-                                        <Link href={`/restaurant/services/${service.id}`}>
-                                            {service.type === 'products' ? t(translations.manageCatalog) : (service.type === 'reservations' ? t(translations.manageReservations) : t(translations.configureConsultation))}
-                                            <ArrowRight className="ml-2 h-4 w-4"/>
-                                        </Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        );
-                    })}
-                </div>
-            ) : (
-                <Card className="text-center py-12">
-                    <CardContent>
-                        <h3 className="text-lg font-semibold">{t(translations.noServices)}</h3>
-                        <p className="text-muted-foreground mt-2">{t(translations.createFirstService)}</p>
-                    </CardContent>
-                </Card>
-            )}
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editedService?.id ? t(translations.editServiceTitle) : t(translations.newServiceTitle)}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="service-name">{t(translations.serviceName)}</Label>
-                            <Input
-                                id="service-name"
-                                placeholder={t(translations.serviceNamePlaceholder)}
-                                value={editedService?.name || ''}
-                                onChange={(e) => setEditedService(prev => ({ ...prev, name: e.target.value }))}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="service-desc">{t(translations.serviceDesc)}</Label>
-                            <Textarea
-                                id="service-desc"
-                                value={editedService?.description || ''}
-                                onChange={(e) => setEditedService(prev => ({ ...prev, description: e.target.value }))}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="service-type">{t(translations.serviceType)}</Label>
-                            <Select
-                                value={editedService?.type || 'products'}
-                                onValueChange={(value: ServiceType) => setEditedService(prev => ({ ...prev, type: value }))}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="products">
-                                        <div className="flex flex-col">
-                                            <span>{t(translations.productManagement)}</span>
-                                            <span className="text-xs text-muted-foreground">{t(translations.productManagementDesc)}</span>
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="reservations">
-                                        <div className="flex flex-col">
-                                            <span>{t(translations.reservationManagement)}</span>
-                                            <span className="text-xs text-muted-foreground">{t(translations.reservationManagementDesc)}</span>
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="consultation">
-                                        <div className="flex flex-col">
-                                            <span>{t(translations.consultationManagement)}</span>
-                                            <span className="text-xs text-muted-foreground">{t(translations.consultationManagementDesc)}</span>
-                                        </div>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t(translations.cancel)}</Button>
-                        <Button onClick={handleSaveService}>{t(translations.save)}</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
+export default function RedirectToStores() {
+    const router = useRouter();
+    // This component will redirect to the stores page,
+    // which is the new central place for managing services.
+    if (typeof window !== 'undefined') {
+        router.replace('/restaurant/stores');
+    }
+    return null; // Render nothing while redirecting
 }
