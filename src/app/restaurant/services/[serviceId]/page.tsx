@@ -338,7 +338,7 @@ const ProductsView: React.FC = () => {
               </TabsList>
               <TabsContent value="import" className="pt-4 space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Gagnez du temps. Importez votre catalogue depuis un fichier (Excel, etc.) ou une simple photo de votre menu. Notre IA s'occupe de tout.
+                    Gagnez du temps. Importez votre catalogue depuis un fichier (Excel, etc.) ou une simple photo de votre menu. Notre IA s'occupe de tout.
                 </p>
                 <MenuSyncForm />
               </TabsContent>
@@ -391,6 +391,8 @@ const ReservationsView: React.FC = () => {
     const [reservations, setReservations] = useState(initialReservations);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
     const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
+    const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
+    const [syncPopupTab, setSyncPopupTab] = useState('import');
     const [editedItem, setEditedItem] = useState<Partial<ReservableItem> | null>(null);
 
     const handleNewItem = () => {
@@ -400,6 +402,7 @@ const ReservationsView: React.FC = () => {
             status: 'active',
         });
         setIsItemDialogOpen(true);
+        setIsSyncPopupOpen(false);
     };
 
     const handleEditItem = (item: ReservableItem) => {
@@ -567,7 +570,28 @@ const ReservationsView: React.FC = () => {
                         </CardHeader>
                         <CardContent>
                             <div className="mb-4 text-right">
-                                <Button onClick={handleNewItem}><PlusCircle className="mr-2 h-4 w-4" /> Ajouter une prestation</Button>
+                                <Dialog open={isSyncPopupOpen} onOpenChange={setIsSyncPopupOpen}>
+                                    <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4" />Ajouter / Synchroniser</Button></DialogTrigger>
+                                    <DialogContent className="sm:max-w-lg">
+                                        <DialogHeader><DialogTitle>Création de Prestations</DialogTitle></DialogHeader>
+                                        <Tabs value={syncPopupTab} onValueChange={setSyncPopupTab} className="pt-2">
+                                        <TabsList className="grid w-full grid-cols-2">
+                                            <TabsTrigger value="import">Importer</TabsTrigger>
+                                            <TabsTrigger value="prestation">Prestation</TabsTrigger>
+                                        </TabsList>
+                                        <TabsContent value="import" className="pt-4 space-y-4">
+                                            <p className="text-sm text-muted-foreground">
+                                            Gagnez du temps. Importez vos prestations depuis une brochure, un flyer ou un fichier. Notre IA s'occupe de tout.
+                                            </p>
+                                            <MenuSyncForm />
+                                        </TabsContent>
+                                        <TabsContent value="prestation" className="pt-4 space-y-4">
+                                            <p className="text-sm text-muted-foreground">Idéal pour ajouter une prestation rapidement. Configurez toutes les options manuellement pour un contrôle total.</p>
+                                            <Button className="w-full" onClick={handleNewItem}><PlusCircle className="mr-2 h-4 w-4"/>Créer une nouvelle prestation</Button>
+                                        </TabsContent>
+                                        </Tabs>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                             <div className="rounded-md border">
                                 <Table>
@@ -737,7 +761,7 @@ export default function ServiceDetailPage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-8">
+    <div className="space-y-4 md:space-y-6">
       <header className="mb-4">
         <Button variant="ghost" onClick={() => router.push('/restaurant/services')} className="-ml-4 mb-2">
             <ArrowLeft className="mr-2 h-4 w-4" />
