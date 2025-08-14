@@ -50,7 +50,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -190,7 +190,7 @@ const initialCatalogItems: CatalogItem[] = [
 
 
 //======= RESERVATIONS-SPECIFIC DATA STRUCTURES =======//
-type PricingModel = 'fixed' | 'per_hour';
+type PricingModel = 'fixed' | 'per_hour' | 'per_day' | 'per_unit';
 
 type PriceOption = {
   id: string;
@@ -200,7 +200,9 @@ type PriceOption = {
 
 type Pricing = {
   model: PricingModel;
-  basePrice: number;
+  basePrice?: number;
+  unitName?: string;
+  perUnitPrice?: number;
   options?: PriceOption[];
 };
 
@@ -208,7 +210,7 @@ type ReservableItem = {
     id: string;
     name: string;
     description: string;
-    duration: number; // in minutes
+    duration?: number; // in minutes, optional now
     pricing: Pricing;
     availability: Availability;
     status: 'active' | 'inactive';
@@ -233,7 +235,8 @@ const initialReservations: Reservation[] = [
 const initialReservableItems: ReservableItem[] = [
     { id: 'res-item-1', name: 'Location Salle "Prestige"', description: 'Notre plus grande salle pour vos événements corporatifs ou privés. Capacité 100 personnes.', duration: 240, pricing: { model: 'fixed', basePrice: 500, options: [{id: 'opt-1', name: 'Nettoyage inclus', price: 150}] }, availability: defaultAvailability, status: 'active' },
     { id: 'res-item-2', name: 'Consultation Décorateur', description: 'Une heure de consultation avec notre décorateur floral pour votre événement.', duration: 60, pricing: { model: 'per_hour', basePrice: 80 }, availability: defaultAvailability, status: 'active' },
-    { id: 'res-item-3', name: 'Location Porsche 911', description: 'Vivez une expérience inoubliable au volant d\'une voiture de légende.', duration: 1440, pricing: { model: 'fixed', basePrice: 950 }, availability: defaultAvailability, status: 'active' },
+    { id: 'res-item-3', name: 'Location Porsche 911', description: 'Vivez une expérience inoubliable au volant d\'une voiture de légende.', duration: 1440, pricing: { model: 'per_day', basePrice: 950 }, availability: defaultAvailability, status: 'active' },
+    { id: 'res-item-4', name: 'Trajet VTC', description: 'Service de transport avec chauffeur.', pricing: { model: 'per_unit', unitName: 'km', perUnitPrice: 2.5, basePrice: 10 }, availability: defaultAvailability, status: 'active' },
 ];
 
 //======= DYNAMIC COMPONENTS =======//
@@ -406,7 +409,7 @@ const ReservationsView: React.FC = () => {
             id: editedItem.id || `res-item-${Date.now()}`,
             name: editedItem.name,
             description: editedItem.description || '',
-            duration: editedItem.duration || 60,
+            duration: editedItem.duration || undefined,
             pricing: editedItem.pricing || { model: 'fixed', basePrice: 0 },
             availability: editedItem.availability || defaultAvailability,
             status: editedItem.status || 'active',
@@ -423,7 +426,21 @@ const ReservationsView: React.FC = () => {
     }, [reservations, selectedDate]);
 
     const handlePricingChange = <T extends keyof Pricing>(field: T, value: Pricing[T]) => {
-        setEditedItem(prev => prev ? { ...prev, pricing: { ...prev.pricing!, [field]: value } } : null);
+        setEditedItem(prev => {
+            if (!prev) return null;
+            const newPricing = { ...(prev.pricing || { model: 'fixed' }), [field]: value };
+            // Reset fields that are not relevant for the new model
+            if (field === 'model') {
+                if (value !== 'per_unit') {
+                    delete newPricing.unitName;
+                    delete newPricing.perUnitPrice;
+                }
+                if (value === 'per_unit') {
+                     delete newPricing.basePrice;
+                }
+            }
+            return { ...prev, pricing: newPricing };
+        });
     };
     
     const handleOptionChange = (index: number, field: keyof PriceOption, value: string | number) => {
@@ -453,12 +470,25 @@ const ReservationsView: React.FC = () => {
     };
 
     const getPriceDisplay = (item: ReservableItem) => {
-        let text = `${item.pricing.basePrice.toFixed(2)}€`;
-        if (item.pricing.model === 'per_hour') {
-            text += ' / h';
+        let text = '';
+        const price = item.pricing.basePrice;
+
+        switch(item.pricing.model) {
+            case 'fixed':
+            case 'per_hour':
+            case 'per_day':
+                text = `${(price || 0).toFixed(2)}€`;
+                if (item.pricing.model === 'per_hour') text += ' / h';
+                if (item.pricing.model === 'per_day') text += ' / jour';
+                break;
+            case 'per_unit':
+                text = `${(item.pricing.perUnitPrice || 0).toFixed(2)}€ / ${item.pricing.unitName || 'unité'}`;
+                if (price) text = `${price.toFixed(2)}€ + ${text}`;
+                break;
         }
+
         if (item.pricing.options && item.pricing.options.length > 0) {
-            text = `À partir de ${text}`;
+            return `À partir de ${text}`;
         }
         return text;
     };
@@ -546,7 +576,7 @@ const ReservationsView: React.FC = () => {
                                         {reservableItems.map(item => (
                                             <TableRow key={item.id}>
                                                 <TableCell className="font-medium">{item.name}</TableCell>
-                                                <TableCell>{item.duration} min</TableCell>
+                                                <TableCell>{item.duration ? `${item.duration} min` : 'N/A'}</TableCell>
                                                 <TableCell>{getPriceDisplay(item)}</TableCell>
                                                 <TableCell><Badge variant={item.status === 'active' ? 'default' : 'secondary'} className={item.status === 'active' ? 'bg-green-100 text-green-700' : ''}>{item.status}</Badge></TableCell>
                                                 <TableCell className="text-right">
@@ -588,28 +618,45 @@ const ReservationsView: React.FC = () => {
                                 <CardTitle className="text-base">Tarification</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Modèle de tarification</Label>
-                                    <Select value={editedItem?.pricing?.model} onValueChange={(v: PricingModel) => handlePricingChange('model', v)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="fixed">Prix Fixe</SelectItem>
-                                            <SelectItem value="per_hour">Prix Par Heure</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
                                 <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Modèle de tarification</Label>
+                                        <Select value={editedItem?.pricing?.model} onValueChange={(v: PricingModel) => handlePricingChange('model', v)}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="fixed">Prix Fixe</SelectItem>
+                                                <SelectItem value="per_hour">Prix Par Heure</SelectItem>
+                                                <SelectItem value="per_day">Prix Par Jour</SelectItem>
+                                                <SelectItem value="per_unit">Prix Par Unité</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label htmlFor="item-duration">Durée par défaut (minutes)</Label>
+                                        <Input id="item-duration" type="number" value={editedItem?.duration || ''} onChange={e => setEditedItem(p => ({...p, duration: parseInt(e.target.value) || undefined}))}/>
+                                    </div>
+                                </div>
+                                {editedItem?.pricing?.model !== 'per_unit' ? (
                                     <div className="space-y-2">
                                         <Label htmlFor="item-price">Prix de base (€)</Label>
                                         <Input id="item-price" type="number" value={editedItem?.pricing?.basePrice || ''} onChange={e => handlePricingChange('basePrice', parseFloat(e.target.value) || 0)}/>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="item-duration">Durée (minutes)</Label>
-                                        <Input id="item-duration" type="number" value={editedItem?.duration || ''} onChange={e => setEditedItem(p => ({...p, duration: parseInt(e.target.value)}))}/>
+                                ) : (
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2 col-span-1">
+                                            <Label>Prix de base (€)</Label>
+                                            <Input type="number" placeholder="Facultatif" value={editedItem?.pricing?.basePrice || ''} onChange={e => handlePricingChange('basePrice', parseFloat(e.target.value) || undefined)}/>
+                                        </div>
+                                        <div className="space-y-2 col-span-1">
+                                            <Label>Nom de l'unité</Label>
+                                            <Input placeholder="km, heure, etc." value={editedItem?.pricing?.unitName || ''} onChange={e => handlePricingChange('unitName', e.target.value)}/>
+                                        </div>
+                                        <div className="space-y-2 col-span-1">
+                                            <Label>Prix / unité (€)</Label>
+                                            <Input type="number" value={editedItem?.pricing?.perUnitPrice || ''} onChange={e => handlePricingChange('perUnitPrice', parseFloat(e.target.value) || 0)}/>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                                 <Separator />
                                 <div>
                                     <Label>Options supplémentaires (facultatif)</Label>
