@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building, Sparkles, BookOpen, BrainCircuit, ConciergeBell } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Clock, Upload, Utensils, Zap, Link as LinkIcon, CheckCircle, XCircle, BadgeEuro, X, Printer, Cog, TestTube2, Network, MessageCircle, TabletSmartphone, Copy, FileText, Bot, PhoneCall, PhoneForwarded, Car, Coffee, Building, Sparkles, BookOpen, BrainCircuit, ConciergeBell, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -42,19 +42,17 @@ type TaxRate = {
 type PrinterDevice = {
     id: string;
     name: string;
-    role: 'kitchen' | 'receipt';
     width: '58mm' | '80mm';
     connectionType: 'network' | 'usb';
     ipAddress?: string;
     port?: string;
 };
 
-type KDSConnection = {
-    id: string;
-    name: string;
-    connectionCode: string;
-    lastSeen: string;
-}
+type NotificationConfig = {
+    enabled: boolean;
+    email?: string;
+    whatsapp?: string;
+};
 
 type ServiceType = 'products' | 'reservations' | 'consultation';
 
@@ -69,7 +67,7 @@ type Store = {
     currency: 'EUR' | 'USD' | 'TND';
     taxRates: TaxRate[];
     printers?: PrinterDevice[];
-    kdsConnections?: KDSConnection[];
+    notifications: NotificationConfig;
     telnyxNumber?: string;
     telnyxConfigured?: boolean;
     serviceId?: string;
@@ -88,7 +86,7 @@ const initialStores: Store[] = [
         whatsappNumber: '+33612345678',
         taxRates: [],
         printers: [],
-        kdsConnections: [],
+        notifications: { enabled: true, email: 'contact@gourmet.fr', whatsapp: '+33612345678'},
         telnyxNumber: '+33987654321',
         telnyxConfigured: true,
         serviceId: 'service-1',
@@ -103,6 +101,7 @@ const initialStores: Store[] = [
         stripeStatus: 'connected',
         currency: 'EUR',
         taxRates: [],
+        notifications: { enabled: false },
         serviceType: 'reservations',
         telnyxConfigured: true,
     },
@@ -115,6 +114,7 @@ const initialStores: Store[] = [
         stripeStatus: 'disconnected',
         currency: 'EUR',
         taxRates: [],
+        notifications: { enabled: true, email: 'contact@avocats.fr' },
         serviceType: 'consultation',
         telnyxConfigured: false,
     },
@@ -127,6 +127,7 @@ const initialStores: Store[] = [
         stripeStatus: 'disconnected',
         currency: 'EUR',
         taxRates: [],
+        notifications: { enabled: false },
         serviceType: 'reservations',
         telnyxConfigured: false,
     },
@@ -141,7 +142,7 @@ const WIZARD_STEPS = [
     { id: 'serviceType', title: { fr: "Type d'activité", en: 'Business Type' } },
     { id: 'general', title: { fr: 'Infos Générales', en: 'General Info' } },
     { id: 'opening', title: { fr: 'Horaires', en: 'Opening Hours' } },
-    { id: 'taxes', title: { fr: 'Taxes & Services', en: 'Taxes & Services' } },
+    { id: 'taxes', title: { fr: 'Taxes & Notifications', en: 'Taxes & Notifications' } },
     { id: 'peripherals', title: { fr: 'Périphériques', en: 'Peripherals' } },
     { id: 'voice', title: { fr: 'Configuration Vocale', en: 'Voice Setup' } },
     { id: 'finish', title: { fr: 'Finalisation', en: 'Finalization' } },
@@ -161,7 +162,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
             currency: 'EUR',
             taxRates: [],
             printers: [],
-            kdsConnections: [],
+            notifications: { enabled: true },
             telnyxConfigured: false,
         }
     );
@@ -182,6 +183,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     const handleInputChange = (field: keyof Store, value: any) => {
         setEditableStore(prev => ({ ...prev, [field]: value }));
     };
+
+    const handleNotificationChange = (field: keyof NotificationConfig, value: any) => {
+        const currentNotifications = editableStore.notifications || { enabled: false };
+        handleInputChange('notifications', { ...currentNotifications, [field]: value });
+    }
 
     const handleServiceTypeSelection = (type: ServiceType) => {
         handleInputChange('serviceType', type);
@@ -221,7 +227,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     };
 
     const addPrinter = () => {
-        const newPrinters = [...(editableStore.printers || []), { id: `printer_${Date.now()}`, name: t({ fr: 'Nouvelle imprimante', en: 'New Printer' }), role: 'receipt', width: '80mm', connectionType: 'network' }];
+        const newPrinters = [...(editableStore.printers || []), { id: `printer_${Date.now()}`, name: t({ fr: 'Nouvelle imprimante', en: 'New Printer' }), width: '80mm', connectionType: 'network' }];
         handleInputChange('printers', newPrinters);
     };
 
@@ -229,23 +235,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         const newPrinters = (editableStore.printers || []).filter((_, i) => i !== index);
         handleInputChange('printers', newPrinters);
     };
-
-    const handleKDSChange = (index: number, field: keyof KDSConnection, value: string) => {
-        const newKDS = [...(editableStore.kdsConnections || [])];
-        (newKDS[index] as any)[field] = value;
-        handleInputChange('kdsConnections', newKDS);
-    };
-
-    const addKDS = () => {
-        const newCode = `${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        const newKDSs = [...(editableStore.kdsConnections || []), { id: `kds_${Date.now()}`, name: t({ fr: 'Nouvelle tablette', en: 'New Tablet' }), connectionCode: newCode, lastSeen: t({ fr: 'Jamais vu', en: 'Never seen' }) }];
-        handleInputChange('kdsConnections', newKDSs);
-    }
-
-    const removeKDS = (index: number) => {
-        const newKDSs = (editableStore.kdsConnections || []).filter((_, i) => i !== index);
-        handleInputChange('kdsConnections', newKDSs);
-    }
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -266,7 +255,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         startConfig: { fr: 'Commencer la configuration', en: 'Start Configuration' },
         general: { fr: "Général", en: "General" },
         openingHours: { fr: "Horaires", en: "Hours" },
-        taxes: { fr: "Taxes", en: "Taxes" },
+        taxes: { fr: "Taxes & Notifications", en: "Taxes & Notifications" },
         peripherals: { fr: "Périphériques", en: "Peripherals" },
         activityTypeTitle: { fr: "Quel est le cœur de votre métier ?", en: "What is the core of your business?" },
         activityTypeDescription: { fr: "Ce choix déterminera les outils de configuration disponibles.", en: "This choice will determine the available configuration tools." },
@@ -286,6 +275,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         rate: { fr: "Taux", en: "Rate" },
         default: { fr: "Défaut", en: "Default" },
         addVatRate: { fr: "Ajouter un taux de TVA", en: "Add a VAT rate" },
+        notifications: { fr: "Notifications", en: "Notifications" },
+        notificationsDesc: { fr: "Soyez prévenu des nouvelles demandes.", en: "Be notified of new requests." },
+        enableNotifications: { fr: "Activer les notifications", en: "Enable notifications" },
+        notificationEmail: { fr: "Email de notification", en: "Notification Email" },
+        notificationWhatsapp: { fr: "N° WhatsApp de notification", en: "Notification WhatsApp No." },
         connectionsTitle: { fr: 'Connexions & Services', en: 'Connections & Services' },
         endCustomerPayments: { fr: "Paiements des clients finaux", en: "End-customer payments" },
         stripeDescription: { fr: "Permet à vos clients de payer leurs commandes/réservations en ligne. L'argent est directement versé sur votre compte Stripe.", en: "Allows your customers to pay for their orders/reservations online. The money is paid directly into your Stripe account." },
@@ -293,10 +287,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         planProRequired: { fr: 'Plan Pro requis', en: 'Pro Plan required' },
         messagingDescription: { fr: "Utilisé pour les demandes de preuve (Plan Pro et +).", en: "Used for proof requests (Pro Plan and up)." },
         whatsappNumber: { fr: "Numéro WhatsApp de l'activité", en: "Activity's WhatsApp number" },
-        printerManagement: { fr: "Gestion des imprimantes", en: "Printer Management" },
-        role: { fr: "Rôle", en: "Role" },
-        receipt: { fr: "Ticket de caisse", en: "Receipt" },
-        kitchenTicket: { fr: "Ticket de cuisine", en: "Kitchen ticket" },
+        printerManagement: { fr: "Gestion des imprimantes de tickets", en: "Receipt Printer Management" },
         width: { fr: "Largeur", en: "Width" },
         connectionType: { fr: "Type de connexion", en: "Connection Type" },
         networkIp: { fr: "Réseau (IP)", en: "Network (IP)" },
@@ -304,12 +295,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         ipAddress: { fr: "Adresse IP", en: "IP Address" },
         port: { fr: "Port", en: "Port" },
         addPrinter: { fr: "Ajouter une imprimante", en: "Add a printer" },
-        kdsConnections: { fr: 'Connexions KDS', en: 'KDS Connections' },
-        kdsDescription: { fr: "Connectez vos tablettes de cuisine (KDS) pour recevoir les commandes en temps réel.", en: "Connect your kitchen display systems (KDS) to receive orders in real time." },
-        deviceName: { fr: "Nom de l'appareil", en: "Device Name" },
-        connectionCode: { fr: "Code de connexion", en: "Connection Code" },
-        lastSeen: { fr: "Dernière connexion", en: "Last seen" },
-        addKDS: { fr: "Ajouter un KDS", en: "Add a KDS" },
         telnyxTitle: { fr: "Activez la réception des appels", en: "Activate call reception" },
         telnyxDescription: { fr: "Pour que notre IA puisse répondre à vos clients, vous devez rediriger les appels de votre ligne principale vers le numéro que nous avons créé pour vous.", en: "For our AI to be able to answer your customers, you must forward calls from your main line to the number we have created for you." },
         telnyxNumberLabel: { fr: "Votre numéro vocal", en: "Your voice number" },
@@ -477,27 +462,34 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                     </div>
                                 </CardContent>
                             </Card>
-                             <Card>
+                            <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4"/> {t(translations.connectionsTitle)}</CardTitle>
+                                    <CardTitle className="text-base flex items-center gap-2"><MessageCircle className="h-4 w-4"/> {t(translations.notifications)}</CardTitle>
+                                    <CardDescription>{t(translations.notificationsDesc)}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                     <div className={cn("p-4 rounded-md", currentUserPlan === 'starter' ? "bg-muted/50" : "")}>
-                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                            <div>
-                                                <h4 className="font-semibold text-sm">{t(translations.endCustomerPayments)} (Stripe)</h4>
-                                                <p className="text-xs text-muted-foreground">{t(translations.stripeDescription)}</p>
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="notifications-enabled" checked={editableStore.notifications?.enabled} onCheckedChange={(checked) => handleNotificationChange('enabled', checked)} />
+                                        <Label htmlFor="notifications-enabled">{t(translations.enableNotifications)}</Label>
+                                    </div>
+                                    {editableStore.notifications?.enabled && (
+                                        <div className="space-y-4 pl-8">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="notification-email">{t(translations.notificationEmail)}</Label>
+                                                <div className="relative">
+                                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <Input id="notification-email" type="email" placeholder="contact@mondomaine.com" className="pl-10" value={editableStore.notifications?.email || ''} onChange={(e) => handleNotificationChange('email', e.target.value)} />
+                                                </div>
                                             </div>
-                                             <Button type="button" variant="outline" size="sm" disabled={currentUserPlan === 'starter'} className="w-full sm:w-auto mt-2 sm:mt-0">{t(translations.connectStripe)}</Button>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="notification-whatsapp">{t(translations.notificationWhatsapp)}</Label>
+                                                <div className="relative">
+                                                    <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <Input id="notification-whatsapp" type="tel" placeholder="+33612345678" className="pl-10" value={editableStore.notifications?.whatsapp || ''} onChange={(e) => handleNotificationChange('whatsapp', e.target.value)} />
+                                                </div>
+                                            </div>
                                         </div>
-                                        {currentUserPlan === 'starter' && <Badge variant="secondary" className="mt-2">{t(translations.planProRequired)}</Badge>}
-                                    </div>
-                                    <div className={cn("p-4 rounded-md", currentUserPlan === 'starter' ? "bg-muted/50" : "")}>
-                                        <h4 className="font-semibold text-sm">Messaging (WhatsApp)</h4>
-                                        <p className="text-xs text-muted-foreground mb-2">{t(translations.messagingDescription)}</p>
-                                        <Input disabled={currentUserPlan === 'starter'} placeholder={t(translations.whatsappNumber)} />
-                                        {currentUserPlan === 'starter' && <Badge variant="secondary" className="mt-2">{t(translations.planProRequired)}</Badge>}
-                                    </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
@@ -521,16 +513,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                       </CardHeader>
                                       <CardContent className="p-4 pt-0 space-y-4">
                                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                              <div>
-                                                  <Label className="text-xs">{t(translations.role)}</Label>
-                                                   <Select value={printer.role} onValueChange={(value) => handlePrinterChange(index, 'role', value)}>
-                                                      <SelectTrigger><SelectValue /></SelectTrigger>
-                                                      <SelectContent>
-                                                        <SelectItem value="receipt">{t(translations.receipt)}</SelectItem>
-                                                        <SelectItem value="kitchen">{t(translations.kitchenTicket)}</SelectItem>
-                                                      </SelectContent>
-                                                  </Select>
-                                              </div>
                                                <div>
                                                   <Label className="text-xs">{t(translations.width)}</Label>
                                                   <Select value={printer.width} onValueChange={(value) => handlePrinterChange(index, 'width', value)}>
@@ -541,16 +523,16 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                                       </SelectContent>
                                                   </Select>
                                               </div>
-                                          </div>
-                                          <div>
-                                             <Label className="text-xs">{t(translations.connectionType)}</Label>
-                                             <Select value={printer.connectionType} onValueChange={(value) => handlePrinterChange(index, 'connectionType', value)}>
-                                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                                  <SelectContent>
-                                                    <SelectItem value="network">{t(translations.networkIp)}</SelectItem>
-                                                    <SelectItem value="usb">{t(translations.usbOther)}</SelectItem>
-                                                  </SelectContent>
-                                              </Select>
+                                              <div>
+                                                <Label className="text-xs">{t(translations.connectionType)}</Label>
+                                                <Select value={printer.connectionType} onValueChange={(value) => handlePrinterChange(index, 'connectionType', value)}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="network">{t(translations.networkIp)}</SelectItem>
+                                                        <SelectItem value="usb">{t(translations.usbOther)}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                           </div>
                                           {printer.connectionType === 'network' && (
                                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -570,42 +552,6 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                   <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addPrinter}>
                                       <Printer className="mr-2 h-4 w-4"/> {t(translations.addPrinter)}
                                   </Button>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base flex items-center gap-2"><TabletSmartphone className="h-4 w-4"/> {t(translations.kdsConnections)}</CardTitle>
-                                    <CardDescription>{t(translations.kdsDescription)}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    {(editableStore.kdsConnections || []).map((kds, index) => (
-                                        <Card key={kds.id} className="bg-muted/50 p-3">
-                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                                                <div className="sm:col-span-5 space-y-1">
-                                                    <Label className="text-xs">{t(translations.deviceName)}</Label>
-                                                    <Input className="h-8 bg-background" defaultValue={kds.name} onChange={(e) => handleKDSChange(index, 'name', e.target.value)} />
-                                                </div>
-                                                <div className="sm:col-span-5 space-y-1">
-                                                    <Label className="text-xs">{t(translations.connectionCode)}</Label>
-                                                    <div className="flex">
-                                                        <Input className="h-8 rounded-r-none font-mono bg-background" value={kds.connectionCode} readOnly />
-                                                        <Button type="button" size="icon" className="h-8 w-8 rounded-l-none" onClick={() => copyToClipboard(kds.connectionCode)}>
-                                                            <Copy className="h-4 w-4"/>
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                                <div className="sm:col-span-2 text-right">
-                                                     <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeKDS(index)}>
-                                                        <X className="h-4 w-4"/>
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-1">{t(translations.lastSeen)}: {kds.lastSeen}</p>
-                                        </Card>
-                                    ))}
-                                    <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={addKDS}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> {t(translations.addKDS)}
-                                    </Button>
                                 </CardContent>
                             </Card>
                         </div>
@@ -831,7 +777,7 @@ export default function StoresPage() {
         areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
         deleteConfirmation: { fr: "Cette action est irréversible. L'activité et toutes ses données associées seront définitivement supprimées.", en: "This action is irreversible. The activity and all associated data will be permanently deleted." },
         cancel: { fr: "Annuler", en: "Cancel" },
-        manageService: { fr: "Gérer", en: "Manage" },
+        manage: { fr: "Gérer", en: "Manage" },
     };
 
     return (
@@ -910,7 +856,7 @@ export default function StoresPage() {
                          <CardFooter>
                             <Button className="w-full" onClick={() => handleManageService(store)}>
                                 <BookOpen className="mr-2 h-4 w-4" />
-                                {t(translations.manageService)}
+                                {t(translations.manage)}
                             </Button>
                         </CardFooter>
                     </Card>

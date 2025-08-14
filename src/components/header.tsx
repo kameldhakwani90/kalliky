@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -11,7 +12,6 @@ export function Header() {
 
   const loginLabel = { fr: "Connexion", en: "Log In" };
   const signupLabel = { fr: "S'inscrire", en: "Sign Up" };
-  const kdsLabel = { fr: "Accès KDS", en: "KDS Access" };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,9 +28,6 @@ export function Header() {
             </Button>
             <Button asChild>
               <Link href="/signup">{t(signupLabel)}</Link>
-            </Button>
-             <Button variant="outline" asChild>
-              <Link href="/kds">{t(kdsLabel)}</Link>
             </Button>
           </nav>
         </div>

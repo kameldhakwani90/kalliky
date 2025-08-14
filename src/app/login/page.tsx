@@ -37,7 +37,7 @@ export default function LoginPage() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              Pour accéder au système de cuisine (KDS), utilisez le lien dédié.
+              Pour accéder au système de caisse, utilisez le lien dédié.
             </p>
           </CardFooter>
         </Card>
