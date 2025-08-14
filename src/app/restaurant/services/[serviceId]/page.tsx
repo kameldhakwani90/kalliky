@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -49,7 +50,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -189,16 +190,29 @@ const initialCatalogItems: CatalogItem[] = [
 
 
 //======= RESERVATIONS-SPECIFIC DATA STRUCTURES =======//
+type PricingModel = 'fixed' | 'per_hour';
+
+type PriceOption = {
+  id: string;
+  name: string;
+  price: number;
+};
+
+type Pricing = {
+  model: PricingModel;
+  basePrice: number;
+  options?: PriceOption[];
+};
 
 type ReservableItem = {
     id: string;
     name: string;
     description: string;
     duration: number; // in minutes
-    price: number;
+    pricing: Pricing;
     availability: Availability;
     status: 'active' | 'inactive';
-}
+};
 
 type Reservation = {
     id: string;
@@ -207,7 +221,7 @@ type Reservation = {
     startTime: Date;
     endTime: Date;
     status: 'confirmed' | 'pending' | 'cancelled';
-}
+};
 
 const today = new Date();
 const initialReservations: Reservation[] = [
@@ -217,9 +231,9 @@ const initialReservations: Reservation[] = [
 ];
 
 const initialReservableItems: ReservableItem[] = [
-    { id: 'res-item-1', name: 'Location Salle "Prestige"', description: 'Notre plus grande salle pour vos événements corporatifs ou privés. Capacité 100 personnes.', duration: 240, price: 500, availability: defaultAvailability, status: 'active' },
-    { id: 'res-item-2', name: 'Consultation Décorateur', description: 'Une heure de consultation avec notre décorateur floral pour votre événement.', duration: 60, price: 80, availability: defaultAvailability, status: 'active' },
-    { id: 'res-item-3', name: 'Location Porsche 911', description: 'Vivez une expérience inoubliable au volant d\'une voiture de légende.', duration: 1440, price: 950, availability: defaultAvailability, status: 'active' },
+    { id: 'res-item-1', name: 'Location Salle "Prestige"', description: 'Notre plus grande salle pour vos événements corporatifs ou privés. Capacité 100 personnes.', duration: 240, pricing: { model: 'fixed', basePrice: 500, options: [{id: 'opt-1', name: 'Nettoyage inclus', price: 150}] }, availability: defaultAvailability, status: 'active' },
+    { id: 'res-item-2', name: 'Consultation Décorateur', description: 'Une heure de consultation avec notre décorateur floral pour votre événement.', duration: 60, pricing: { model: 'per_hour', basePrice: 80 }, availability: defaultAvailability, status: 'active' },
+    { id: 'res-item-3', name: 'Location Porsche 911', description: 'Vivez une expérience inoubliable au volant d\'une voiture de légende.', duration: 1440, pricing: { model: 'fixed', basePrice: 950 }, availability: defaultAvailability, status: 'active' },
 ];
 
 //======= DYNAMIC COMPONENTS =======//
@@ -369,12 +383,16 @@ const ReservationsView: React.FC = () => {
     const [editedItem, setEditedItem] = useState<Partial<ReservableItem> | null>(null);
 
     const handleNewItem = () => {
-        setEditedItem({});
+        setEditedItem({
+            pricing: { model: 'fixed', basePrice: 0, options: [] },
+            availability: defaultAvailability,
+            status: 'active',
+        });
         setIsItemDialogOpen(true);
     };
 
     const handleEditItem = (item: ReservableItem) => {
-        setEditedItem(item);
+        setEditedItem(JSON.parse(JSON.stringify(item))); // Deep copy
         setIsItemDialogOpen(true);
     };
 
@@ -389,7 +407,7 @@ const ReservationsView: React.FC = () => {
             name: editedItem.name,
             description: editedItem.description || '',
             duration: editedItem.duration || 60,
-            price: editedItem.price || 0,
+            pricing: editedItem.pricing || { model: 'fixed', basePrice: 0 },
             availability: editedItem.availability || defaultAvailability,
             status: editedItem.status || 'active',
         };
@@ -404,6 +422,48 @@ const ReservationsView: React.FC = () => {
         return reservations.filter(r => selectedDate && isSameDay(r.startTime, selectedDate));
     }, [reservations, selectedDate]);
 
+    const handlePricingChange = <T extends keyof Pricing>(field: T, value: Pricing[T]) => {
+        setEditedItem(prev => prev ? { ...prev, pricing: { ...prev.pricing!, [field]: value } } : null);
+    };
+    
+    const handleOptionChange = (index: number, field: keyof PriceOption, value: string | number) => {
+        setEditedItem(prev => {
+            if (!prev || !prev.pricing || !prev.pricing.options) return prev;
+            const newOptions = [...prev.pricing.options];
+            (newOptions[index] as any)[field] = value;
+            return { ...prev, pricing: { ...prev.pricing, options: newOptions } };
+        });
+    };
+
+    const addOption = () => {
+        setEditedItem(prev => {
+            if (!prev || !prev.pricing) return prev;
+            const newOption: PriceOption = { id: `opt-${Date.now()}`, name: '', price: 0 };
+            const options = [...(prev.pricing.options || []), newOption];
+            return { ...prev, pricing: { ...prev.pricing, options } };
+        });
+    };
+
+    const removeOption = (index: number) => {
+        setEditedItem(prev => {
+             if (!prev || !prev.pricing || !prev.pricing.options) return prev;
+             const options = prev.pricing.options.filter((_, i) => i !== index);
+             return { ...prev, pricing: { ...prev.pricing, options } };
+        });
+    };
+
+    const getPriceDisplay = (item: ReservableItem) => {
+        let text = `${item.pricing.basePrice.toFixed(2)}€`;
+        if (item.pricing.model === 'per_hour') {
+            text += ' / h';
+        }
+        if (item.pricing.options && item.pricing.options.length > 0) {
+            text = `À partir de ${text}`;
+        }
+        return text;
+    };
+
+
     return (
         <>
             <Tabs defaultValue="calendar">
@@ -413,7 +473,7 @@ const ReservationsView: React.FC = () => {
                 </TabsList>
                 <TabsContent value="calendar">
                     <Card>
-                        <CardContent className="p-4 grid md:grid-cols-3 gap-6">
+                        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="md:col-span-1">
                                 <ShadcnCalendar
                                     mode="single"
@@ -487,7 +547,7 @@ const ReservationsView: React.FC = () => {
                                             <TableRow key={item.id}>
                                                 <TableCell className="font-medium">{item.name}</TableCell>
                                                 <TableCell>{item.duration} min</TableCell>
-                                                <TableCell>{item.price.toFixed(2)}€</TableCell>
+                                                <TableCell>{getPriceDisplay(item)}</TableCell>
                                                 <TableCell><Badge variant={item.status === 'active' ? 'default' : 'secondary'} className={item.status === 'active' ? 'bg-green-100 text-green-700' : ''}>{item.status}</Badge></TableCell>
                                                 <TableCell className="text-right">
                                                     <DropdownMenu>
@@ -509,11 +569,11 @@ const ReservationsView: React.FC = () => {
             </Tabs>
 
             <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editedItem?.id ? 'Modifier la prestation' : 'Nouvelle prestation réservable'}</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto px-1">
                         <div className="space-y-2">
                             <Label htmlFor="item-name">Nom de la prestation</Label>
                             <Input id="item-name" value={editedItem?.name || ''} onChange={e => setEditedItem(p => ({...p, name: e.target.value}))}/>
@@ -522,22 +582,59 @@ const ReservationsView: React.FC = () => {
                             <Label htmlFor="item-desc">Description</Label>
                             <Textarea id="item-desc" value={editedItem?.description || ''} onChange={e => setEditedItem(p => ({...p, description: e.target.value}))}/>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="item-duration">Durée (minutes)</Label>
-                                <Input id="item-duration" type="number" value={editedItem?.duration || ''} onChange={e => setEditedItem(p => ({...p, duration: parseInt(e.target.value)}))}/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="item-price">Prix (€)</Label>
-                                <Input id="item-price" type="number" value={editedItem?.price || ''} onChange={e => setEditedItem(p => ({...p, price: parseFloat(e.target.value)}))}/>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
+                        
+                        <Card className="bg-muted/50">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-base">Tarification</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Modèle de tarification</Label>
+                                    <Select value={editedItem?.pricing?.model} onValueChange={(v: PricingModel) => handlePricingChange('model', v)}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="fixed">Prix Fixe</SelectItem>
+                                            <SelectItem value="per_hour">Prix Par Heure</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="item-price">Prix de base (€)</Label>
+                                        <Input id="item-price" type="number" value={editedItem?.pricing?.basePrice || ''} onChange={e => handlePricingChange('basePrice', parseFloat(e.target.value) || 0)}/>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="item-duration">Durée (minutes)</Label>
+                                        <Input id="item-duration" type="number" value={editedItem?.duration || ''} onChange={e => setEditedItem(p => ({...p, duration: parseInt(e.target.value)}))}/>
+                                    </div>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <Label>Options supplémentaires (facultatif)</Label>
+                                    <div className="space-y-2 mt-2">
+                                        {editedItem?.pricing?.options?.map((opt, index) => (
+                                            <div key={opt.id} className="flex items-center gap-2">
+                                                <Input placeholder="Nom de l'option" value={opt.name} onChange={(e) => handleOptionChange(index, 'name', e.target.value)} className="flex-1" />
+                                                <Input type="number" placeholder="Prix" value={opt.price} onChange={(e) => handleOptionChange(index, 'price', parseFloat(e.target.value) || 0)} className="w-24" />
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeOption(index)}><Trash className="h-4 w-4" /></Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Button variant="outline" size="sm" className="mt-2 w-full" onClick={addOption}>
+                                        <PackagePlus className="mr-2 h-4 w-4" /> Ajouter une option
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="flex items-center space-x-2 pt-4">
                             <Switch id="item-status" checked={editedItem?.status === 'active'} onCheckedChange={c => setEditedItem(p => ({...p, status: c ? 'active' : 'inactive'}))} />
-                            <Label htmlFor="item-status">Actif</Label>
+                            <Label htmlFor="item-status">Actif (disponible à la réservation)</Label>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="border-t pt-4">
                         <Button variant="outline" onClick={() => setIsItemDialogOpen(false)}>Annuler</Button>
                         <Button onClick={handleSaveItem}>Enregistrer</Button>
                     </DialogFooter>
@@ -545,7 +642,7 @@ const ReservationsView: React.FC = () => {
             </Dialog>
         </>
     );
-}
+};
 
 export default function ServiceDetailPage() {
   const { t } = useLanguage();
@@ -570,13 +667,17 @@ export default function ServiceDetailPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <Button variant="ghost" onClick={() => router.push('/restaurant/services')} className="mb-4">
+      <header className="mb-4">
+        <Button variant="ghost" onClick={() => router.push('/restaurant/services')} className="mb-2 -ml-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour aux services
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
-        <p className="text-muted-foreground">{service.description}</p>
+        <div className="flex items-center justify-between">
+            <div>
+                 <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
+                <p className="text-muted-foreground">{service.description}</p>
+            </div>
+        </div>
       </header>
       
       {service.type === 'products' ? <ProductsView /> : <ReservationsView />}
