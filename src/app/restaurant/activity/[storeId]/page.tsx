@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -44,7 +44,7 @@ type ActivityLog = {
 };
 
 const mockActivities: Record<string, ActivityLog[]> = {
-    "store-1": Array.from({ length: 25 }, (_, i) => ({ id: `#${1025 - i}`, type: 'Commande', customer: `Alice Martin ${i}`, customerId: `cust-${i+1}`, phone: `06123456${78-i}`, date: new Date(2024, 4, 30 - i), amount: `${(24.50 + i * 2).toFixed(2)}€` })),
+    "store-1": Array.from({ length: 25 }, (_, i) => ({ id: `#${1025 - i}`, type: 'Commande', customer: `Alice Martin ${i}`, customerId: `cust-${i+1}`, phone: `06123456${78-i}`, date: new Date(2024, 4, 30 - Math.floor(i/2)), amount: `${(24.50 + i * 2).toFixed(2)}€` })),
     "store-loc": Array.from({ length: 8 }, (_, i) => ({ id: `#R${87 - i}`, type: 'Réservation', customer: `Carlos Sainz ${i}`, customerId: `cust-${30+i}`, phone: `06112233${44-i}`, date: new Date(2024, 4, 30 - i*2), amount: `${(1900 - i * 150).toFixed(2)}€` })),
     "store-4": Array.from({ length: 12 }, (_, i) => ({ id: `#C${12 - i}`, type: 'Consultation', customer: `Mme. Lefevre ${i}`, customerId: `cust-${40+i}`, phone: `01234567${89-i}`, date: new Date(2024, 4, 30 - i*3), amount: 'N/A' })),
     "store-spa": Array.from({ length: 5 }, (_, i) => ({ id: `#S${33-i}`, type: 'Réservation', customer: `Claire Chazal ${i}`, customerId: `cust-${55+i}`, phone: `07556677${88-i}`, date: new Date(2024, 4, 30 - i*5), amount: `${(250 + i * 10).toFixed(2)}€` })),
@@ -73,14 +73,30 @@ export default function StoreActivityPage() {
     
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
     
     const activities = mockActivities[storeId] || [];
-    const totalPages = Math.ceil(activities.length / ITEMS_PER_PAGE);
 
-    const paginatedActivities = activities.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    const filteredActivities = useMemo(() => {
+        return activities.filter(activity => {
+            const dateMatch = !date || format(activity.date, "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
+            const searchMatch = !searchTerm || 
+                activity.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                activity.phone.includes(searchTerm) ||
+                activity.id.toLowerCase().includes(searchTerm.toLowerCase());
+            return dateMatch && searchMatch;
+        });
+    }, [activities, date, searchTerm]);
+    
+    const totalPages = Math.ceil(filteredActivities.length / ITEMS_PER_PAGE);
+
+    const paginatedActivities = useMemo(() => {
+        return filteredActivities.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [filteredActivities, currentPage]);
+
 
     if (!store) {
         return <div>Boutique non trouvée.</div>;
@@ -99,7 +115,7 @@ export default function StoreActivityPage() {
         actions: { fr: "Actions", en: "Actions" },
         view: { fr: "Voir", en: "View" },
         searchPlaceholder: { fr: "Rechercher...", en: "Search..." },
-        chooseDate: { fr: "Choisir une date", en: "Choose a date" },
+        chooseDate: { fr: "Filtrer par date", en: "Filter by date" },
         previous: { fr: "Précédent", en: "Previous" },
         next: { fr: "Suivant", en: "Next" },
         pageOf: { fr: "Page {current} sur {total}", en: "Page {current} of {total}" },
@@ -112,8 +128,13 @@ export default function StoreActivityPage() {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     {t(translations.back)}
                 </Button>
-                <h1 className="text-3xl font-bold tracking-tight">{t(translations.activityTitle)}: {store.name}</h1>
-                <p className="text-muted-foreground">{t(translations.requestsList)}</p>
+                <div className="flex items-center gap-4">
+                    <Icon className="h-8 w-8"/>
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">{t(translations.activityTitle)}: {store.name}</h1>
+                        <p className="text-muted-foreground">{t(translations.requestsList)}</p>
+                    </div>
+                </div>
              </header>
 
              <Card>
@@ -123,7 +144,7 @@ export default function StoreActivityPage() {
                         <div className="flex flex-col sm:flex-row items-center gap-2">
                            <div className="relative flex-1 w-full">
                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder={t(translations.searchPlaceholder)} className="pl-10" />
+                               <Input placeholder={t(translations.searchPlaceholder)} className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                            </div>
                            <Popover>
                                <PopoverTrigger asChild>
@@ -144,7 +165,7 @@ export default function StoreActivityPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t(translations.type)}</TableHead>
+                                    <TableHead>Demande</TableHead>
                                     <TableHead>{t(translations.customer)}</TableHead>
                                     <TableHead className="hidden sm:table-cell">{t(translations.date)}</TableHead>
                                     <TableHead className="hidden md:table-cell">{t(translations.amount)}</TableHead>
@@ -155,16 +176,13 @@ export default function StoreActivityPage() {
                                 {paginatedActivities.map((activity) => (
                                     <TableRow key={activity.id}>
                                         <TableCell>
-                                            <Badge variant="outline" className="flex items-center gap-2 w-fit">
-                                                <Icon className="h-4 w-4" />
-                                                <span>{activity.type}</span>
-                                            </Badge>
+                                            <p className="font-mono text-sm">{activity.id}</p>
                                         </TableCell>
                                         <TableCell>
                                             <p className="font-medium">{activity.customer}</p>
                                             <p className="text-xs text-muted-foreground">{activity.phone}</p>
                                         </TableCell>
-                                        <TableCell className="hidden sm:table-cell">{format(activity.date, "dd/MM/yyyy")}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{format(activity.date, "dd/MM/yyyy HH:mm")}</TableCell>
                                         <TableCell className="hidden md:table-cell">{activity.amount}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="sm" onClick={(e) => {
