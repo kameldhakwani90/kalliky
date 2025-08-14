@@ -629,22 +629,7 @@ export default function ClientProfilePage() {
                     {isEditing ? (
                         <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/>{t(translations.save)}</Button>
                     ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button><Edit className="mr-2 h-4 w-4"/>{t(translations.edit)}</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>{t(translations.devInProgress)}</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {t(translations.editSoon)}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>{t(translations.understood)}</AlertDialogCancel>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/>{t(translations.edit)}</Button>
                     )}
                 </div>
             </header>
