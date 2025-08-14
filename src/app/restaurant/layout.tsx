@@ -30,6 +30,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -89,6 +90,8 @@ export default function RestaurantLayout({
   const pathname = usePathname();
   const { t } = useLanguage();
   const [hasUnreadNotifications, setHasUnreadNotifications] = React.useState(true);
+  const { setOpenMobile } = useSidebar();
+
 
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
@@ -115,9 +118,9 @@ export default function RestaurantLayout({
                   tooltip={t(item.label)}
                   className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground font-semibold"
                 >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{t(item.label)}</span>
+                  <Link href={item.href} onClick={() => setOpenMobile(false)}>
+                    <item.icon className="h-6 w-6" />
+                    <span className="text-base">{t(item.label)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
