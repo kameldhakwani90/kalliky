@@ -392,28 +392,26 @@ export default function RestaurantDashboard() {
                   {recentOrders.map(order => {
                     const customer = customersData[order.customerPhone] || defaultCustomer(order.customerPhone);
                     return (
-                        <div key={order.id} className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                                <Avatar className="hidden h-9 w-9 sm:flex">
-                                    <AvatarFallback>{customer.name ? customer.name.slice(0,2) : customer.phone.slice(-2)}</AvatarFallback>
-                                </Avatar>
-                                <div className="grid gap-1 flex-1 min-w-0">
-                                    <p className="text-sm font-medium leading-none truncate">
-                                        {customer.phone}
-                                        {customer.name && <span className="text-xs text-muted-foreground"> ({customer.name})</span>}
-                                    </p>
-                                    <div className="text-xs text-muted-foreground flex items-center">
-                                      <span>{order.items.length} {t(translations.items)}</span>
-                                      {customer.status && 
-                                          <Badge variant="outline" className={`ml-2 ${customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
-                                          {customer.status === 'Fidèle' ? t(translations.loyal) : t(translations.new)}
-                                          </Badge>}
-                                    </div>
+                        <div key={order.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
+                            <Avatar className="h-9 w-9">
+                                <AvatarFallback>{customer.name ? customer.name.slice(0,2) : customer.phone.slice(-2)}</AvatarFallback>
+                            </Avatar>
+                            <div className="grid gap-1">
+                                <p className="text-sm font-medium leading-none truncate">
+                                    {customer.phone}
+                                    {customer.name && <span className="text-xs text-muted-foreground"> ({customer.name})</span>}
+                                </p>
+                                <div className="text-xs text-muted-foreground flex items-center">
+                                  <span>{order.items.length} {t(translations.items)}</span>
+                                  {customer.status && 
+                                      <Badge variant="outline" className={`ml-2 ${customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
+                                      {customer.status === 'Fidèle' ? t(translations.loyal) : t(translations.new)}
+                                      </Badge>}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                                 <p className="text-sm font-bold w-16 text-right">{order.total.toFixed(2)}€</p>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
+                            <div className="flex items-center gap-1">
+                                <p className="text-sm font-bold w-16 text-right">{order.total.toFixed(2)}€</p>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
                                     <Eye className="h-4 w-4"/>
                                 </Button>
                             </div>
