@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -55,8 +56,6 @@ type KDSConnection = {
     lastSeen: string;
 }
 
-type BusinessType = 'restaurant' | 'coffeeshop' | 'event_hall' | 'car_rental' | 'consulting' | 'wellness';
-
 type ServiceType = 'products' | 'reservations' | 'consultation';
 
 type Store = {
@@ -75,7 +74,6 @@ type Store = {
     telnyxConfigured?: boolean;
     serviceId?: string;
     serviceType: ServiceType;
-    businessType?: BusinessType;
 };
 
 const initialStores: Store[] = [
@@ -140,6 +138,7 @@ const daysOfWeekFr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi
 
 const WIZARD_STEPS = [
     { id: 'welcome', title: { fr: 'Bienvenue', en: 'Welcome' } },
+    { id: 'serviceType', title: { fr: "Type d'activité", en: 'Business Type' } },
     { id: 'general', title: { fr: 'Infos Générales', en: 'General Info' } },
     { id: 'opening', title: { fr: 'Horaires', en: 'Opening Hours' } },
     { id: 'taxes', title: { fr: 'Taxes & Services', en: 'Taxes & Services' } },
@@ -150,67 +149,11 @@ const WIZARD_STEPS = [
 
 const currentUserPlan = 'pro'; // Should be dynamic in a real app
 
-const businessTemplates: Record<BusinessType, { taxRates: Omit<TaxRate, 'id'>[], printers: Omit<PrinterDevice, 'id'>[] }> = {
-    restaurant: {
-        taxRates: [
-            { name: 'À emporter / Réduit', rate: 5.5, isDefault: false },
-            { name: 'Sur place / Intermédiaire', rate: 10, isDefault: true },
-            { name: 'Alcool', rate: 20, isDefault: false },
-        ],
-        printers: [
-            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network', ipAddress: '', port: '' },
-            { name: 'Imprimante Cuisine', role: 'kitchen', width: '58mm', connectionType: 'network', ipAddress: '', port: '' },
-        ]
-    },
-    coffeeshop: {
-        taxRates: [
-            { name: 'TVA Standard', rate: 5.5, isDefault: true },
-        ],
-        printers: [
-            { name: 'Imprimante Caisse', role: 'receipt', width: '80mm', connectionType: 'network', ipAddress: '', port: '' },
-        ]
-    },
-    event_hall: {
-        taxRates: [
-            { name: 'Prestation de service', rate: 20, isDefault: true },
-        ],
-        printers: []
-    },
-    car_rental: {
-        taxRates: [
-            { name: 'TVA Standard', rate: 20, isDefault: true },
-        ],
-        printers: []
-    },
-    consulting: {
-        taxRates: [
-            { name: 'TVA Standard', rate: 20, isDefault: true },
-        ],
-        printers: []
-    },
-    wellness: {
-        taxRates: [
-            { name: 'TVA Standard', rate: 20, isDefault: true },
-        ],
-        printers: []
-    }
-};
-
-const businessTypeToServiceTypeMapping: Record<BusinessType, ServiceType> = {
-    restaurant: 'products',
-    coffeeshop: 'products',
-    event_hall: 'reservations',
-    car_rental: 'reservations',
-    consulting: 'consultation',
-    wellness: 'reservations'
-};
-
-
 function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave: (store: Store) => void, onCancel: () => void }) {
     const router = useRouter();
     const { toast } = useToast();
     const { t, language } = useLanguage();
-    const [wizardStep, setWizardStep] = useState(store ? 1 : 0);
+    const [wizardStep, setWizardStep] = useState(store ? 2 : 0); // Start at general info if editing
     const [editableStore, setEditableStore] = useState<Partial<Store>>(
         store || {
             status: 'active',
@@ -240,21 +183,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         setEditableStore(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleBusinessTypeSelection = (value: BusinessType) => {
-        const serviceType = businessTypeToServiceTypeMapping[value];
-        setEditableStore(prev => ({...prev, businessType: value, serviceType: serviceType}));
-    };
+    const handleServiceTypeSelection = (type: ServiceType) => {
+        handleInputChange('serviceType', type);
+        nextStep();
+    }
 
-    const applyTemplate = () => {
-        if (!editableStore.businessType) return;
-        const template = businessTemplates[editableStore.businessType];
-        setEditableStore(prev => ({
-            ...prev,
-            taxRates: template.taxRates.map(t => ({...t, id: `tax_${Date.now()}_${Math.random()}`})),
-            printers: template.printers.map(p => ({...p, id: `printer_${Date.now()}_${Math.random()}`})),
-        }));
-        setWizardStep(3); // Skip to taxes step after applying template
-    };
 
     const handleTaxRateChange = (index: number, field: keyof TaxRate, value: string | number | boolean) => {
         const newTaxRates = [...(editableStore.taxRates || [])];
@@ -335,13 +268,14 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         openingHours: { fr: "Horaires", en: "Hours" },
         taxes: { fr: "Taxes", en: "Taxes" },
         peripherals: { fr: "Périphériques", en: "Peripherals" },
-        businessType: { fr: "Quel est votre type d'activité ?", en: "What is your business type?" },
-        restaurant: { fr: "Restaurant", en: "Restaurant" },
-        coffeeshop: { fr: "Café / Salon de thé", en: "Coffee Shop" },
-        eventHall: { fr: "Salle d'événementiel", en: "Event Hall" },
-        carRental: { fr: "Location de véhicules", en: "Car Rental" },
-        consulting: { fr: "Cabinet (Avocat, Conseil...)", en: "Consulting (Lawyer, Consultant...)" },
-        wellness: { fr: "Bien-être (Spa, Massage...)", en: "Wellness (Spa, Massage...)" },
+        activityTypeTitle: { fr: "Quel est le cœur de votre métier ?", en: "What is the core of your business?" },
+        activityTypeDescription: { fr: "Ce choix déterminera les outils de configuration disponibles.", en: "This choice will determine the available configuration tools." },
+        productsSale: { fr: "Vente de Produits", en: "Product Sales" },
+        productsSaleDesc: { fr: "Restaurants, cafés, fast-foods...", en: "Restaurants, cafes, fast-food..." },
+        reservationsManagement: { fr: "Gestion de Réservations", en: "Reservation Management" },
+        reservationsManagementDesc: { fr: "Location, spas, événements...", en: "Rentals, spas, events..." },
+        qualifiedAppointments: { fr: "Prise de RDV Qualifiée", en: "Qualified Appointments" },
+        qualifiedAppointmentsDesc: { fr: "Avocats, consultants...", en: "Lawyers, consultants..." },
         posName: { fr: "Nom de l'activité", en: "Activity Name" },
         fullAddress: { fr: "Adresse complète", en: "Full address" },
         landline: { fr: "Téléphone fixe (ligne principale)", en: "Landline phone (main line)" },
@@ -396,14 +330,10 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         previous: { fr: 'Précédent', en: 'Previous' },
         next: { fr: 'Suivant', en: 'Next' },
         finishAndCreateMenu: { fr: 'Terminer et configurer le service', en: 'Finish and Configure Service' },
-        configTemplate: { fr: 'Modèle de configuration', en: 'Configuration Template' },
-        configTemplateDesc: { fr: "Pour vous faire gagner du temps, nous pouvons pré-remplir la configuration avec des paramètres standards pour votre type d'activité.", en: "To save you time, we can pre-fill the configuration with standard settings for your business type." },
-        applyTemplate: { fr: 'Appliquer le modèle et continuer', en: 'Apply template and continue' },
-        manualConfig: { fr: 'Configurer manuellement', en: 'Configure manually' },
     };
 
     return (
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
             <DialogHeader>
                 <DialogTitle className="text-center font-headline text-2xl">{store ? t(translations.editStore) : t(translations.addNewStore)}</DialogTitle>
                 {WIZARD_STEPS[wizardStep].id !== 'welcome' && WIZARD_STEPS[wizardStep].id !== 'finish' && (
@@ -428,6 +358,41 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         </div>
                     )}
                     {wizardStep === 1 && (
+                         <div className="space-y-2 py-4">
+                            <h3 className="text-center font-semibold text-lg">{t(translations.activityTypeTitle)}</h3>
+                            <p className="text-center text-sm text-muted-foreground">{t(translations.activityTypeDescription)}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                                <Card onClick={() => handleServiceTypeSelection('products')} className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+                                    <CardHeader className="items-center text-center">
+                                        <Utensils className="h-8 w-8 mb-2 text-primary" />
+                                        <CardTitle className="text-base">{t(translations.productsSale)}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-center text-xs text-muted-foreground">
+                                        {t(translations.productsSaleDesc)}
+                                    </CardContent>
+                                </Card>
+                                <Card onClick={() => handleServiceTypeSelection('reservations')} className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+                                    <CardHeader className="items-center text-center">
+                                        <ConciergeBell className="h-8 w-8 mb-2 text-primary" />
+                                        <CardTitle className="text-base">{t(translations.reservationsManagement)}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-center text-xs text-muted-foreground">
+                                        {t(translations.reservationsManagementDesc)}
+                                    </CardContent>
+                                </Card>
+                                <Card onClick={() => handleServiceTypeSelection('consultation')} className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+                                    <CardHeader className="items-center text-center">
+                                        <BrainCircuit className="h-8 w-8 mb-2 text-primary" />
+                                        <CardTitle className="text-base">{t(translations.qualifiedAppointments)}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-center text-xs text-muted-foreground">
+                                        {t(translations.qualifiedAppointmentsDesc)}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                         </div>
+                    )}
+                    {wizardStep === 2 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name">{t(translations.posName)}</Label>
@@ -441,41 +406,9 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                 <Label htmlFor="phone">{t(translations.landline)}</Label>
                                 <Input id="phone" name="phone" type="tel" value={editableStore.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} required />
                             </div>
-                            <div className="space-y-2">
-                                <Label>{t(translations.businessType)}</Label>
-                                 <Select name="businessType" value={editableStore.businessType} onValueChange={(value: BusinessType) => handleBusinessTypeSelection(value)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={t({ fr: 'Sélectionnez un type', en: 'Select a type' })} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="restaurant"><Utensils className="mr-2 h-4 w-4" />{t(translations.restaurant)}</SelectItem>
-                                        <SelectItem value="coffeeshop"><Coffee className="mr-2 h-4 w-4" />{t(translations.coffeeshop)}</SelectItem>
-                                        <SelectItem value="event_hall"><Building className="mr-2 h-4 w-4" />{t(translations.eventHall)}</SelectItem>
-                                        <SelectItem value="car_rental"><Car className="mr-2 h-4 w-4" />{t(translations.carRental)}</SelectItem>
-                                        <SelectItem value="wellness"><Sparkles className="mr-2 h-4 w-4" />{t(translations.wellness)}</SelectItem>
-                                        <SelectItem value="consulting"><BrainCircuit className="mr-2 h-4 w-4" />{t(translations.consulting)}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                           
-                            {!store && editableStore.businessType && (
-                                <Card className="mt-6 bg-primary/5 border-primary/20">
-                                    <CardHeader>
-                                        <CardTitle className="text-base flex items-center gap-2">
-                                            <Sparkles className="h-4 w-4 text-primary" />
-                                            {t(translations.configTemplate)}
-                                        </CardTitle>
-                                        <CardDescription>{t(translations.configTemplateDesc)}</CardDescription>
-                                    </CardHeader>
-                                    <CardFooter className="flex-col sm:flex-row gap-4">
-                                        <Button className="flex-1" variant="outline" onClick={() => nextStep()}>{t(translations.manualConfig)}</Button>
-                                        <Button className="flex-1" onClick={applyTemplate}>{t(translations.applyTemplate)}</Button>
-                                    </CardFooter>
-                                </Card>
-                            )}
                         </div>
                     )}
-                     {wizardStep === 2 && (
+                     {wizardStep === 3 && (
                         <div className="space-y-4">
                             <div className="space-y-3">
                                 {daysOfWeek.map(day => (
@@ -494,7 +427,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                             </div>
                         </div>
                     )}
-                    {wizardStep === 3 && (
+                    {wizardStep === 4 && (
                         <div className="space-y-6">
                             <Card>
                                 <CardHeader>
@@ -569,7 +502,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                             </Card>
                         </div>
                     )}
-                    {wizardStep === 4 && (
+                    {wizardStep === 5 && (
                         <div className="space-y-4">
                            <Card>
                                 <CardHeader>
@@ -677,7 +610,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                             </Card>
                         </div>
                     )}
-                     {wizardStep === 5 && (
+                     {wizardStep === 6 && (
                         <Card className="bg-amber-50 border-amber-200">
                             <CardHeader>
                                 <CardTitle className="text-amber-900 flex items-center gap-3"><PhoneCall className="h-5 w-5"/>{t(translations.telnyxTitle)}</CardTitle>
@@ -704,7 +637,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                             </CardContent>
                         </Card>
                     )}
-                    {wizardStep === 6 && (
+                    {wizardStep === 7 && (
                         <div className="text-center space-y-6 py-8">
                             <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
                             <h2 className="text-2xl font-bold font-headline">{t(translations.finishTitle)}</h2>
@@ -746,15 +679,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         <Button type="button" onClick={nextStep} className="w-full sm:w-auto">{t(translations.startConfig)}</Button>
                     )}
 
-                    {wizardStep === 1 && store && (
-                        <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
-                    )}
-
-                    {wizardStep > 1 && wizardStep < 5 && wizardStep !== 1 && (
+                    {wizardStep > 1 && wizardStep < 6 && wizardStep !== 1 && (
                         <Button type="button" onClick={nextStep}>{t(translations.next)}</Button>
                     )}
                     
-                    {wizardStep === 5 && (
+                    {wizardStep === 6 && (
                        <>
                         <Button type="button" variant="secondary" onClick={() => { handleInputChange('telnyxConfigured', false); nextStep(); }}>
                             {t(translations.configureLater)}
@@ -999,5 +928,3 @@ export default function StoresPage() {
         </div>
     );
 }
-
-    
