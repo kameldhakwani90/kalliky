@@ -31,6 +31,7 @@ type ActivityLog = {
     id: string;
     type: ActivityType;
     customer: string;
+    customerId: string;
     phone: string;
     date: string;
     amount: string;
@@ -38,20 +39,20 @@ type ActivityLog = {
 
 const mockActivities: Record<string, ActivityLog[]> = {
     "store-1": [
-        { id: "#1025", type: 'Commande', customer: 'Alice Martin', phone: '0612345678', date: 'il y a 5 min', amount: '24,50€' },
-        { id: "#1024", type: 'Commande', customer: 'Bob Dupont', phone: '0787654321', date: 'il y a 1h', amount: '18,00€' },
-        { id: "#1023", type: 'Commande', customer: 'Anonyme', phone: '0699887766', date: 'hier', amount: '55,20€' },
+        { id: "#1025", type: 'Commande', customer: 'Alice Martin', customerId: 'cust-1', phone: '0612345678', date: 'il y a 5 min', amount: '24,50€' },
+        { id: "#1024", type: 'Commande', customer: 'Bob Dupont', customerId: 'cust-2', phone: '0787654321', date: 'il y a 1h', amount: '18,00€' },
+        { id: "#1023", type: 'Commande', customer: 'Anonyme', customerId: 'cust-4', phone: '0699887766', date: 'hier', amount: '55,20€' },
     ],
     "store-loc": [
-        { id: "#R87", type: 'Réservation', customer: 'Carlos Sainz', phone: '0611223344', date: 'aujourd\'hui', amount: '1900,00€' },
-        { id: "#R86", type: 'Réservation', customer: 'Lando Norris', phone: '0688776655', date: 'demain', amount: '950,00€' },
+        { id: "#R87", type: 'Réservation', customer: 'Carlos Sainz', customerId: 'cust-5', phone: '0611223344', date: 'aujourd\'hui', amount: '1900,00€' },
+        { id: "#R86", type: 'Réservation', customer: 'Lando Norris', customerId: 'cust-6', phone: '0688776655', date: 'demain', amount: '950,00€' },
     ],
     "store-4": [
-        { id: "#C12", type: 'Consultation', customer: 'Mme. Lefevre', phone: '0123456789', date: 'il y a 2h', amount: 'N/A' },
-        { id: "#C11", type: "Consultation", customer: 'M. Bernard', phone: '0198765432', date: 'hier', amount: 'N/A' },
+        { id: "#C12", type: 'Consultation', customer: 'Mme. Lefevre', customerId: 'cust-7', phone: '0123456789', date: 'il y a 2h', amount: 'N/A' },
+        { id: "#C11", type: "Consultation", customer: 'M. Bernard', customerId: 'cust-8', phone: '0198765432', date: 'hier', amount: 'N/A' },
     ],
     "store-spa": [
-         { id: "#S33", type: 'Réservation', customer: 'Claire Chazal', phone: '0755667788', date: 'demain', amount: '250,00€' },
+         { id: "#S33", type: 'Réservation', customer: 'Claire Chazal', customerId: 'cust-9', phone: '0755667788', date: 'demain', amount: '250,00€' },
     ]
 };
 
@@ -122,7 +123,7 @@ export default function StoreActivityPage() {
                             </TableHeader>
                             <TableBody>
                                 {activities.map((activity) => (
-                                    <TableRow key={activity.id}>
+                                    <TableRow key={activity.id} className="cursor-pointer" onClick={() => router.push(`/restaurant/clients/${activity.customerId}`)}>
                                         <TableCell>
                                             <Badge variant="outline" className="flex items-center gap-2 w-fit">
                                                 <Icon className="h-4 w-4" />
@@ -136,7 +137,7 @@ export default function StoreActivityPage() {
                                         <TableCell className="hidden sm:table-cell">{activity.date}</TableCell>
                                         <TableCell className="hidden md:table-cell">{activity.amount}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm">
+                                            <Button variant="ghost" size="sm" onClick={(e) => {e.stopPropagation(); router.push(`/restaurant/clients/${activity.customerId}`)}}>
                                                 <Eye className="mr-2 h-4 w-4" />
                                                 {t(translations.view)}
                                             </Button>
@@ -152,4 +153,3 @@ export default function StoreActivityPage() {
         </div>
     );
 }
-
