@@ -82,7 +82,7 @@ const notifications = [
     },
 ];
 
-export default function RestaurantLayout({
+function RestaurantLayoutContent({
   children,
 }: {
   children: React.ReactNode
@@ -92,7 +92,6 @@ export default function RestaurantLayout({
   const [hasUnreadNotifications, setHasUnreadNotifications] = React.useState(true);
   const { setOpenMobile } = useSidebar();
 
-
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
     { href: "/restaurant/activity", label: {fr: "Activité", en: "Activity"}, icon: LayoutGrid },
@@ -100,9 +99,9 @@ export default function RestaurantLayout({
     { href: "/restaurant/reports", label: {fr: "Signalements", en: "Reports"}, icon: Flag },
     { href: "/restaurant/stores", label: {fr: "Configuration", en: "Settings"}, icon: Settings },
   ];
-  
+
   return (
-    <SidebarProvider>
+    <>
       <Sidebar collapsible="icon" variant="sidebar" side="left">
         <SidebarHeader>
            <KallikyLogo />
@@ -231,6 +230,19 @@ export default function RestaurantLayout({
             {children}
         </main>
       </SidebarInset>
+    </>
+  );
+}
+
+
+export default function RestaurantLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <SidebarProvider>
+      <RestaurantLayoutContent>{children}</RestaurantLayoutContent>
     </SidebarProvider>
   )
 }
