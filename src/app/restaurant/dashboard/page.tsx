@@ -477,7 +477,7 @@ export default function RestaurantDashboard() {
 
                     <div className="grid lg:grid-cols-2 gap-6">
                         <div>
-                            <div className="flex justify-between items-center mb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                                 <h3 className="text-lg font-semibold">{t(translations.orderHistory)}</h3>
                                 <Popover>
                                     <PopoverTrigger asChild>

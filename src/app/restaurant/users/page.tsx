@@ -217,7 +217,7 @@ export default function UsersPage() {
                     </DialogHeader>
                     <form onSubmit={handleSaveUser}>
                         <div className="space-y-6 py-4 px-1">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="firstname">{t(translations.firstName)}</Label>
                                     <Input id="firstname" name="firstname" defaultValue={selectedUser?.name.split(' ')[0] || ''} required />
@@ -265,7 +265,7 @@ export default function UsersPage() {
                             </div>
 
                         </div>
-                        <DialogFooter className="mt-6">
+                        <DialogFooter className="mt-6 flex-col-reverse sm:flex-row sm:justify-end gap-2">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>{t(translations.cancel)}</Button>
                             <Button type="submit">{t(translations.save)}</Button>
                         </DialogFooter>

@@ -363,7 +363,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     return (
         <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
             <DialogHeader>
-                <DialogTitle className="text-center font-headline text-2xl">{store ? translations.editStore.fr : translations.addNewStore.fr}</DialogTitle>
+                <DialogTitle className="text-center font-headline text-2xl">{store ? t(translations.editStore) : t(translations.addNewStore)}</DialogTitle>
                 {WIZARD_STEPS[wizardStep].id !== 'welcome' && WIZARD_STEPS[wizardStep].id !== 'finish' && (
                     <DialogDescription className="text-center">
                         {t(translations.stepOf).replace('{step}', wizardStep.toString()).replace('{total}', (WIZARD_STEPS.length - 2).toString())} - {t(WIZARD_STEPS[wizardStep].title)}
@@ -422,7 +422,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                         </CardTitle>
                                         <CardDescription>{t(translations.configTemplateDesc)}</CardDescription>
                                     </CardHeader>
-                                    <CardFooter className="gap-4">
+                                    <CardFooter className="flex-col sm:flex-row gap-4">
                                         <Button className="flex-1" variant="outline" onClick={() => nextStep()}>{t(translations.manualConfig)}</Button>
                                         <Button className="flex-1" onClick={applyTemplate}>{t(translations.applyTemplate)}</Button>
                                     </CardFooter>
@@ -434,15 +434,15 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                         <div className="space-y-4">
                             <div className="space-y-3">
                                 {daysOfWeek.map(day => (
-                                    <div key={day} className="grid grid-cols-3 items-center gap-4">
+                                    <div key={day} className="grid grid-cols-1 sm:grid-cols-3 items-center gap-2 sm:gap-4">
                                         <Label htmlFor={`hours-${day}`} className="col-span-1">{day}</Label>
-                                        <div className="col-span-2 grid grid-cols-2 gap-2">
+                                        <div className="col-span-1 sm:col-span-2 grid grid-cols-2 gap-2">
                                              <Input id={`hours-${day}-open`} name={`hours-${day}-open`} type="time" defaultValue="09:00" />
                                              <Input id={`hours-${day}-close`} name={`hours-${day}-close`} type="time" defaultValue="22:00" />
                                         </div>
                                     </div>
                                 ))}
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
                                     <Clock className="h-4 w-4" />
                                     <span>{t(translations.openingHoursDesc)}</span>
                                 </div>
@@ -471,20 +471,20 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                         <Label>{t(translations.vatRates)}</Label>
                                         <div className="mt-2 space-y-2 p-3 border rounded-md">
                                             {(editableStore.taxRates || []).map((taxRate, index) => (
-                                                <div key={taxRate.id} className="grid grid-cols-12 gap-2 items-center">
-                                                    <div className="col-span-5">
+                                                <div key={taxRate.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                                                    <div className="sm:col-span-5">
                                                         <Input placeholder={t(translations.taxNamePlaceholder)} value={taxRate.name} onChange={(e) => handleTaxRateChange(index, 'name', e.target.value)} />
                                                     </div>
-                                                    <div className="col-span-3 relative">
+                                                    <div className="sm:col-span-3 relative">
                                                         <Input placeholder={t(translations.rate)} type="number" value={taxRate.rate} onChange={(e) => handleTaxRateChange(index, 'rate', parseFloat(e.target.value))} step="0.1" />
                                                          <span className="absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">%</span>
                                                     </div>
-                                                    <div className="col-span-3 flex items-center gap-2">
+                                                    <div className="sm:col-span-3 flex items-center gap-2">
                                                         <input type="radio" id={`default-tax-${index}`} name="default-tax" checked={taxRate.isDefault} onChange={(e) => handleTaxRateChange(index, 'isDefault', e.target.checked)} />
                                                         <Label htmlFor={`default-tax-${index}`} className="text-xs font-normal">{t(translations.default)}</Label>
                                                     </div>
                                                     {(editableStore.taxRates || []).length > 1 &&
-                                                        <div className="col-span-1">
+                                                        <div className="sm:col-span-1">
                                                             <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeTaxRate(index)}>
                                                                 <X className="h-4 w-4"/>
                                                             </Button>
@@ -505,12 +505,12 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                      <div className={cn("p-4 rounded-md", currentUserPlan === 'starter' ? "bg-muted/50" : "")}>
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                             <div>
                                                 <h4 className="font-semibold text-sm">{t(translations.endCustomerPayments)} (Stripe)</h4>
                                                 <p className="text-xs text-muted-foreground">{t(translations.stripeDescription)}</p>
                                             </div>
-                                             <Button type="button" variant="outline" size="sm" disabled={currentUserPlan === 'starter'}>{t(translations.connectStripe)}</Button>
+                                             <Button type="button" variant="outline" size="sm" disabled={currentUserPlan === 'starter'} className="w-full sm:w-auto mt-2 sm:mt-0">{t(translations.connectStripe)}</Button>
                                         </div>
                                         {currentUserPlan === 'starter' && <Badge variant="secondary" className="mt-2">{t(translations.planProRequired)}</Badge>}
                                     </div>
@@ -542,7 +542,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                           </Button>
                                       </CardHeader>
                                       <CardContent className="p-4 pt-0 space-y-4">
-                                          <div className="grid grid-cols-2 gap-4">
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                               <div>
                                                   <Label className="text-xs">{t(translations.role)}</Label>
                                                    <Select value={printer.role} onValueChange={(value) => handlePrinterChange(index, 'role', value)}>
@@ -575,7 +575,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                               </Select>
                                           </div>
                                           {printer.connectionType === 'network' && (
-                                              <div className="grid grid-cols-2 gap-4">
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                   <div>
                                                       <Label className="text-xs">{t(translations.ipAddress)}</Label>
                                                       <Input value={printer.ipAddress || ''} onChange={(e) => handlePrinterChange(index, 'ipAddress', e.target.value)} placeholder="192.168.1.100"/>
@@ -602,12 +602,12 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                 <CardContent className="space-y-2">
                                     {(editableStore.kdsConnections || []).map((kds, index) => (
                                         <Card key={kds.id} className="bg-muted/50 p-3">
-                                            <div className="grid grid-cols-12 gap-2 items-center">
-                                                <div className="col-span-5 space-y-1">
+                                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                                                <div className="sm:col-span-5 space-y-1">
                                                     <Label className="text-xs">{t(translations.deviceName)}</Label>
                                                     <Input className="h-8 bg-background" defaultValue={kds.name} onChange={(e) => handleKDSChange(index, 'name', e.target.value)} />
                                                 </div>
-                                                <div className="col-span-5 space-y-1">
+                                                <div className="sm:col-span-5 space-y-1">
                                                     <Label className="text-xs">{t(translations.connectionCode)}</Label>
                                                     <div className="flex">
                                                         <Input className="h-8 rounded-r-none font-mono bg-background" value={kds.connectionCode} readOnly />
@@ -616,7 +616,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                                                         </Button>
                                                     </div>
                                                 </div>
-                                                <div className="col-span-2 text-right">
+                                                <div className="sm:col-span-2 text-right">
                                                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeKDS(index)}>
                                                         <X className="h-4 w-4"/>
                                                     </Button>
@@ -690,15 +690,15 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                     )}
                 </div>
             </div>
-             <DialogFooter className="pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={onCancel}>{t(translations.cancel)}</Button>
+             <DialogFooter className="pt-4 border-t flex flex-col sm:flex-row gap-2">
+                    <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">{t(translations.cancel)}</Button>
                     <div className="flex-grow" />
                     {wizardStep > 0 && wizardStep < WIZARD_STEPS.length - 1 && (
                         <Button type="button" variant="ghost" onClick={prevStep}>{t(translations.previous)}</Button>
                     )}
                     
                     {wizardStep === 0 && (
-                        <Button type="button" onClick={nextStep}>{t(translations.startConfig)}</Button>
+                        <Button type="button" onClick={nextStep} className="w-full sm:w-auto">{t(translations.startConfig)}</Button>
                     )}
 
                     {wizardStep === 1 && store && (
@@ -777,9 +777,9 @@ function TelnyxPopup({ store, onConfirm, onCancel }: { store: Store, onConfirm: 
                     </ul>
                 </div>
             </div>
-            <DialogFooter>
-                <Button variant="outline" onClick={onCancel}>{t(translations.cancel)}</Button>
-                <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => onConfirm(store.id)}>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">{t(translations.cancel)}</Button>
+                <Button className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto" onClick={() => onConfirm(store.id)}>
                     <PhoneForwarded className="mr-2 h-4 w-4"/>
                     {t(translations.telnyxConfirm)}
                 </Button>
@@ -856,7 +856,7 @@ export default function StoresPage() {
 
     return (
         <div className="space-y-8">
-            <header className="flex items-center justify-between">
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
                     <p className="text-muted-foreground">{t(translations.description)}</p>
@@ -873,8 +873,8 @@ export default function StoresPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{t(translations.name)}</TableHead>
-                                <TableHead>{t(translations.status)}</TableHead>
-                                <TableHead>{t(translations.connections)}</TableHead>
+                                <TableHead className="hidden sm:table-cell">{t(translations.status)}</TableHead>
+                                <TableHead className="hidden md:table-cell">{t(translations.connections)}</TableHead>
                                 <TableHead className="text-right">{t(translations.actions)}</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -885,10 +885,10 @@ export default function StoresPage() {
                                         <p>{store.name}</p>
                                         <p className="text-xs text-muted-foreground">{store.address}</p>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="hidden sm:table-cell">
                                         <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className={cn(store.status === 'active' ? 'bg-green-100 text-green-700' : '')}>{store.status === 'active' ? t(translations.active) : t(translations.inactive)}</Badge>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="hidden md:table-cell">
                                         <div className="flex items-center gap-4">
                                             <Badge variant="outline" className={cn("cursor-pointer", !store.telnyxConfigured && "border-amber-400 text-amber-700 hover:bg-amber-50")} onClick={() => !store.telnyxConfigured && handleConfigureTelnyxClick(store)}>
                                                 <PhoneCall className="mr-2 h-3 w-3" />
