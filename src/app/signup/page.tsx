@@ -77,9 +77,9 @@ const plans = [
 
 export default function SignupPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-card p-4 md:p-8">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 md:p-8">
       <div className="w-full max-w-6xl">
-        <Card className="shadow-2xl">
+        <Card>
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
               <Logo />
@@ -89,7 +89,7 @@ export default function SignupPage() {
           </CardHeader>
           <CardContent className="grid md:grid-cols-3 gap-6">
             {plans.map((plan) => (
-              <Card key={plan.name} className={`flex flex-col ${plan.recommended ? "border-primary border-2 shadow-lg" : ""}`}>
+              <Card key={plan.name} className={`flex flex-col bg-background ${plan.recommended ? "border-primary/50 shadow-[10px_10px_20px_#d0d8e6,-10px_-10px_20px_#ffffff] dark:shadow-[10px_10px_20px_#0c0d0e,-10px_-10px_20px_#1e2124]" : "shadow-[5px_5px_10px_#d0d8e6,-5px_-5px_10px_#ffffff] dark:shadow-[5px_5px_10px_#0c0d0e,-5px_-5px_10px_#1e2124]"}`}>
                 <CardHeader className="text-center">
                   <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
                   {plan.subtitle && <p className="text-sm font-semibold text-primary">{plan.subtitle}</p>}

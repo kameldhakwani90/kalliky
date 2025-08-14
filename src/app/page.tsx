@@ -58,12 +58,11 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header />
       <main className="flex-1">
-        <section className="relative py-20 md:py-32 bg-card">
+        <section className="relative py-20 md:py-32">
           <div className="container mx-auto px-4 text-center">
-            <div className="absolute inset-0 bg-grid-pink-500/[0.05] bg-[length:30px_30px] [mask-image:linear-gradient(to_bottom,white_30%,transparent_100%)]"></div>
             <h1 className="text-4xl md:text-6xl font-bold font-headline mb-4 tracking-tight">
               La Révolution de la Commande par IA pour votre Restaurant
             </h1>
@@ -90,7 +89,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map((feature, index) => (
-                <Card key={index} className="bg-card hover:shadow-lg transition-shadow duration-300">
+                <Card key={index} className="bg-background transition-shadow duration-300">
                   <CardHeader className="items-center text-center">
                     <div className="p-3 rounded-full bg-primary/10 mb-4">
                       {feature.icon}
@@ -106,7 +105,7 @@ export default function Home() {
           </div>
         </section>
         
-        <section className="py-20 md:py-24 bg-card">
+        <section className="py-20 md:py-24">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -166,7 +165,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {testimonials.map((testimonial, index) => (
-                <Card key={index} className="bg-card">
+                <Card key={index} className="bg-background">
                   <CardContent className="pt-6">
                     <div className="flex items-start">
                       <Avatar className="mr-4">
@@ -205,7 +204,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="py-6 border-t bg-card">
+      <footer className="py-6 border-t bg-background">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Kalliky.ai. Tous droits réservés.</p>
         </div>
