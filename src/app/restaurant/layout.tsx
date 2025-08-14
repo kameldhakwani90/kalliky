@@ -100,7 +100,7 @@ export default function RestaurantLayout({
   
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" variant="floating" side="left">
+      <Sidebar collapsible="icon" variant="sidebar" side="left">
         <SidebarHeader>
            <KallikyLogo />
         </SidebarHeader>
@@ -113,7 +113,7 @@ export default function RestaurantLayout({
                   size="lg"
                   isActive={pathname.startsWith(item.href)}
                   tooltip={t(item.label)}
-                  className="data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground font-semibold"
+                  className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground font-semibold"
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -125,7 +125,7 @@ export default function RestaurantLayout({
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-16 items-center gap-4 border-b bg-card/50 px-6 backdrop-blur-md">
+        <header className="flex h-16 items-center gap-4 border-b bg-background/50 px-6 backdrop-blur-md sticky top-0 z-40">
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
                 {/* Optional Header Content */}

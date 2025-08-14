@@ -4,39 +4,39 @@
 
 @layer base {
   :root {
-    --background: 258 39% 10%;
-    --foreground: 258 30% 95%;
-    --card: 258 39% 15%;
-    --card-foreground: 258 30% 95%;
-    --popover: 258 39% 10%;
-    --popover-foreground: 258 30% 95%;
-    --primary: 258 85% 70%;
-    --primary-foreground: 258 30% 95%;
-    --secondary: 258 39% 25%;
-    --secondary-foreground: 258 30% 95%;
-    --muted: 258 39% 20%;
-    --muted-foreground: 258 10% 65%;
-    --accent: 258 39% 25%;
-    --accent-foreground: 258 30% 95%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 258 39% 25%;
-    --input: 258 39% 15%;
-    --ring: 258 85% 75%;
-    --chart-1: 258 85% 70%;
-    --chart-2: 190 85% 65%;
-    --chart-3: 330 85% 65%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 1rem;
-    --sidebar-background: 258 39% 12%;
-    --sidebar-foreground: 258 30% 95%;
-    --sidebar-primary: 258 85% 70%;
-    --sidebar-primary-foreground: 258 30% 95%;
-    --sidebar-accent: 258 39% 20%;
-    --sidebar-accent-foreground: 258 30% 95%;
-    --sidebar-border: 258 39% 20%;
-    --sidebar-ring: 258 85% 75%;
+    --background: 300 100% 99%;
+    --foreground: 258 30% 10%;
+    --card: 300 100% 100%;
+    --card-foreground: 258 30% 10%;
+    --popover: 300 100% 100%;
+    --popover-foreground: 258 30% 10%;
+    --primary: 258 85% 60%;
+    --primary-foreground: 258 30% 98%;
+    --secondary: 258 30% 95%;
+    --secondary-foreground: 258 30% 10%;
+    --muted: 258 30% 95%;
+    --muted-foreground: 258 10% 45%;
+    --accent: 258 30% 95%;
+    --accent-foreground: 258 30% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 258 30% 90%;
+    --input: 258 30% 95%;
+    --ring: 258 85% 65%;
+    --chart-1: 258 85% 60%;
+    --chart-2: 190 85% 60%;
+    --chart-3: 330 85% 60%;
+    --chart-4: 43 74% 60%;
+    --chart-5: 27 87% 60%;
+    --radius: 0.75rem;
+    --sidebar-background: 300 100% 100%;
+    --sidebar-foreground: 258 30% 15%;
+    --sidebar-primary: 258 85% 60%;
+    --sidebar-primary-foreground: 258 30% 98%;
+    --sidebar-accent: 258 30% 95%;
+    --sidebar-accent-foreground: 258 30% 10%;
+    --sidebar-border: 258 30% 90%;
+    --sidebar-ring: 258 85% 65%;
   }
 
   .dark {
