@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -326,11 +325,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     const prevStep = () => setWizardStep(prev => Math.max(prev - 1, 0));
 
     const translations = {
-        editStore: { fr: "Modifier le point de vente", en: "Edit Point of Sale" },
-        addNewStore: { fr: "Assistant de création de point de vente", en: "Point of Sale Creation Wizard" },
+        editStore: { fr: "Modifier l'activité", en: "Edit Activity" },
+        addNewStore: { fr: "Assistant de configuration", en: "Setup Wizard" },
         stepOf: { fr: "Étape {step} sur {total}", en: "Step {step} of {total}" },
         welcomeTitle: { fr: 'Bienvenue chez Kalliky.ai !', en: 'Welcome to Kalliky.ai!' },
-        welcomeDescription: { fr: 'Prêt à transformer la gestion de votre commerce ? Cet assistant va vous guider pour configurer votre premier point de vente en quelques minutes.', en: 'Ready to transform your business management? This wizard will guide you to set up your first point of sale in minutes.' },
+        welcomeDescription: { fr: 'Prêt à transformer la gestion de votre activité ? Cet assistant va vous guider pour configurer votre espace de travail en quelques minutes.', en: 'Ready to transform your business management? This wizard will guide you to set up your workspace in minutes.' },
         startConfig: { fr: 'Commencer la configuration', en: 'Start Configuration' },
         general: { fr: "Général", en: "General" },
         openingHours: { fr: "Horaires", en: "Hours" },
@@ -343,10 +342,10 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         carRental: { fr: "Location de véhicules", en: "Car Rental" },
         consulting: { fr: "Cabinet (Avocat, Conseil...)", en: "Consulting (Lawyer, Consultant...)" },
         wellness: { fr: "Bien-être (Spa, Massage...)", en: "Wellness (Spa, Massage...)" },
-        posName: { fr: "Nom du point de vente", en: "Point of Sale Name" },
+        posName: { fr: "Nom de l'activité", en: "Activity Name" },
         fullAddress: { fr: "Adresse complète", en: "Full address" },
         landline: { fr: "Téléphone fixe (ligne principale)", en: "Landline phone (main line)" },
-        openingHoursDesc: { fr: "Utilisé pour accepter ou refuser les commandes automatiquement.", en: "Used to automatically accept or refuse orders." },
+        openingHoursDesc: { fr: "Utilisé pour accepter ou refuser les demandes automatiquement.", en: "Used to automatically accept or refuse requests." },
         defaultCurrency: { fr: "Devise par défaut", en: "Default currency" },
         vatRates: { fr: "Taux de TVA applicables", en: "Applicable VAT rates" },
         taxNamePlaceholder: { fr: "Nom (ex: Normal)", en: "Name (e.g. Standard)" },
@@ -355,11 +354,11 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         addVatRate: { fr: "Ajouter un taux de TVA", en: "Add a VAT rate" },
         connectionsTitle: { fr: 'Connexions & Services', en: 'Connections & Services' },
         endCustomerPayments: { fr: "Paiements des clients finaux", en: "End-customer payments" },
-        stripeDescription: { fr: "Permet à vos clients de payer leurs commandes en ligne. L'argent est directement versé sur votre compte Stripe.", en: "Allows your customers to pay for their orders online. The money is paid directly into your Stripe account." },
+        stripeDescription: { fr: "Permet à vos clients de payer leurs commandes/réservations en ligne. L'argent est directement versé sur votre compte Stripe.", en: "Allows your customers to pay for their orders/reservations online. The money is paid directly into your Stripe account." },
         connectStripe: { fr: "Connecter mon compte Stripe", en: "Connect my Stripe account" },
         planProRequired: { fr: 'Plan Pro requis', en: 'Pro Plan required' },
         messagingDescription: { fr: "Utilisé pour les demandes de preuve (Plan Pro et +).", en: "Used for proof requests (Pro Plan and up)." },
-        whatsappNumber: { fr: "Numéro WhatsApp du point de vente", en: "POS's WhatsApp number" },
+        whatsappNumber: { fr: "Numéro WhatsApp de l'activité", en: "Activity's WhatsApp number" },
         printerManagement: { fr: "Gestion des imprimantes", en: "Printer Management" },
         role: { fr: "Rôle", en: "Role" },
         receipt: { fr: "Ticket de caisse", en: "Receipt" },
@@ -386,19 +385,19 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         telnyxInstruction3: { fr: "3. Configurez un renvoi de tous les appels vers votre numéro vocal ci-dessus.", en: "3. Set up forwarding for all calls to your voice number above." },
         telnyxConfirm: { fr: "J'ai configuré le renvoi d'appel", en: "I have configured call forwarding" },
         configureLater: { fr: 'Configurer plus tard', en: 'Configure later' },
-        finishTitle: { fr: 'Votre point de vente est prêt !', en: 'Your point of sale is ready!' },
-        finishDescription: { fr: "Il ne reste plus qu'à créer votre catalogue. C'est simple et rapide.", en: "All that's left is to create your catalog. It's quick and easy." },
-        menuCreationMethod: { fr: 'Méthodes de création de catalogue', en: 'Catalog Creation Methods' },
+        finishTitle: { fr: 'Votre espace est prêt !', en: 'Your space is ready!' },
+        finishDescription: { fr: "Il ne reste plus qu'à configurer les services que vous proposez. C'est simple et rapide.", en: "All that's left is to configure the services you offer. It's quick and easy." },
+        menuCreationMethod: { fr: 'Méthodes de configuration du service', en: 'Service Configuration Methods' },
         method1Title: { fr: 'Import de fichier', en: 'File Import' },
-        method1Desc: { fr: 'Importez votre catalogue depuis un fichier Excel ou une simple photo.', en: 'Import your catalog from an Excel file or a simple photo.' },
+        method1Desc: { fr: 'Importez votre catalogue ou vos prestations depuis un fichier ou une photo.', en: 'Import your catalog or services from a file or photo.' },
         method2Title: { fr: 'Création manuelle', en: 'Manual Creation' },
-        method2Desc: { fr: 'Utilisez notre éditeur complet pour créer vos articles et services pas à pas.', en: 'Use our comprehensive editor to create your items and services step-by-step.' },
+        method2Desc: { fr: 'Utilisez notre éditeur complet pour créer vos offres pas à pas.', en: 'Use our comprehensive editor to create your offerings step-by-step.' },
         cancel: { fr: "Annuler", en: "Cancel" },
         previous: { fr: 'Précédent', en: 'Previous' },
         next: { fr: 'Suivant', en: 'Next' },
-        finishAndCreateMenu: { fr: 'Terminer et créer mon catalogue', en: 'Finish and Create Catalog' },
+        finishAndCreateMenu: { fr: 'Terminer et configurer le service', en: 'Finish and Configure Service' },
         configTemplate: { fr: 'Modèle de configuration', en: 'Configuration Template' },
-        configTemplateDesc: { fr: "Pour vous faire gagner du temps, nous pouvons pré-remplir la configuration de votre point de vente avec des paramètres standards pour votre type d'activité.", en: "To save you time, we can pre-fill your point of sale's configuration with standard settings for your business type." },
+        configTemplateDesc: { fr: "Pour vous faire gagner du temps, nous pouvons pré-remplir la configuration avec des paramètres standards pour votre type d'activité.", en: "To save you time, we can pre-fill the configuration with standard settings for your business type." },
         applyTemplate: { fr: 'Appliquer le modèle et continuer', en: 'Apply template and continue' },
         manualConfig: { fr: 'Configurer manuellement', en: 'Configure manually' },
     };
@@ -886,9 +885,9 @@ export default function StoresPage() {
     };
 
     const translations = {
-        title: { fr: "Gestion des points de vente", en: "Point of Sale Management" },
-        description: { fr: "Gérez vos points de vente et les services associés.", en: "Manage your points of sale and associated services." },
-        addStore: { fr: "Ajouter un point de vente", en: "Add Point of Sale" },
+        title: { fr: "Gestion des activités", en: "Activity Management" },
+        description: { fr: "Gérez vos différents espaces et les services associés.", en: "Manage your different spaces and associated services." },
+        addStore: { fr: "Ajouter une activité", en: "Add Activity" },
         name: { fr: "Nom", en: "Name" },
         status: { fr: "Statut", en: "Status" },
         connections: { fr: "Connexions", en: "Connections" },
@@ -901,7 +900,7 @@ export default function StoresPage() {
         edit: { fr: "Modifier", en: "Edit" },
         delete: { fr: "Supprimer", en: "Delete" },
         areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
-        deleteConfirmation: { fr: "Cette action est irréversible. Le point de vente, son service et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The point of sale, its service, and all associated data will be permanently deleted." },
+        deleteConfirmation: { fr: "Cette action est irréversible. L'activité et toutes ses données associées seront définitivement supprimées.", en: "This action is irreversible. The activity and all associated data will be permanently deleted." },
         cancel: { fr: "Annuler", en: "Cancel" },
         manageService: { fr: "Gérer le service", en: "Manage Service" },
     };
@@ -973,7 +972,7 @@ export default function StoresPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                      <Badge variant="outline" className={cn(store.stripeStatus !== 'connected' && "text-muted-foreground")}>
-                                        <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3 shrink-0"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
+                                        <svg role="img" viewBox="0 0 48 48" className="mr-2 h-3 w-3 shrink-0"><path d="M43.013 13.062c.328-.18.72-.038.898.292.18.328.038.72-.29.898l-2.91 1.593c.318.92.483 1.88.483 2.864v.002c0 2.14-.52 4.19-1.48 5.968l-4.223 2.152a.634.634 0 0 1-.87-.303l-1.05-2.05c-.06-.118-.08-.25-.062-.378.017-.128.072-.244-.158-.33l3.525-3.524a.632.632 0 0 1 .894 0 .632.632 0 0 1 0 .894l-3.525-3.523c-.34.34-.798.53-1.27.53-.47 0-.928-.19-1.27-.53l-2.028-2.027a1.796 1.796 0 1 1 2.54-2.54l3.525 3.525a.632.632 0 0 0 .894 0 .632.632 0 0 0 0-.894l-3.525-3.524a1.8 1.8 0 0 0-1.27-.527c-.47 0-.928.188-1.27.527L28.12 25.1a1.796 1.796 0 0 1-2.54 0 1.796 1.796 0 0 1 0-2.54l2.028-2.027a1.795 1.795 0 0 1 1.27-.53c.47 0 .93.19 1.27.53l1.05 1.05c.06.06.136.09.213.09s.154-.03-.213-.09l-4.223-2.152A7.26 7.26 0 0 0 37.3 13.44l2.91-1.593a.633.633 0 0 1 .802-.286Zm-25.04 18.59c-.328.18-.72.038-.898-.29-.18-.328-.038-.72.29-.898l2.91-1.594c-.318-.92-.483-1.88-.483-2.863 0-2.14.52-4.19 1.48-5.968l4.223-2.152a.634.634 0 0 1 .87.303l1.05 2.05c.06.118.08.25.062-.378-.017.128-.072-.244-.158-.33l-3.525 3.525a.632.632 0 0 1-.894 0 .632.632 0 0 1 0-.894l3.525-3.525c.34-.34.798-.53-1.27-.53.47 0 .928.19 1.27.53l2.028 2.027a1.796 1.796 0 1 1-2.54 2.54l-3.525-3.525a.632.632 0 0 0-.894 0 .632.632 0 0 0 0 .894l3.525 3.525c.34.34.798.528 1.27.528.47 0 .928-.188 1.27-.528l2.028-2.027a1.796 1.796 0 0 1 2.54 0c.7.7.7 1.84 0 2.54l-2.028 2.027a1.795 1.795 0 0 1-1.27.53c-.47 0-.93-.19-1.27-.53l-1.05-1.05c-.06-.06-.136-.09-.213-.09s.154-.03-.213-.09l-4.223 2.152c-1.428.73-3.033 1.15-4.708 1.15l-2.91 1.593a.633.633 0 0 1-.803.285ZM13.442 4.986c0 2.705-2.22 4.9-4.95 4.9s-4.95-2.195-4.95-4.9c0-2.705 2.22-4.9 4.95-4.9s4.95 2.195 4.95 4.9Z" fill="#635bff"></path></svg>
                                         <span>Paiement en ligne</span>
                                     </Badge>
                                 </div>
@@ -1000,3 +999,5 @@ export default function StoresPage() {
         </div>
     );
 }
+
+    
