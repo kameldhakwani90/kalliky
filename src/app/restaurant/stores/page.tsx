@@ -831,7 +831,7 @@ export default function StoresPage() {
         areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
         deleteConfirmation: { fr: "Cette action est irréversible. L'activité et toutes ses données associées seront définitivement supprimées.", en: "This action is irreversible. The activity and all associated data will be permanently deleted." },
         cancel: { fr: "Annuler", en: "Cancel" },
-        manageService: { fr: "Gérer le service", en: "Manage Service" },
+        manageService: { fr: "Gérer", en: "Manage" },
     };
 
     return (
