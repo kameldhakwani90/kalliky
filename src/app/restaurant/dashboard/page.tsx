@@ -254,7 +254,7 @@ export default function RestaurantDashboard() {
   return (
     <>
     <div className="flex-1 space-y-6">
-        <div className="flex items-center justify-between space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">{t(translations.dashboardTitle)}</h2>
               <p className="text-muted-foreground">{t(translations.dashboardSubtitle)}</p>
@@ -272,11 +272,11 @@ export default function RestaurantDashboard() {
 
         <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer">
             <Link href="/restaurant/stores?action=new" className="block">
-                <CardHeader className="flex flex-row items-center gap-6 space-y-0">
-                    <div className="p-4 bg-primary/10 rounded-full">
+                <CardHeader className="flex flex-col md:flex-row md:items-center gap-4 space-y-0">
+                    <div className="p-4 bg-primary/10 rounded-full w-fit">
                         <Store className="h-8 w-8 text-primary" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                         <CardTitle>{t(translations.addStoreTitle)}</CardTitle>
                         <CardDescription>{t(translations.addStoreDescription)}</CardDescription>
                     </div>
@@ -483,7 +483,7 @@ export default function RestaurantDashboard() {
                                     <PopoverTrigger asChild>
                                         <Button
                                         variant={"outline"}
-                                        className="w-[240px] justify-start text-left font-normal"
+                                        className="w-full sm:w-[240px] justify-start text-left font-normal"
                                         >
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
@@ -557,9 +557,9 @@ export default function RestaurantDashboard() {
                         </div>
                     </div>
                 </div>
-                 <DialogFooter className="pt-4 border-t">
-                    <Button variant="outline">{t(translations.sendSMS)}</Button>
-                    <Button>{t(translations.contactCustomer)}</Button>
+                 <DialogFooter className="pt-4 border-t flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" className="w-full sm:w-auto">{t(translations.sendSMS)}</Button>
+                    <Button className="w-full sm:w-auto">{t(translations.contactCustomer)}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

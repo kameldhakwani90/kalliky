@@ -106,7 +106,7 @@ export default function ClientsPage() {
 
     return (
         <div className="space-y-8">
-            <header className="flex items-center justify-between">
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
                     <p className="text-muted-foreground">{t(translations.description)}</p>
@@ -133,48 +133,50 @@ export default function ClientsPage() {
                     <CardTitle>{t(translations.clientList)}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t(translations.client)}</TableHead>
-                                <TableHead>{t(translations.contact)}</TableHead>
-                                <TableHead>{t(translations.status)}</TableHead>
-                                <TableHead>{t(translations.totalSpent)}</TableHead>
-                                <TableHead>{t(translations.lastOrder)}</TableHead>
-                                <TableHead className="text-right">{t(translations.actions)}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredCustomers.map((customer) => (
-                                <TableRow key={customer.id} className="cursor-pointer" onClick={() => handleViewCustomer(customer.id)}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarFallback>
-                                                    {(customer.firstName ? customer.firstName.charAt(0) : '') + (customer.lastName ? customer.lastName.charAt(0) : '') || 'CL'}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p>{customer.firstName} {customer.lastName || t(translations.anonymousClient)}</p>
-                                                <p className="text-xs text-muted-foreground">{customer.phone}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{customer.email || '-'}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}>{translateStatus(customer.status)}</Badge>
-                                    </TableCell>
-                                    <TableCell>{customer.totalSpent}</TableCell>
-                                    <TableCell>{customer.lastSeen}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewCustomer(customer.id); }}>
-                                            <Eye className="h-4 w-4"/>
-                                        </Button>
-                                    </TableCell>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t(translations.client)}</TableHead>
+                                    <TableHead className="hidden md:table-cell">{t(translations.contact)}</TableHead>
+                                    <TableHead>{t(translations.status)}</TableHead>
+                                    <TableHead className="hidden sm:table-cell">{t(translations.totalSpent)}</TableHead>
+                                    <TableHead className="hidden lg:table-cell">{t(translations.lastOrder)}</TableHead>
+                                    <TableHead className="text-right">{t(translations.actions)}</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredCustomers.map((customer) => (
+                                    <TableRow key={customer.id} className="cursor-pointer" onClick={() => handleViewCustomer(customer.id)}>
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarFallback>
+                                                        {(customer.firstName ? customer.firstName.charAt(0) : '') + (customer.lastName ? customer.lastName.charAt(0) : '') || 'CL'}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p>{customer.firstName} {customer.lastName || t(translations.anonymousClient)}</p>
+                                                    <p className="text-xs text-muted-foreground md:hidden">{customer.email || customer.phone}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">{customer.email || '-'}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className={customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}>{translateStatus(customer.status)}</Badge>
+                                        </TableCell>
+                                        <TableCell className="hidden sm:table-cell">{customer.totalSpent}</TableCell>
+                                        <TableCell className="hidden lg:table-cell">{customer.lastSeen}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewCustomer(customer.id); }}>
+                                                <Eye className="h-4 w-4"/>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
         </div>

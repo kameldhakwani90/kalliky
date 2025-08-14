@@ -122,7 +122,7 @@ export default function UsersPage() {
 
     return (
         <div className="space-y-8">
-            <header className="flex items-center justify-between">
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
                     <p className="text-muted-foreground">{t(translations.description)}</p>
@@ -138,67 +138,72 @@ export default function UsersPage() {
                     <CardTitle>{t(translations.userList)}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t(translations.name)}</TableHead>
-                                <TableHead>{t(translations.email)}</TableHead>
-                                <TableHead>{t(translations.role)}</TableHead>
-                                <TableHead>{t(translations.assignedStores)}</TableHead>
-                                <TableHead className="text-right">{t(translations.actions)}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {users.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell className="font-medium">{user.name}</TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline">{t(roleTranslations[user.role])}</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                       {user.assignedStores.map(id => getStoreNameById(id)).join(', ')}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">{t(translations.openMenu)}</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleOpenDialog(user)}>
-                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                    {t(translations.edit)}
-                                                </DropdownMenuItem>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            {t(translations.delete)}
-                                                        </DropdownMenuItem>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                {t(translations.deleteUserConfirmation)}
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => deleteUser(user.id)}>{t(translations.delete)}</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                   <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t(translations.name)}</TableHead>
+                                    <TableHead className="hidden md:table-cell">{t(translations.email)}</TableHead>
+                                    <TableHead>{t(translations.role)}</TableHead>
+                                    <TableHead className="hidden sm:table-cell">{t(translations.assignedStores)}</TableHead>
+                                    <TableHead className="text-right">{t(translations.actions)}</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {users.map((user) => (
+                                    <TableRow key={user.id}>
+                                        <TableCell className="font-medium">
+                                            <p>{user.name}</p>
+                                            <p className="text-xs text-muted-foreground md:hidden">{user.email}</p>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{t(roleTranslations[user.role])}</Badge>
+                                        </TableCell>
+                                        <TableCell className="hidden sm:table-cell">
+                                        {user.assignedStores.map(id => getStoreNameById(id)).join(', ')}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <span className="sr-only">{t(translations.openMenu)}</span>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleOpenDialog(user)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        {t(translations.edit)}
+                                                    </DropdownMenuItem>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                {t(translations.delete)}
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>{t(translations.areYouSure)}</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    {t(translations.deleteUserConfirmation)}
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => deleteUser(user.id)}>{t(translations.delete)}</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                   </div>
                 </CardContent>
             </Card>
 
@@ -244,7 +249,7 @@ export default function UsersPage() {
 
                             <div className="space-y-4">
                                <h4 className="font-medium">{t(translations.assignToStores)}</h4>
-                                <div className="space-y-2">
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
                                     {availableStores.map(store => (
                                         <div key={store.id} className="flex items-center space-x-2">
                                             <Checkbox 

@@ -331,25 +331,25 @@ export default function ReportsPage() {
 
     return (
         <div className="space-y-8">
-            <header className="flex items-center justify-between">
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Gestion des Signalements</h1>
                     <p className="text-muted-foreground">Consultez et traitez les réclamations et retours de vos clients.</p>
                 </div>
-                 <div className="flex items-center gap-2">
-                     <div className="relative flex-1">
+                 <div className="flex flex-col sm:flex-row items-center gap-2">
+                     <div className="relative flex-1 w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input placeholder="Rechercher un signalement..." className="pl-10" />
                     </div>
                      <Select>
-                        <SelectTrigger className="w-48"><SelectValue placeholder="Toutes les boutiques" /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Toutes les boutiques" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Toutes les boutiques</SelectItem>
                             {availableStoresSummary.map(store => <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Select>
-                        <SelectTrigger className="w-48"><SelectValue placeholder="Tous les statuts" /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Tous les statuts" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Tous les statuts</SelectItem>
                             <SelectItem value="Ouvert">Ouvert</SelectItem>
@@ -365,39 +365,41 @@ export default function ReportsPage() {
                     <CardTitle>Liste des signalements</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Client</TableHead>
-                                <TableHead>Boutique</TableHead>
-                                <TableHead>Raison</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Statut</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {reports.map((report) => (
-                                <TableRow key={report.id} className="cursor-pointer" onClick={() => handleViewReport(report)}>
-                                    <TableCell className="font-medium">
-                                        <p>{report.customer.name}</p>
-                                        <p className="text-xs text-muted-foreground">{report.customer.phone}</p>
-                                    </TableCell>
-                                    <TableCell>{getStoreName(report.storeId)}</TableCell>
-                                    <TableCell>{report.reason}</TableCell>
-                                    <TableCell>{report.date}</TableCell>
-                                    <TableCell>
-                                        <Badge className={statusStyles[report.status]}>{report.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewReport(report); }}>
-                                            <Eye className="h-4 w-4"/>
-                                        </Button>
-                                    </TableCell>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Client</TableHead>
+                                    <TableHead className="hidden md:table-cell">Boutique</TableHead>
+                                    <TableHead>Raison</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Date</TableHead>
+                                    <TableHead>Statut</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {reports.map((report) => (
+                                    <TableRow key={report.id} className="cursor-pointer" onClick={() => handleViewReport(report)}>
+                                        <TableCell className="font-medium">
+                                            <p>{report.customer.name}</p>
+                                            <p className="text-xs text-muted-foreground">{report.customer.phone}</p>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">{getStoreName(report.storeId)}</TableCell>
+                                        <TableCell>{report.reason}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{report.date}</TableCell>
+                                        <TableCell>
+                                            <Badge className={statusStyles[report.status]}>{report.status}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewReport(report); }}>
+                                                <Eye className="h-4 w-4"/>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
             
@@ -430,7 +432,7 @@ export default function ReportsPage() {
                                     </CardHeader>
                                     <CardContent>
                                         {selectedReport.proofs && selectedReport.proofs.length > 0 ? (
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 {selectedReport.proofs.map((proof, i) => (
                                                     <div key={i} className="space-y-2">
                                                         <Image
@@ -520,7 +522,7 @@ export default function ReportsPage() {
                                 </Card>
                            </div>
                         </div>
-                        <DialogFooter className="border-t pt-4">
+                        <DialogFooter className="border-t pt-4 flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="secondary" disabled={currentUserPlan === 'starter'}>
@@ -643,4 +645,3 @@ export default function ReportsPage() {
         </div>
     );
 }
-

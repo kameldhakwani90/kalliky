@@ -104,44 +104,46 @@ export default function AdminDashboard() {
           <CardTitle>Gestion des Restaurateurs</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Restaurant</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Statut Stripe</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead className="text-right">Commandes (Mois)</TableHead>
-                <TableHead className="text-right">CA (Mois)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {restaurants.map((resto) => (
-                <TableRow key={resto.name}>
-                  <TableCell className="font-medium">{resto.name}</TableCell>
-                  <TableCell>{resto.email}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={resto.stripeStatus === 'connecté' ? 'default' : 'secondary'}
-                      className={resto.stripeStatus === 'connecté' ? 'bg-green-500/20 text-green-700' : 'bg-yellow-500/20 text-yellow-700'}
-                    >
-                      {resto.stripeStatus === 'connecté' ? (
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                      ) : (
-                        <Clock className="mr-2 h-4 w-4" />
-                      )}
-                      {resto.stripeStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                     <Badge variant="outline">{resto.plan}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{resto.orders}</TableCell>
-                  <TableCell className="text-right">{resto.revenue}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Restaurant</TableHead>
+                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                  <TableHead>Statut Stripe</TableHead>
+                  <TableHead className="hidden sm:table-cell">Plan</TableHead>
+                  <TableHead className="text-right hidden lg:table-cell">Commandes (Mois)</TableHead>
+                  <TableHead className="text-right">CA (Mois)</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {restaurants.map((resto) => (
+                  <TableRow key={resto.name}>
+                    <TableCell className="font-medium">{resto.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">{resto.email}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={resto.stripeStatus === 'connecté' ? 'default' : 'secondary'}
+                        className={resto.stripeStatus === 'connecté' ? 'bg-green-500/20 text-green-700' : 'bg-yellow-500/20 text-yellow-700'}
+                      >
+                        {resto.stripeStatus === 'connecté' ? (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        ) : (
+                          <Clock className="mr-2 h-4 w-4" />
+                        )}
+                        {resto.stripeStatus}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                       <Badge variant="outline">{resto.plan}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right hidden lg:table-cell">{resto.orders}</TableCell>
+                    <TableCell className="text-right">{resto.revenue}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
