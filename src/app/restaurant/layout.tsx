@@ -124,7 +124,6 @@ export default function RestaurantLayout({
   const menuItems = [
     { href: "/restaurant/dashboard", label: {fr: "Aperçu", en: "Overview"}, icon: Home },
     { href: "/restaurant/clients", label: {fr: "Clients", en: "Customers"}, icon: User },
-    { href: "/restaurant/services", label: {fr: "Services", en: "Services"}, icon: BookOpen },
     { href: "/restaurant/reports", label: {fr: "Signalements", en: "Reports"}, icon: Flag },
   ];
   
@@ -134,7 +133,9 @@ export default function RestaurantLayout({
     { href: "/restaurant/billing", label: {fr: "Facturation", en: "Billing"}, icon: CreditCard },
   ];
 
-  const isSettingsPathActive = settingsItems.some(item => pathname.startsWith(item.href));
+  // A settings path is active if the current path starts with one of the settings items' hrefs,
+  // or if it's the service detail page.
+  const isSettingsPathActive = settingsItems.some(item => pathname.startsWith(item.href)) || pathname.startsWith('/restaurant/services/');
 
   return (
     <SidebarProvider>
@@ -179,7 +180,7 @@ export default function RestaurantLayout({
                     <SidebarMenuSub>
                         {settingsItems.map((item) => (
                             <SidebarMenuSubItem key={item.href}>
-                                <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)}>
+                                <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href) || (item.href === "/restaurant/stores" && pathname.startsWith("/restaurant/services"))}>
                                     <Link href={item.href}>
                                         <item.icon />
                                         <span>{t(item.label)}</span>
@@ -293,4 +294,6 @@ export default function RestaurantLayout({
     </SidebarProvider>
   )
 }
+    
+
     

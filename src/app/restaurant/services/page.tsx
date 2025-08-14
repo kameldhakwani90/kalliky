@@ -3,13 +3,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function RedirectToStores() {
     const router = useRouter();
+    
     // This component will redirect to the stores page,
     // which is the new central place for managing services.
-    if (typeof window !== 'undefined') {
+    useEffect(() => {
         router.replace('/restaurant/stores');
-    }
+    }, [router]);
+
     return null; // Render nothing while redirecting
 }
+
+    

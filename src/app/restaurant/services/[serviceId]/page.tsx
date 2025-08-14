@@ -50,7 +50,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus, FileText, Bot, MessageCircle, Check, Ban, BadgeEuro } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus, FileText, Bot, MessageCircle, Check, Ban, BadgeEuro, Utensils, ConciergeBell, BrainCircuit } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -115,6 +115,8 @@ type Service = {
   consultationConfig?: ConsultationConfig;
 };
 
+// This is now a mock store of all services.
+// In a real app this would be in a database.
 const mockServices: Service[] = [
     { id: 'service-1', storeId: 'store-1', name: 'Restauration sur place', description: 'Le catalogue de tous les produits servis à table.', type: 'products' },
     { id: 'service-2', storeId: 'store-1', name: 'Vente à emporter', description: 'Le catalogue des produits disponibles à la vente à emporter.', type: 'products' },
@@ -339,7 +341,7 @@ const ProductsView: React.FC = () => {
   return (
     <>
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1">
           <CardTitle>Catalogue du service</CardTitle>
           <CardDescription>Consultez et gérez les articles pour ce service.</CardDescription>
@@ -861,19 +863,67 @@ const ConsultationView: React.FC<{ service: Service, onSave: (config: Consultati
     );
 };
 
+const ServiceTypeSelector: React.FC<{ onSelect: (type: ServiceType) => void }> = ({ onSelect }) => {
+    return (
+        <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Configurer le service de votre boutique</DialogTitle>
+                <DialogDescription>
+                    Choisissez le type d'activité principal pour cette boutique. Ce choix déterminera les outils de configuration disponibles.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                <Card onClick={() => onSelect('products')} className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+                    <CardHeader className="items-center text-center">
+                        <Utensils className="h-8 w-8 mb-2 text-primary" />
+                        <CardTitle className="text-lg">Vente de Produits</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center text-xs text-muted-foreground">
+                        Idéal pour restaurants, cafés, fast-foods. Gestion de catalogue, prix, options, etc.
+                    </CardContent>
+                </Card>
+                <Card onClick={() => onSelect('reservations')} className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+                     <CardHeader className="items-center text-center">
+                        <ConciergeBell className="h-8 w-8 mb-2 text-primary" />
+                        <CardTitle className="text-lg">Gestion de Réservations</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center text-xs text-muted-foreground">
+                        Idéal pour location de salles, de matériel, de véhicules. Gestion de calendrier, tarifs, etc.
+                    </CardContent>
+                </Card>
+                 <Card onClick={() => onSelect('consultation')} className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+                     <CardHeader className="items-center text-center">
+                        <BrainCircuit className="h-8 w-8 mb-2 text-primary" />
+                        <CardTitle className="text-lg">Prise de RDV Qualifiée</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center text-xs text-muted-foreground">
+                        Pour professions libérales (avocats, consultants). Qualification d'appels par IA.
+                    </CardContent>
+                </Card>
+            </div>
+        </DialogContent>
+    );
+}
 
 export default function ServiceDetailPage() {
   const { t } = useLanguage();
   const router = useRouter();
   const params = useParams();
-  const serviceId = params.serviceId as string;
+  // The serviceId from URL is actually the storeId in our new logic
+  const storeId = params.serviceId as string;
   
-  const [service, setService] = useState<Service | null>(null);
+  // We manage one service per store, fetched based on storeId
+  const [service, setService] = useState<Service | null | undefined>(undefined);
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
   useEffect(() => {
-    const foundService = mockServices.find(s => s.id === serviceId);
+    // In a real app, you'd fetch this from a DB. Here we find it from mocks.
+    const foundService = mockServices.find(s => s.storeId === storeId);
     setService(foundService || null);
-  }, [serviceId]);
+    if (!foundService) {
+        setIsSelectorOpen(true);
+    }
+  }, [storeId]);
 
   const handleSaveConsultationConfig = (config: ConsultationConfig) => {
     if (!service) return;
@@ -886,13 +936,38 @@ export default function ServiceDetailPage() {
         mockServices[serviceIndex] = updatedService;
     }
   };
+  
+  const handleSelectServiceType = (type: ServiceType) => {
+    // This function creates a new service associated with the store
+    const newService: Service = {
+        id: `service-${storeId}`, // Link service ID to store ID
+        storeId: storeId,
+        type: type,
+        // Add default names and descriptions based on type
+        name: type === 'products' ? 'Catalogue de Produits' : type === 'reservations' ? 'Service de Réservation' : 'Service de Consultation',
+        description: `Service de ${type} pour la boutique ${storeId}`
+    };
+    mockServices.push(newService); // Add to our mock data source
+    setService(newService);
+    setIsSelectorOpen(false);
+  }
 
-  if (!service) {
+  // Initial loading state before we have checked for a service
+  if (service === undefined) {
     return (
         <div className="flex h-full items-center justify-center">
             <p>Chargement du service...</p>
         </div>
     );
+  }
+
+  // If no service, show the selector dialog
+  if (!service) {
+      return (
+        <Dialog open={isSelectorOpen} onOpenChange={(open) => { if(!open) router.push('/restaurant/stores')}}>
+            <ServiceTypeSelector onSelect={handleSelectServiceType} />
+        </Dialog>
+      )
   }
 
   const renderServiceView = () => {
@@ -911,9 +986,9 @@ export default function ServiceDetailPage() {
   return (
     <div className="space-y-4 md:space-y-6">
       <header className="mb-4">
-        <Button variant="ghost" onClick={() => router.push('/restaurant/services')} className="-ml-4 mb-2">
+        <Button variant="ghost" onClick={() => router.push('/restaurant/stores')} className="-ml-4 mb-2">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour aux services
+            Retour aux boutiques
         </Button>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
@@ -928,3 +1003,5 @@ export default function ServiceDetailPage() {
     </div>
   );
 }
+
+    
