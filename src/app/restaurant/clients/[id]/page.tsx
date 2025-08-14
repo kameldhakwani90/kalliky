@@ -707,39 +707,41 @@ export default function ClientProfilePage() {
                 <TabsContent value="history">
                     <Card>
                         <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>{t({fr: "Type", en: "Type"})}</TableHead>
-                                        <TableHead>{t({fr: "Détail", en: "Detail"})}</TableHead>
-                                        <TableHead>{t(translations.date)}</TableHead>
-                                        <TableHead>{t(translations.amountTTC)}</TableHead>
-                                        <TableHead className="text-right">{t(translations.action)}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {customer.history.map(item => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>
-                                                <Badge variant="outline" className="flex items-center gap-2">
-                                                    {getHistoryItemIcon(item)}
-                                                    <span>{getHistoryItemLabel(item)}</span>
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {item.type === 'order' ? `${item.id} (${item.items.length} ${t(translations.items)})` : item.serviceName}
-                                            </TableCell>
-                                            <TableCell>{item.date}</TableCell>
-                                            <TableCell>{item.total.toFixed(2)}€</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewHistoryItem(item)}>
-                                                    <Eye className="h-4 w-4"/>
-                                                </Button>
-                                            </TableCell>
+                             <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{t({fr: "Type", en: "Type"})}</TableHead>
+                                            <TableHead>{t({fr: "Détail", en: "Detail"})}</TableHead>
+                                            <TableHead>{t(translations.date)}</TableHead>
+                                            <TableHead>{t(translations.amountTTC)}</TableHead>
+                                            <TableHead className="text-right">{t(translations.action)}</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {customer.history.map(item => (
+                                            <TableRow key={item.id}>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="flex items-center gap-2">
+                                                        {getHistoryItemIcon(item)}
+                                                        <span>{getHistoryItemLabel(item)}</span>
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    {item.type === 'order' ? `${item.id} (${item.items.length} ${t(translations.items)})` : item.serviceName}
+                                                </TableCell>
+                                                <TableCell>{item.date}</TableCell>
+                                                <TableCell>{item.total.toFixed(2)}€</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewHistoryItem(item)}>
+                                                        <Eye className="h-4 w-4"/>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                             </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -799,6 +801,7 @@ export default function ClientProfilePage() {
                 <TabsContent value="reports">
                     <Card>
                         <CardContent className="p-0">
+                               <div className="overflow-x-auto">
                                 <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -834,6 +837,7 @@ export default function ClientProfilePage() {
                                     ))}
                                 </TableBody>
                             </Table>
+                               </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
