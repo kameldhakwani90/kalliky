@@ -117,6 +117,7 @@ export default function RestaurantLayout({
                 >
                   <Link href={item.href}>
                     <item.icon />
+                    <span>{t(item.label)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
