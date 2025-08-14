@@ -16,7 +16,6 @@ import {
     ArrowUp,
     Calendar as CalendarIcon,
     Eye,
-    Filter,
     Phone,
     PlusCircle,
     Receipt,
@@ -41,6 +40,7 @@ import { format } from "date-fns";
 import { useLanguage } from "@/contexts/language-context";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 
 const chartDataFr = [
@@ -90,6 +90,7 @@ type DetailedOrder = {
 
 
 type Customer = {
+    id: string;
     phone: string;
     name?: string;
     status: 'Nouveau' | 'Fidèle' | 'VIP';
@@ -109,6 +110,7 @@ const mockStores = [
 
 const customersData: Record<string, Customer> = {
     "0612345678": {
+        id: "cust-1",
         phone: "06 12 34 56 78",
         name: "Alice Martin",
         status: "Fidèle",
@@ -120,6 +122,7 @@ const customersData: Record<string, Customer> = {
         callHistory: []
     },
      "0787654321": {
+        id: "cust-2",
         phone: "07 87 65 43 21",
         name: "Bob Dupont",
         status: "Nouveau",
@@ -130,6 +133,30 @@ const customersData: Record<string, Customer> = {
         orderHistory: [],
         callHistory: []
     },
+    "0601020304": {
+        id: "cust-10",
+        phone: "06 01 02 03 04",
+        name: undefined,
+        status: 'Nouveau',
+        avgBasket: '24.75€',
+        totalSpent: '24.75€',
+        firstSeen: "27/05/2024",
+        lastSeen: "27/05/2024",
+        orderHistory: [],
+        callHistory: []
+    },
+     "0655443322": {
+        id: "cust-11",
+        phone: "06 55 44 33 22",
+        name: undefined,
+        status: 'Nouveau',
+        avgBasket: '93.90€',
+        totalSpent: '93.90€',
+        firstSeen: "26/05/2024",
+        lastSeen: "26/05/2024",
+        orderHistory: [],
+        callHistory: []
+    }
 };
 
 const recentOrders: DetailedOrder[] = [
@@ -176,6 +203,7 @@ const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId)
 
 // Default customer for phones not in customersData
 const defaultCustomer = (phone: string): Customer => ({
+    id: `cust-temp-${phone}`,
     phone: phone.replace(/(\d{2})(?=\d)/g, '$1 '),
     status: 'Nouveau',
     avgBasket: 'N/A',
@@ -188,6 +216,7 @@ const defaultCustomer = (phone: string): Customer => ({
 
 
 export default function RestaurantDashboard() {
+  const router = useRouter();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isClientFileOpen, setClientFileOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
@@ -207,11 +236,23 @@ export default function RestaurantDashboard() {
   }
   
   const hasStores = mockStores.length > 0;
+  
+  const handleRecentOrderClick = (order: DetailedOrder) => {
+    const customer = customersData[order.customerPhone];
+    if (customer) {
+        const url = `/restaurant/clients/${customer.id}?historyId=${encodeURIComponent(order.id)}`;
+        router.push(url);
+    } else {
+        // Fallback or error handling if customer not found
+        console.warn(`Customer with phone ${order.customerPhone} not found.`);
+        // maybe just open the ticket without linking to a customer page
+        handleViewOrderTicket(order);
+    }
+  }
 
   const translations = {
       dashboardTitle: { fr: "Tableau de Bord", en: "Dashboard" },
       dashboardSubtitle: { fr: "Voici un aperçu de la performance de votre restaurant.", en: "Here is an overview of your restaurant's performance." },
-      filter: { fr: "Filtre", en: "Filter" },
       export: { fr: "Exporter", en: "Export" },
       totalRevenue: { fr: "Revenu Total", en: "Total Revenue" },
       sinceLastMonth: { fr: "depuis le mois dernier", en: "since last month" },
@@ -249,9 +290,9 @@ export default function RestaurantDashboard() {
       total: { fr: "TOTAL", en: "TOTAL" },
       thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
       
-      addFirstStoreTitle: { fr: "Créez votre premier point de vente", en: "Create your first point of sale" },
-      addFirstStoreDescription: { fr: "Commencez à configurer votre activité pour recevoir vos premières demandes avec Kalliky.ai.", en: "Start configuring your business to receive your first requests with Kalliky.ai." },
-      addStoreButton: { fr: "Ajouter un point de vente", en: "Add a point of sale" },
+      addFirstPOS: { fr: "Créez votre premier point de vente", en: "Create your first point of sale" },
+      addPOSDescription: { fr: "Commencez à configurer votre activité pour recevoir vos premières demandes avec Kalliky.ai.", en: "Start configuring your business to receive your first requests with Kalliky.ai." },
+      addPOSButton: { fr: "Ajouter un point de vente", en: "Add a point of sale" },
   }
     
   return (
@@ -263,17 +304,11 @@ export default function RestaurantDashboard() {
               <p className="text-muted-foreground">{t(translations.dashboardSubtitle)}</p>
             </div>
             <div className="flex items-center space-x-2">
-                 {hasStores && (
-                    <Button variant="outline" className="h-9">
-                        <Filter className="mr-2 h-4 w-4" />
-                        {t(translations.filter)}
-                    </Button>
-                 )}
                  {hasStores ? (
                     <Button asChild>
                        <Link href="/restaurant/stores?action=new">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            {t(translations.addStoreButton)}
+                            {t(translations.addPOSButton)}
                         </Link>
                     </Button>
                  ) : (
@@ -285,20 +320,20 @@ export default function RestaurantDashboard() {
         </div>
 
         {!hasStores && (
-             <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer">
+             <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all">
                 <Link href="/restaurant/stores?action=new" className="block">
                     <CardHeader className="flex flex-col md:flex-row md:items-center gap-4 space-y-0">
                         <div className="p-4 bg-primary/10 rounded-full w-fit">
                             <Store className="h-8 w-8 text-primary" />
                         </div>
                         <div className="flex-1">
-                            <CardTitle>{t(translations.addFirstStoreTitle)}</CardTitle>
-                            <CardDescription>{t(translations.addFirstStoreDescription)}</CardDescription>
+                            <CardTitle>{t(translations.addFirstPOS)}</CardTitle>
+                            <CardDescription>{t(translations.addPOSDescription)}</CardDescription>
                         </div>
                         <div className="ml-auto">
                             <Button>
                                 <PlusCircle className="mr-2 h-4 w-4" />
-                                {t(translations.addStoreButton)}
+                                {t(translations.addPOSButton)}
                             </Button>
                         </div>
                     </CardHeader>
@@ -408,7 +443,7 @@ export default function RestaurantDashboard() {
                   {recentOrders.map(order => {
                     const customer = customersData[order.customerPhone] || defaultCustomer(order.customerPhone);
                     return (
-                        <div key={order.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
+                        <div key={order.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 cursor-pointer" onClick={() => handleRecentOrderClick(order)}>
                             <Avatar className="h-9 w-9">
                                 <AvatarFallback>{customer.name ? customer.name.slice(0,2) : customer.phone.slice(-2)}</AvatarFallback>
                             </Avatar>
@@ -427,7 +462,7 @@ export default function RestaurantDashboard() {
                             </div>
                             <div className="flex items-center gap-1">
                                 <p className="text-sm font-bold w-16 text-right">{order.total.toFixed(2)}€</p>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <Eye className="h-4 w-4"/>
                                 </Button>
                             </div>

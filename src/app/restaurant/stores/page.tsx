@@ -76,6 +76,7 @@ type Store = {
     telnyxConfigured?: boolean;
     serviceId?: string;
     serviceType: ServiceType;
+    businessType?: BusinessType;
 };
 
 const initialStores: Store[] = [
@@ -196,10 +197,13 @@ const businessTemplates: Record<BusinessType, { taxRates: Omit<TaxRate, 'id'>[],
     }
 };
 
-const businessTypeMapping: Record<ServiceType, BusinessType> = {
-    products: 'restaurant',
-    reservations: 'event_hall',
-    consultation: 'consulting',
+const businessTypeToServiceTypeMapping: Record<BusinessType, ServiceType> = {
+    restaurant: 'products',
+    coffeeshop: 'products',
+    event_hall: 'reservations',
+    car_rental: 'reservations',
+    consulting: 'consultation',
+    wellness: 'reservations'
 };
 
 
@@ -237,9 +241,9 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         setEditableStore(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleServiceTypeSelection = (value: ServiceType) => {
-        const businessType = businessTypeMapping[value] || 'restaurant';
-        setEditableStore(prev => ({...prev, serviceType: value, businessType: businessType}));
+    const handleBusinessTypeSelection = (value: BusinessType) => {
+        const serviceType = businessTypeToServiceTypeMapping[value];
+        setEditableStore(prev => ({...prev, businessType: value, serviceType: serviceType}));
     };
 
     const applyTemplate = () => {
@@ -322,8 +326,8 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
     const prevStep = () => setWizardStep(prev => Math.max(prev - 1, 0));
 
     const translations = {
-        editStore: { fr: "Modifier la boutique", en: "Edit store" },
-        addNewStore: { fr: "Assistant de création de boutique", en: "Store Creation Wizard" },
+        editStore: { fr: "Modifier le point de vente", en: "Edit Point of Sale" },
+        addNewStore: { fr: "Assistant de création de point de vente", en: "Point of Sale Creation Wizard" },
         stepOf: { fr: "Étape {step} sur {total}", en: "Step {step} of {total}" },
         welcomeTitle: { fr: 'Bienvenue chez Kalliky.ai !', en: 'Welcome to Kalliky.ai!' },
         welcomeDescription: { fr: 'Prêt à transformer la gestion de votre commerce ? Cet assistant va vous guider pour configurer votre premier point de vente en quelques minutes.', en: 'Ready to transform your business management? This wizard will guide you to set up your first point of sale in minutes.' },
@@ -332,14 +336,16 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         openingHours: { fr: "Horaires", en: "Hours" },
         taxes: { fr: "Taxes", en: "Taxes" },
         peripherals: { fr: "Périphériques", en: "Peripherals" },
-        businessType: { fr: "Type d'activité", en: "Business Type" },
+        businessType: { fr: "Quel est votre type d'activité ?", en: "What is your business type?" },
         restaurant: { fr: "Restaurant", en: "Restaurant" },
         coffeeshop: { fr: "Café / Salon de thé", en: "Coffee Shop" },
         eventHall: { fr: "Salle d'événementiel", en: "Event Hall" },
         carRental: { fr: "Location de véhicules", en: "Car Rental" },
-        restaurantName: { fr: "Nom de l'établissement", en: "Establishment Name" },
+        consulting: { fr: "Cabinet (Avocat, Conseil...)", en: "Consulting (Lawyer, Consultant...)" },
+        wellness: { fr: "Bien-être (Spa, Massage...)", en: "Wellness (Spa, Massage...)" },
+        posName: { fr: "Nom du point de vente", en: "Point of Sale Name" },
         fullAddress: { fr: "Adresse complète", en: "Full address" },
-        landline: { fr: "Téléphone fixe", en: "Landline phone" },
+        landline: { fr: "Téléphone fixe (ligne principale)", en: "Landline phone (main line)" },
         openingHoursDesc: { fr: "Utilisé pour accepter ou refuser les commandes automatiquement.", en: "Used to automatically accept or refuse orders." },
         defaultCurrency: { fr: "Devise par défaut", en: "Default currency" },
         vatRates: { fr: "Taux de TVA applicables", en: "Applicable VAT rates" },
@@ -353,7 +359,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         connectStripe: { fr: "Connecter mon compte Stripe", en: "Connect my Stripe account" },
         planProRequired: { fr: 'Plan Pro requis', en: 'Pro Plan required' },
         messagingDescription: { fr: "Utilisé pour les demandes de preuve (Plan Pro et +).", en: "Used for proof requests (Pro Plan and up)." },
-        whatsappNumber: { fr: "Numéro WhatsApp de la boutique", en: "Store's WhatsApp number" },
+        whatsappNumber: { fr: "Numéro WhatsApp du point de vente", en: "POS's WhatsApp number" },
         printerManagement: { fr: "Gestion des imprimantes", en: "Printer Management" },
         role: { fr: "Rôle", en: "Role" },
         receipt: { fr: "Ticket de caisse", en: "Receipt" },
@@ -380,7 +386,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         telnyxInstruction3: { fr: "3. Configurez un renvoi de tous les appels vers votre numéro vocal ci-dessus.", en: "3. Set up forwarding for all calls to your voice number above." },
         telnyxConfirm: { fr: "J'ai configuré le renvoi d'appel", en: "I have configured call forwarding" },
         configureLater: { fr: 'Configurer plus tard', en: 'Configure later' },
-        finishTitle: { fr: 'Votre boutique est prête !', en: 'Your store is ready!' },
+        finishTitle: { fr: 'Votre point de vente est prêt !', en: 'Your point of sale is ready!' },
         finishDescription: { fr: "Il ne reste plus qu'à créer votre catalogue. C'est simple et rapide.", en: "All that's left is to create your catalog. It's quick and easy." },
         menuCreationMethod: { fr: 'Méthodes de création de catalogue', en: 'Catalog Creation Methods' },
         method1Title: { fr: 'Import de fichier', en: 'File Import' },
@@ -392,7 +398,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
         next: { fr: 'Suivant', en: 'Next' },
         finishAndCreateMenu: { fr: 'Terminer et créer mon catalogue', en: 'Finish and Create Catalog' },
         configTemplate: { fr: 'Modèle de configuration', en: 'Configuration Template' },
-        configTemplateDesc: { fr: "Pour vous faire gagner du temps, nous pouvons pré-remplir la configuration de votre boutique avec des paramètres standards pour votre type d'activité.", en: "To save you time, we can pre-fill your store's configuration with standard settings for your business type." },
+        configTemplateDesc: { fr: "Pour vous faire gagner du temps, nous pouvons pré-remplir la configuration de votre point de vente avec des paramètres standards pour votre type d'activité.", en: "To save you time, we can pre-fill your point of sale's configuration with standard settings for your business type." },
         applyTemplate: { fr: 'Appliquer le modèle et continuer', en: 'Apply template and continue' },
         manualConfig: { fr: 'Configurer manuellement', en: 'Configure manually' },
     };
@@ -425,7 +431,7 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                     {wizardStep === 1 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">{t(translations.restaurantName)}</Label>
+                                <Label htmlFor="name">{t(translations.posName)}</Label>
                                 <Input id="name" name="name" value={editableStore.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} required />
                             </div>
                             <div className="space-y-2">
@@ -438,19 +444,22 @@ function StoreWizard({ store, onSave, onCancel }: { store: Store | null, onSave:
                             </div>
                             <div className="space-y-2">
                                 <Label>{t(translations.businessType)}</Label>
-                                 <Select name="serviceType" value={editableStore.serviceType} onValueChange={(value: ServiceType) => handleServiceTypeSelection(value)}>
+                                 <Select name="businessType" value={editableStore.businessType} onValueChange={(value: BusinessType) => handleBusinessTypeSelection(value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder={t({ fr: 'Sélectionnez un type', en: 'Select a type' })} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="products"><Utensils className="mr-2 h-4 w-4" />{t({fr: "Vente de Produits", en: "Product Sales"})}</SelectItem>
-                                        <SelectItem value="reservations"><ConciergeBell className="mr-2 h-4 w-4" />{t({fr: "Réservations", en: "Reservations"})}</SelectItem>
-                                        <SelectItem value="consultation"><BrainCircuit className="mr-2 h-4 w-4" />{t({fr: "Consultations", en: "Consultations"})}</SelectItem>
+                                        <SelectItem value="restaurant"><Utensils className="mr-2 h-4 w-4" />{t(translations.restaurant)}</SelectItem>
+                                        <SelectItem value="coffeeshop"><Coffee className="mr-2 h-4 w-4" />{t(translations.coffeeshop)}</SelectItem>
+                                        <SelectItem value="event_hall"><Building className="mr-2 h-4 w-4" />{t(translations.eventHall)}</SelectItem>
+                                        <SelectItem value="car_rental"><Car className="mr-2 h-4 w-4" />{t(translations.carRental)}</SelectItem>
+                                        <SelectItem value="wellness"><Sparkles className="mr-2 h-4 w-4" />{t(translations.wellness)}</SelectItem>
+                                        <SelectItem value="consulting"><BrainCircuit className="mr-2 h-4 w-4" />{t(translations.consulting)}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                            
-                            {!store && editableStore.serviceType && (
+                            {!store && editableStore.businessType && (
                                 <Card className="mt-6 bg-primary/5 border-primary/20">
                                     <CardHeader>
                                         <CardTitle className="text-base flex items-center gap-2">
@@ -877,9 +886,9 @@ export default function StoresPage() {
     };
 
     const translations = {
-        title: { fr: "Gestion des Boutiques", en: "Store Management" },
-        description: { fr: "Gérez vos points de vente et les catalogues associés.", en: "Manage your points of sale and associated catalogs." },
-        addStore: { fr: "Ajouter une boutique", en: "Add store" },
+        title: { fr: "Gestion des points de vente", en: "Point of Sale Management" },
+        description: { fr: "Gérez vos points de vente et les services associés.", en: "Manage your points of sale and associated services." },
+        addStore: { fr: "Ajouter un point de vente", en: "Add Point of Sale" },
         name: { fr: "Nom", en: "Name" },
         status: { fr: "Statut", en: "Status" },
         connections: { fr: "Connexions", en: "Connections" },
@@ -892,7 +901,7 @@ export default function StoresPage() {
         edit: { fr: "Modifier", en: "Edit" },
         delete: { fr: "Supprimer", en: "Delete" },
         areYouSure: { fr: "Êtes-vous sûr ?", en: "Are you sure?" },
-        deleteConfirmation: { fr: "Cette action est irréversible. La boutique, son catalogue et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The store, its catalog, and all associated data will be permanently deleted." },
+        deleteConfirmation: { fr: "Cette action est irréversible. Le point de vente, son service et toutes ses données associées seront définitivement supprimés.", en: "This action is irreversible. The point of sale, its service, and all associated data will be permanently deleted." },
         cancel: { fr: "Annuler", en: "Cancel" },
         manageService: { fr: "Gérer le service", en: "Manage Service" },
     };
@@ -991,5 +1000,3 @@ export default function StoresPage() {
         </div>
     );
 }
-
-    
