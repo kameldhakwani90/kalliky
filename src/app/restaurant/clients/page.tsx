@@ -111,8 +111,8 @@ export default function ClientsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
                     <p className="text-muted-foreground">{t(translations.description)}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                     <div className="relative flex-1">
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                     <div className="relative flex-1 w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input 
                             placeholder={t(translations.searchPlaceholder)} 
@@ -121,7 +121,7 @@ export default function ClientsPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <Button variant="outline">
+                    <Button variant="outline" className="w-full sm:w-auto">
                         <Filter className="mr-2 h-4 w-4" />
                         {t(translations.filters)}
                     </Button>
