@@ -342,8 +342,8 @@ export default function RestaurantDashboard() {
             </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
               <CardHeader>
                 <CardTitle>{t(translations.salesPerformance)}</CardTitle>
                 <CardDescription>{t(translations.monthlyRevenue)}</CardDescription>
@@ -380,7 +380,7 @@ export default function RestaurantDashboard() {
               </CardContent>
             </Card>
 
-             <Card className="lg:col-span-1">
+             <Card>
               <CardHeader>
                 <CardTitle>{t(translations.recentOrders)}</CardTitle>
                 <CardDescription>
