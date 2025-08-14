@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { PlusCircle, Utensils, CalendarCheck, MoreHorizontal, Pencil, Trash2, ArrowRight } from 'lucide-react';
+import { PlusCircle, Utensils, CalendarCheck, MoreHorizontal, Pencil, Trash2, ArrowRight, MessageCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -41,7 +41,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/contexts/language-context';
 import { Badge } from '@/components/ui/badge';
 
-type ServiceType = 'products' | 'reservations';
+type ServiceType = 'products' | 'reservations' | 'consultation';
 
 type Service = {
   id: string;
@@ -55,12 +55,14 @@ const availableStores = [
     { id: "store-1", name: "Le Gourmet Parisien - Centre" },
     { id: "store-2", name: "Le Gourmet Parisien - Montmartre"},
     { id: "store-3", name: "Pizzeria Bella - Bastille" },
+    { id: "store-4", name: "Cabinet Avocat Dupont & Associés" },
 ];
 
 const initialServices: Service[] = [
     { id: 'service-1', storeId: 'store-1', name: 'Restauration sur place', description: 'Le catalogue de tous les produits servis à table.', type: 'products' },
     { id: 'service-2', storeId: 'store-1', name: 'Vente à emporter', description: 'Le catalogue des produits disponibles à la vente à emporter.', type: 'products' },
     { id: 'service-3', storeId: 'store-2', name: 'Location de la salle de réception', description: 'Service de réservation pour les événements privés.', type: 'reservations' },
+    { id: 'service-5', storeId: 'store-4', name: 'Consultation Droit des Affaires', description: 'Prise de rendez-vous qualifiée par IA pour les nouveaux clients.', type: 'consultation' },
 ];
 
 export default function ServicesPage() {
@@ -111,24 +113,28 @@ export default function ServicesPage() {
         createService: { fr: "Créer un service", en: "Create a service" },
         manageCatalog: { fr: "Gérer le catalogue", en: "Manage Catalog" },
         manageReservations: { fr: "Gérer les réservations", en: "Manage Reservations" },
+        configureConsultation: { fr: "Configurer l'IA", en: "Configure AI" },
         products: { fr: "Produits", en: "Products" },
         reservations: { fr: "Réservations", en: "Reservations" },
+        consultation: { fr: "Consultation (IA)", en: "Consultation (AI)" },
         delete: { fr: "Supprimer", en: "Delete" },
         edit: { fr: "Modifier", en: "Edit" },
         confirmDelete: { fr: "Êtes-vous sûr de vouloir supprimer ce service ?", en: "Are you sure you want to delete this service?" },
-        irreversible: { fr: "Cette action est irréversible et supprimera tout le catalogue associé.", en: "This action is irreversible and will delete the entire associated catalog." },
+        irreversible: { fr: "Cette action est irréversible et supprimera tout le catalogue ou la configuration associée.", en: "This action is irreversible and will delete the entire associated catalog or configuration." },
         cancel: { fr: "Annuler", en: "Cancel" },
         save: { fr: "Enregistrer", en: "Save" },
         newServiceTitle: { fr: "Que proposez-vous ?", en: "What do you offer?" },
         editServiceTitle: { fr: "Modifier le service", en: "Edit the service" },
         serviceName: { fr: "Nom de l'offre ou du catalogue", en: "Offer or catalog name" },
-        serviceNamePlaceholder: { fr: "Ex: Menu du restaurant, Location de véhicules, Prestations de coiffure...", en: "E.g.: Restaurant menu, Vehicle rental, Hairdressing services..." },
+        serviceNamePlaceholder: { fr: "Ex: Menu du restaurant, Location de véhicules, Consultation juridique...", en: "E.g.: Restaurant menu, Vehicle rental, Legal consultation..." },
         serviceDesc: { fr: "Description (facultatif)", en: "Description (optional)" },
         serviceType: { fr: "Comment souhaitez-vous gérer cette offre ?", en: "How do you want to manage this offer?" },
         productManagement: { fr: "Catalogue de produits", en: "Product Catalog" },
         productManagementDesc: { fr: "Vente d'articles avec gestion de stock.", en: "Sale of items with stock management." },
         reservationManagement: { fr: "Service de réservation", en: "Reservation Service" },
         reservationManagementDesc: { fr: "Prise de rendez-vous ou location sur calendrier.", en: "Appointment booking or calendar-based rental." },
+        consultationManagement: { fr: "Consultation avec qualification IA", en: "Consultation with AI qualification" },
+        consultationManagementDesc: { fr: "L'IA qualifie le client et vous fournit un compte-rendu avec un score.", en: "The AI qualifies the customer and provides you with a report and a score." },
         noServices: { fr: "Aucun service défini pour cette boutique.", en: "No services defined for this store." },
         createFirstService: { fr: "Créez votre premier service pour commencer.", en: "Create your first service to get started." },
     };
@@ -136,6 +142,7 @@ export default function ServicesPage() {
     const serviceIcons: Record<ServiceType, React.ElementType> = {
         products: Utensils,
         reservations: CalendarCheck,
+        consultation: MessageCircle,
     };
     
     return(
@@ -204,7 +211,7 @@ export default function ServicesPage() {
                                         </DropdownMenu>
                                     </div>
                                     <Badge variant="outline" className="mt-2 w-fit">
-                                        {service.type === 'products' ? t(translations.products) : t(translations.reservations)}
+                                        {service.type === 'products' ? t(translations.products) : (service.type === 'reservations' ? t(translations.reservations) : t(translations.consultation))}
                                     </Badge>
                                 </CardHeader>
                                 <CardContent className="flex-1">
@@ -213,7 +220,7 @@ export default function ServicesPage() {
                                 <CardFooter>
                                     <Button asChild className="w-full">
                                         <Link href={`/restaurant/services/${service.id}`}>
-                                            {service.type === 'products' ? t(translations.manageCatalog) : t(translations.manageReservations)}
+                                            {service.type === 'products' ? t(translations.manageCatalog) : (service.type === 'reservations' ? t(translations.manageReservations) : t(translations.configureConsultation))}
                                             <ArrowRight className="ml-2 h-4 w-4"/>
                                         </Link>
                                     </Button>
@@ -274,6 +281,12 @@ export default function ServicesPage() {
                                         <div className="flex flex-col">
                                             <span>{t(translations.reservationManagement)}</span>
                                             <span className="text-xs text-muted-foreground">{t(translations.reservationManagementDesc)}</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="consultation">
+                                        <div className="flex flex-col">
+                                            <span>{t(translations.consultationManagement)}</span>
+                                            <span className="text-xs text-muted-foreground">{t(translations.consultationManagementDesc)}</span>
                                         </div>
                                     </SelectItem>
                                 </SelectContent>

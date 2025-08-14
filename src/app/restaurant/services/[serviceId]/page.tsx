@@ -50,7 +50,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus, FileText, Bot } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus, FileText, Bot, MessageCircle, Check, Ban, BadgeEuro } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -104,7 +104,7 @@ const daysOfWeek = [
     { id: 'sunday', label: { fr: 'Dimanche', en: 'Sunday' } },
 ];
 
-type ServiceType = 'products' | 'reservations';
+type ServiceType = 'products' | 'reservations' | 'consultation';
 
 type Service = {
   id: string;
@@ -112,6 +112,7 @@ type Service = {
   name: string;
   description: string;
   type: ServiceType;
+  consultationConfig?: ConsultationConfig;
 };
 
 const mockServices: Service[] = [
@@ -119,6 +120,12 @@ const mockServices: Service[] = [
     { id: 'service-2', storeId: 'store-1', name: 'Vente à emporter', description: 'Le catalogue des produits disponibles à la vente à emporter.', type: 'products' },
     { id: 'service-3', storeId: 'store-2', name: 'Location de la salle de réception', description: 'Service de réservation pour les événements privés.', type: 'reservations' },
     { id: 'service-4', storeId: 'store-3', name: 'Location de voitures de luxe', description: 'Réservez nos véhicules exclusifs à la journée ou à la semaine.', type: 'reservations' },
+    { id: 'service-5', storeId: 'store-4', name: 'Consultation Droit des Affaires', description: 'Prise de rendez-vous qualifiée par IA pour les nouveaux clients.', type: 'consultation', consultationConfig: {
+        description: "Avocat spécialisé en droit des affaires, fusions-acquisitions et droit des sociétés.",
+        acceptanceCriteria: ["création de société", "levée de fonds", "pacte d'actionnaires", "cession de fonds de commerce", "M&A"],
+        rejectionCriteria: ["droit de la famille", "divorce", "garde d'enfants", "droit pénal", "droit du travail côté employé"],
+        fees: "Les honoraires sont facturés au temps passé sur la base d'un taux horaire de 300€ HT. Un premier appel de 15 minutes est offert pour qualifier le dossier.",
+    }},
 ];
 
 
@@ -240,6 +247,17 @@ const initialReservableItems: ReservableItem[] = [
     { id: 'res-item-3', name: 'Location Porsche 911', description: 'Vivez une expérience inoubliable au volant d\'une voiture de légende.', duration: 1440, pricing: { model: 'per_day', basePrice: 950 }, availability: defaultAvailability, status: 'active' },
     { id: 'res-item-4', name: 'Trajet VTC', description: 'Service de transport avec chauffeur.', pricing: { model: 'per_unit', unitName: 'km', perUnitPrice: 2.5, basePrice: 10 }, availability: defaultAvailability, status: 'active' },
 ];
+
+
+//======= CONSULTATION-SPECIFIC DATA STRUCTURES =======//
+
+type ConsultationConfig = {
+    description: string;
+    acceptanceCriteria: string[];
+    rejectionCriteria: string[];
+    fees: string;
+};
+
 
 //======= DYNAMIC COMPONENTS =======//
 
@@ -548,7 +566,7 @@ const ReservationsView: React.FC = () => {
                                                         <p className="text-sm text-muted-foreground">{res.customerName}</p>
                                                         <p className="text-xs text-muted-foreground">{format(res.startTime, 'HH:mm')} - {format(res.endTime, 'HH:mm')}</p>
                                                     </div>
-                                                    <Badge variant={res.status === 'confirmed' ? 'default' : 'secondary'} className={res.status === 'confirmed' ? 'bg-green-100 text-green-800' : ''}>{res.status}</Badge>
+                                                    <Badge variant={res.status === 'confirmed' ? 'default' : 'secondary'} className={res.status === 'confirmed' ? 'bg-green-100 text-green-700' : ''}>{res.status}</Badge>
                                                 </CardContent>
                                             </Card>
                                         )
@@ -739,6 +757,111 @@ const ReservationsView: React.FC = () => {
     );
 };
 
+const ConsultationView: React.FC<{ service: Service, onSave: (config: ConsultationConfig) => void }> = ({ service, onSave }) => {
+    const { t } = useLanguage();
+    const [config, setConfig] = useState<ConsultationConfig>(
+        service.consultationConfig || {
+            description: '',
+            acceptanceCriteria: [],
+            rejectionCriteria: [],
+            fees: '',
+        }
+    );
+    const [newAcceptanceCriterion, setNewAcceptanceCriterion] = useState('');
+    const [newRejectionCriterion, setNewRejectionCriterion] = useState('');
+
+    const handleAddCriterion = (type: 'acceptance' | 'rejection') => {
+        if (type === 'acceptance' && newAcceptanceCriterion) {
+            setConfig(prev => ({...prev, acceptanceCriteria: [...prev.acceptanceCriteria, newAcceptanceCriterion]}));
+            setNewAcceptanceCriterion('');
+        }
+        if (type === 'rejection' && newRejectionCriterion) {
+            setConfig(prev => ({...prev, rejectionCriteria: [...prev.rejectionCriteria, newRejectionCriterion]}));
+            setNewRejectionCriterion('');
+        }
+    };
+
+    const handleRemoveCriterion = (type: 'acceptance' | 'rejection', index: number) => {
+        if (type === 'acceptance') {
+            setConfig(prev => ({...prev, acceptanceCriteria: prev.acceptanceCriteria.filter((_, i) => i !== index)}));
+        }
+        if (type === 'rejection') {
+            setConfig(prev => ({...prev, rejectionCriteria: prev.rejectionCriteria.filter((_, i) => i !== index)}));
+        }
+    }
+
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Configuration de l'IA de Consultation</CardTitle>
+                    <CardDescription>
+                        Fournissez à l'IA les informations nécessaires pour qualifier les appels entrants et vous fournir un score de pertinence.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="consult-desc">Description du service / professionnel</Label>
+                        <Textarea id="consult-desc" placeholder="Ex: Avocat spécialisé en droit des affaires..." value={config.description} onChange={e => setConfig(p => ({ ...p, description: e.target.value }))}/>
+                    </div>
+
+                    <Card className="bg-green-50 border border-green-200">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex items-center gap-2"><Check className="text-green-600"/>Critères d'acceptation</CardTitle>
+                            <CardDescription>Mots-clés ou phrases qui indiquent une forte pertinence.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <div className="flex gap-2">
+                             <Input placeholder="Ex: Création de société" value={newAcceptanceCriterion} onChange={e => setNewAcceptanceCriterion(e.target.value)} />
+                             <Button onClick={() => handleAddCriterion('acceptance')}>Ajouter</Button>
+                           </div>
+                           <div className="mt-2 space-x-2 space-y-2">
+                                {config.acceptanceCriteria.map((criterion, index) => (
+                                    <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 text-sm">
+                                        {criterion}
+                                        <button onClick={() => handleRemoveCriterion('acceptance', index)} className="ml-2 rounded-full hover:bg-green-200 p-0.5"><X className="h-3 w-3"/></button>
+                                    </Badge>
+                                ))}
+                           </div>
+                        </CardContent>
+                    </Card>
+
+                     <Card className="bg-red-50 border border-red-200">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex items-center gap-2"><Ban className="text-red-600"/>Critères de refus (Freins)</CardTitle>
+                            <CardDescription>Mots-clés ou phrases qui indiquent une faible pertinence.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <div className="flex gap-2">
+                             <Input placeholder="Ex: Droit de la famille" value={newRejectionCriterion} onChange={e => setNewRejectionCriterion(e.target.value)} />
+                             <Button onClick={() => handleAddCriterion('rejection')}>Ajouter</Button>
+                           </div>
+                           <div className="mt-2 space-x-2 space-y-2">
+                                {config.rejectionCriteria.map((criterion, index) => (
+                                    <Badge key={index} variant="secondary" className="bg-red-100 text-red-800 text-sm">
+                                        {criterion}
+                                        <button onClick={() => handleRemoveCriterion('rejection', index)} className="ml-2 rounded-full hover:bg-red-200 p-0.5"><X className="h-3 w-3"/></button>
+                                    </Badge>
+                                ))}
+                           </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <div className="space-y-2">
+                        <Label htmlFor="consult-fees">Informations sur les honoraires/frais</Label>
+                        <Textarea id="consult-fees" placeholder="Ex: 300€/heure, premier appel de 15min offert..." value={config.fees} onChange={e => setConfig(p => ({ ...p, fees: e.target.value }))}/>
+                    </div>
+                </CardContent>
+                 <CardFooter className="flex justify-end">
+                    <Button onClick={() => onSave(config)}>Enregistrer la configuration</Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+};
+
+
 export default function ServiceDetailPage() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -752,12 +875,37 @@ export default function ServiceDetailPage() {
     setService(foundService || null);
   }, [serviceId]);
 
+  const handleSaveConsultationConfig = (config: ConsultationConfig) => {
+    if (!service) return;
+    const updatedService = { ...service, consultationConfig: config };
+    setService(updatedService);
+    // Here you would also update the main services list, e.g., through a context or a server call
+    // For now, we just update the local state.
+    const serviceIndex = mockServices.findIndex(s => s.id === service.id);
+    if(serviceIndex > -1) {
+        mockServices[serviceIndex] = updatedService;
+    }
+  };
+
   if (!service) {
     return (
         <div className="flex h-full items-center justify-center">
             <p>Chargement du service...</p>
         </div>
     );
+  }
+
+  const renderServiceView = () => {
+    switch (service.type) {
+        case 'products':
+            return <ProductsView />;
+        case 'reservations':
+            return <ReservationsView />;
+        case 'consultation':
+            return <ConsultationView service={service} onSave={handleSaveConsultationConfig} />;
+        default:
+            return <p>Type de service non reconnu.</p>;
+    }
   }
 
   return (
@@ -775,7 +923,7 @@ export default function ServiceDetailPage() {
         </div>
       </header>
       
-      {service.type === 'products' ? <ProductsView /> : <ReservationsView />}
+      {renderServiceView()}
 
     </div>
   );
