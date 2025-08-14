@@ -50,7 +50,7 @@ import {
 import { Button } from '@/components/ui/button';
 import MenuSyncForm from './menu-sync-form';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus, FileText } from 'lucide-react';
+import { PlusCircle, Wand2, Tag, Info, ArrowLeft, ChevronRight, Store, MoreHorizontal, Pencil, Trash2, Search, Clock, ImagePlus, Plus, X, List, Layers, Ruler, Box, CalendarDays, Users, Calendar, DollarSign, Settings, Trash, PackagePlus, FileText, Bot } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -255,7 +255,7 @@ const ProductsView: React.FC = () => {
   const [editedItem, setEditedItem] = useState<CatalogItem | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSyncPopupOpen, setIsSyncPopupOpen] = useState(false);
-  const [syncPopupTab, setSyncPopupTab] = useState('article');
+  const [syncPopupTab, setSyncPopupTab] = useState('import');
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -332,19 +332,25 @@ const ProductsView: React.FC = () => {
             <DialogHeader><DialogTitle>Outils de création et synchronisation</DialogTitle></DialogHeader>
             <Tabs value={syncPopupTab} onValueChange={setSyncPopupTab} className="pt-2">
               <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="import">Importer</TabsTrigger>
                 <TabsTrigger value="article">Article</TabsTrigger>
                 <TabsTrigger value="category">Catégorie</TabsTrigger>
-                <TabsTrigger value="import">Importer</TabsTrigger>
               </TabsList>
+              <TabsContent value="import" className="pt-4 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Gagnez du temps. Importez votre catalogue depuis un fichier (Excel, etc.) ou une simple photo de votre menu. Notre IA s'occupe de tout.
+                </p>
+                <MenuSyncForm />
+              </TabsContent>
               <TabsContent value="article" className="pt-4 space-y-4">
-                <p className="text-sm text-muted-foreground">Créez un nouvel article manuellement et configurez toutes ses options en détail.</p>
+                <p className="text-sm text-muted-foreground">Idéal pour ajouter rapidement un ou deux articles. Configurez toutes les options manuellement pour un contrôle total.</p>
                 <Button className="w-full" onClick={handleCreateNewItem}><PlusCircle className="mr-2 h-4 w-4"/>Créer un nouvel article</Button>
               </TabsContent>
               <TabsContent value="category" className="pt-4 space-y-4">
+                 <p className="text-sm text-muted-foreground">Organisez votre catalogue en créant des catégories pour regrouper vos articles (ex: Entrées, Plats, Boissons).</p>
                 <div className="space-y-2"><Label htmlFor="cat-name">Nom de la nouvelle catégorie</Label><Input id="cat-name" placeholder="Ex: Boissons fraîches"/></div>
                 <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4"/>Ajouter la catégorie</Button>
               </TabsContent>
-              <TabsContent value="import" className="pt-4 space-y-4"><p className="text-sm text-muted-foreground">Importez depuis un fichier Excel ou une image (flyer, menu existant). Notre IA détectera et ajoutera les plats pour vous.</p><MenuSyncForm /></TabsContent>
             </Tabs>
           </DialogContent>
         </Dialog>
@@ -505,19 +511,19 @@ const ReservationsView: React.FC = () => {
                 </TabsList>
                 <TabsContent value="calendar">
                     <Card>
-                        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <CardContent className="grid grid-cols-1 gap-6 p-4 md:grid-cols-3">
                             <div className="md:col-span-1">
                                 <ShadcnCalendar
                                     mode="single"
                                     selected={selectedDate}
                                     onSelect={setSelectedDate}
-                                    className="rounded-md border"
+                                    className="mx-auto rounded-md border"
                                     locale={fr}
                                     components={{
                                         DayContent: (props) => {
                                             const isReserved = reservations.some(r => isSameDay(r.startTime, props.date));
                                             return (
-                                                <div className="relative h-full w-full flex items-center justify-center">
+                                                <div className="relative flex h-full w-full items-center justify-center">
                                                     <span className="relative z-10">{format(props.date, 'd')}</span>
                                                     {isReserved && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary"></span>}
                                                 </div>
@@ -527,13 +533,13 @@ const ReservationsView: React.FC = () => {
                                 />
                             </div>
                             <div className="md:col-span-2">
-                                <h3 className="text-lg font-semibold mb-3">Réservations pour le {selectedDate ? format(selectedDate, "PPP", { locale: fr }) : ''}</h3>
+                                <h3 className="mb-3 text-lg font-semibold">Réservations pour le {selectedDate ? format(selectedDate, "PPP", { locale: fr }) : ''}</h3>
                                 <div className="space-y-3">
                                     {reservationsForSelectedDay.length > 0 ? reservationsForSelectedDay.map(res => {
                                         const item = reservableItems.find(i => i.id === res.reservableItemId);
                                         return (
                                             <Card key={res.id} className="bg-muted/50">
-                                                <CardContent className="p-3 flex items-center justify-between">
+                                                <CardContent className="flex items-center justify-between p-3">
                                                     <div>
                                                         <p className="font-semibold">{item?.name}</p>
                                                         <p className="text-sm text-muted-foreground">{res.customerName}</p>
@@ -544,7 +550,7 @@ const ReservationsView: React.FC = () => {
                                             </Card>
                                         )
                                     }) : (
-                                        <div className="text-center py-10 text-muted-foreground">
+                                        <div className="py-10 text-center text-muted-foreground">
                                             <p>Aucune réservation pour ce jour.</p>
                                         </div>
                                     )}
@@ -560,10 +566,10 @@ const ReservationsView: React.FC = () => {
                             <CardDescription>Configurez les services ou biens que vos clients peuvent réserver.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-right mb-4">
+                            <div className="mb-4 text-right">
                                 <Button onClick={handleNewItem}><PlusCircle className="mr-2 h-4 w-4" /> Ajouter une prestation</Button>
                             </div>
-                            <div className="border rounded-md">
+                            <div className="rounded-md border">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -605,7 +611,7 @@ const ReservationsView: React.FC = () => {
                     <DialogHeader>
                         <DialogTitle>{editedItem?.id ? 'Modifier la prestation' : 'Nouvelle prestation réservable'}</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto px-1">
+                    <div className="max-h-[70vh] space-y-6 overflow-y-auto px-1 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="item-name">Nom de la prestation</Label>
                             <Input id="item-name" value={editedItem?.name || ''} onChange={e => setEditedItem(p => ({...p, name: e.target.value}))}/>
@@ -641,7 +647,7 @@ const ReservationsView: React.FC = () => {
                                 {editedItem?.pricing?.model !== 'per_unit' ? (
                                     <div className="space-y-2">
                                         <Label htmlFor="item-price">Prix de base (€)</Label>
-                                        <Input id="item-price" type="number" value={editedItem?.pricing?.basePrice || ''} onChange={e => handlePricingChange('basePrice', parseFloat(e.target.value) || 0)}/>
+                                        <Input id="item-price" type="number" placeholder="Prix" value={editedItem?.pricing?.basePrice || ''} onChange={e => handlePricingChange('basePrice', parseFloat(e.target.value) || 0)}/>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-3 gap-4">
@@ -662,9 +668,9 @@ const ReservationsView: React.FC = () => {
                                 <Separator />
                                 <div>
                                     <Label>Options supplémentaires (facultatif)</Label>
-                                    <div className="space-y-2 mt-2">
+                                    <div className="mt-2 space-y-2">
                                         {editedItem?.pricing?.options?.map((opt, index) => (
-                                            <div key={opt.id} className="grid grid-cols-12 gap-2 items-center">
+                                            <div key={opt.id} className="grid grid-cols-12 items-center gap-2">
                                                 <div className="col-span-5">
                                                     <Input placeholder="Nom de l'option" value={opt.name} onChange={(e) => handleOptionChange(index, 'name', e.target.value)} />
                                                 </div>
@@ -673,7 +679,7 @@ const ReservationsView: React.FC = () => {
                                                 </div>
                                                 <div className="col-span-3">
                                                     <Select value={opt.pricingModel} onValueChange={(v: OptionPricingModel) => handleOptionChange(index, 'pricingModel', v)}>
-                                                        <SelectTrigger className="text-xs h-9"><SelectValue /></SelectTrigger>
+                                                        <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="fixed">Forfait</SelectItem>
                                                             <SelectItem value="per_hour">/ heure</SelectItem>
@@ -724,7 +730,7 @@ export default function ServiceDetailPage() {
 
   if (!service) {
     return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex h-full items-center justify-center">
             <p>Chargement du service...</p>
         </div>
     );
@@ -733,7 +739,7 @@ export default function ServiceDetailPage() {
   return (
     <div className="space-y-4 md:space-y-8">
       <header className="mb-4">
-        <Button variant="ghost" onClick={() => router.push('/restaurant/services')} className="mb-2 -ml-4">
+        <Button variant="ghost" onClick={() => router.push('/restaurant/services')} className="-ml-4 mb-2">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour aux services
         </Button>
