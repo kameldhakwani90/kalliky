@@ -1,0 +1,1463 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  password         String
+  firstName        String?
+  lastName         String?
+  phone            String?
+  profileImage     String?
+  language         String     @default("fr")
+  role             UserRole   @default(CLIENT)
+  stripeCustomerId String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  metadata         String?
+  businesses       Business[]
+}
+
+model Business {
+  id                  String                  @id @default(uuid())
+  name                String
+  description         String?
+  type                BusinessType            @default(PRODUCTS)
+  ownerId             String
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  aiSessions          AIConversationSession[]
+  owner               User                    @relation(fields: [ownerId], references: [id])
+  calls               Call[]
+  customers           Customer[]
+  invoices            Invoice[]
+  notificationConfigs NotificationConfig[]
+  orders              Order[]
+  phoneNumbers        PhoneNumber[]
+  reports             Report[]
+  stores              Store[]
+  subscriptions       Subscription[]
+}
+
+model Store {
+  id                    String                 @id @default(uuid())
+  name                  String
+  address               String
+  city                  String?
+  country               String                 @default("FR")
+  businessId            String
+  stripeAccountId       String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  isActive              Boolean                @default(true)
+  businessCategory      BusinessCategory       @default(RESTAURANT)
+  settings              Json?
+  hasProducts           Boolean                @default(true)
+  hasReservations       Boolean                @default(false)
+  hasConsultations      Boolean                @default(false)
+  productsConfig        Json?
+  reservationsConfig    Json?
+  consultationsConfig   Json?
+  activityLogs          ActivityLog[]
+  callLogs              CallLog[]
+  components            Component[]
+  componentCategories   ComponentCategory[]
+  componentUsageStats   ComponentUsageStats[]
+  consultations         Consultation[]
+  customerExchanges     CustomerExchange[]
+  intelligentAIConfig   IntelligentAIConfig?
+  menuUploadSessions    MenuUploadSession[]
+  notificationConfigs   NotificationConfig[]
+  notificationTemplates NotificationTemplate[]
+  orders                Order[]
+  preparationTickets    PreparationTicket[]
+  products              Product[]
+  reservations          Reservation[]
+  serviceBookings       ServiceBooking[]
+  serviceCriteria       ServiceCriteria[]
+  serviceResources      ServiceResource[]
+  serviceTypes          ServiceType[]
+  business              Business               @relation(fields: [businessId], references: [id])
+  storeMetrics          StoreMetrics[]
+  subscription          Subscription?
+  universalServices     UniversalService[]
+  usageTracking         UsageTracking[]
+  weatherRecommendation WeatherRecommendation?
+}
+
+model Customer {
+  id              String                  @id @default(uuid())
+  phone           String
+  firstName       String?
+  lastName        String?
+  email           String?
+  status          CustomerStatus          @default(NEW)
+  avgBasket       Float?
+  totalSpent      Float                   @default(0)
+  orderCount      Int                     @default(0)
+  firstSeen       DateTime                @default(now())
+  lastSeen        DateTime                @default(now())
+  businessId      String
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  aiSessions      AIConversationSession[]
+  activityLogs    ActivityLog[]
+  calls           Call[]
+  callLogs        CallLog[]
+  consultations   Consultation[]
+  business        Business                @relation(fields: [businessId], references: [id])
+  behavior        CustomerBehavior?
+  exchanges       CustomerExchange[]
+  orders          Order[]
+  productBehavior ProductBehaviorData[]
+  reservations    Reservation[]
+  serviceBookings ServiceBooking[]
+
+  @@unique([phone, businessId])
+}
+
+model Order {
+  id                String             @id @default(uuid())
+  orderNumber       String
+  customerId        String
+  storeId           String
+  businessId        String
+  items             Json
+  subtotal          Float
+  tax               Float
+  taxRate           Float
+  total             Float
+  status            OrderStatus        @default(PENDING)
+  paymentStatus     PaymentStatus      @default(PENDING)
+  paymentMethod     String?
+  notes             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  exchanges         CustomerExchange[]
+  business          Business           @relation(fields: [businessId], references: [id])
+  customer          Customer           @relation(fields: [customerId], references: [id])
+  store             Store              @relation(fields: [storeId], references: [id])
+  preparationTicket PreparationTicket?
+
+  @@index([businessId, createdAt])
+  @@index([storeId, createdAt])
+  @@index([customerId])
+}
+
+model PhoneNumber {
+  id           String            @id @default(uuid())
+  number       String            @unique
+  telnyxId     String            @unique
+  businessId   String
+  country      String            @default("FR")
+  status       PhoneNumberStatus @default(PENDING)
+  purchaseDate DateTime          @default(now())
+  suspendedAt  DateTime?
+  cancelledAt  DateTime?
+  monthlyPrice Float             @default(1.00)
+  telnyxConfig Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  calls        Call[]
+  business     Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, status])
+  @@index([country, status])
+}
+
+model Call {
+  id            String                 @id @default(uuid())
+  telnyxCallId  String?                @unique
+  phoneNumberId String?
+  businessId    String
+  customerId    String?
+  direction     String
+  fromNumber    String
+  toNumber      String
+  status        CallStatus             @default(INITIATED)
+  duration      Int?
+  startedAt     DateTime?
+  answeredAt    DateTime?
+  endedAt       DateTime?
+  transcript    String?
+  aiSummary     String?
+  aiActions     Json?
+  sentiment     String?
+  language      String                 @default("fr")
+  recordingUrl  String?
+  audioChunks   Json?
+  metadata      Json?
+  cost          Float?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  aiSession     AIConversationSession?
+  business      Business               @relation(fields: [businessId], references: [id])
+  customer      Customer?              @relation(fields: [customerId], references: [id])
+  phoneNumber   PhoneNumber?           @relation(fields: [phoneNumberId], references: [id])
+
+  @@index([businessId, status])
+  @@index([phoneNumberId, createdAt])
+  @@index([telnyxCallId])
+}
+
+model AIConversationSession {
+  id           String    @id @default(uuid())
+  callId       String?   @unique
+  businessId   String
+  customerId   String?
+  aiModel      String    @default("gpt-4")
+  systemPrompt String?
+  context      Json      @default("{}")
+  messages     Json      @default("[]")
+  isActive     Boolean   @default(true)
+  endedAt      DateTime?
+  totalTokens  Int       @default(0)
+  totalCost    Float     @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  business     Business  @relation(fields: [businessId], references: [id])
+  call         Call?     @relation(fields: [callId], references: [id])
+  customer     Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([businessId, isActive])
+  @@index([customerId, isActive])
+}
+
+model Subscription {
+  id                   String                  @id @default(uuid())
+  businessId           String?
+  plan                 SubscriptionPlan        @default(STARTER)
+  period               SubscriptionPeriod      @default(MONTHLY)
+  paymentType          SubscriptionPaymentType @default(STRIPE_AUTO)
+  status               String                  @default("trial")
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  nextBillingDate      DateTime?
+  isActive             Boolean                 @default(true)
+  autoRenew            Boolean                 @default(true)
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+  cancelledAt          DateTime?
+  cancelReason         String?
+  notes                String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  storeId              String?                 @unique
+  trialUsed            Boolean                 @default(false)
+  business             Business?               @relation(fields: [businessId], references: [id])
+  store                Store?                  @relation(fields: [storeId], references: [id])
+}
+
+model Invoice {
+  id              String    @id @default(uuid())
+  invoiceNumber   String    @unique
+  businessId      String
+  amount          Float
+  status          String    @default("pending")
+  dueDate         DateTime
+  paidAt          DateTime?
+  stripeInvoiceId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  business        Business  @relation(fields: [businessId], references: [id])
+}
+
+model UsageTracking {
+  id               String   @id @default(uuid())
+  storeId          String
+  period           String
+  orderCount       Int      @default(0)
+  totalRevenue     Float    @default(0)
+  commissionAmount Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  store            Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, period])
+  @@index([period])
+}
+
+model TrialUsage {
+  id             String   @id @default(uuid())
+  identifier     String   @unique
+  identifierType String
+  userId         String?
+  usedAt         DateTime @default(now())
+
+  @@index([identifier, identifierType])
+}
+
+model Report {
+  id             String       @id @default(uuid())
+  businessId     String
+  reason         String
+  description    String?
+  status         ReportStatus @default(PENDING)
+  customerName   String?
+  customerPhone  String?
+  orderId        String?
+  callTranscript String?
+  audioUrl       String?
+  proofs         Json?
+  resolution     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  business       Business     @relation(fields: [businessId], references: [id])
+}
+
+model Settings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ComponentCategory {
+  id          String      @id @default(uuid())
+  storeId     String
+  name        String
+  description String?
+  color       String?
+  order       Int         @default(0)
+  aiGenerated Boolean     @default(false)
+  frequency   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  components  Component[]
+  store       Store       @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, name])
+}
+
+model Component {
+  id                 String                @id @default(uuid())
+  categoryId         String
+  storeId            String
+  name               String
+  description        String?
+  variations         String[]
+  aliases            String[]
+  nutritionInfo      Json?
+  allergens          String[]
+  defaultPrices      Json?
+  aiExtracted        Boolean               @default(false)
+  aiConfidence       Float?
+  usageCount         Int                   @default(0)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  category           ComponentCategory     @relation(fields: [categoryId], references: [id])
+  store              Store                 @relation(fields: [storeId], references: [id])
+  usageStats         ComponentUsageStats[]
+  compositionOptions CompositionOption[]   @relation("LinkedComponent")
+
+  @@unique([storeId, categoryId, name])
+  @@index([storeId, name])
+  @@index([aliases])
+}
+
+model Product {
+  id                    String                @id @default(uuid())
+  storeId               String
+  name                  String
+  description           String?
+  category              String
+  image                 String?
+  originalComposition   String?
+  hasComposition        Boolean               @default(false)
+  aiDescription         String?
+  aiKeywords            String[]
+  aiSentiment           Float?
+  aiRecommendationScore Float?
+  aiLastUpdated         DateTime?
+  sourceType            ProductSourceType     @default(MANUAL)
+  sourceConfidence      Float?
+  originalMenuText      String?
+  menuUploadSessionId   String?
+  status                ProductStatus         @default(DRAFT)
+  stock                 Int?
+  popularity            Int                   @default(0)
+  profitMargin          Float?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  linkedOptions         CompositionOption[]   @relation("LinkedProduct")
+  compositionSteps      CompositionStep[]
+  menuUploadSession     MenuUploadSession?    @relation(fields: [menuUploadSessionId], references: [id])
+  store                 Store                 @relation(fields: [storeId], references: [id])
+  behaviorData          ProductBehaviorData[]
+  relations             ProductRelation[]     @relation("SourceProduct")
+  relatedTo             ProductRelation[]     @relation("TargetProduct")
+  tags                  ProductTagRelation[]
+  variations            ProductVariation[]
+  upsellSuggestions     UpsellSuggestion[]    @relation("ProductUpsells")
+  suggestedIn           UpsellSuggestion[]    @relation("SuggestedProduct")
+
+  @@index([storeId, hasComposition])
+  @@index([sourceType, sourceConfidence])
+  @@index([storeId, status])
+  @@index([aiKeywords])
+}
+
+model ProductVariation {
+  id        String        @id @default(uuid())
+  productId String
+  name      String
+  type      VariationType @default(CUSTOM)
+  value     String
+  prices    Json
+  isVisible Boolean       @default(true)
+  isDefault Boolean       @default(false)
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model CompositionStep {
+  id            String              @id @default(uuid())
+  productId     String
+  parentStepId  String?
+  title         String
+  isRequired    Boolean
+  selectionType SelectionType       @default(SINGLE)
+  order         Int
+  aiGenerated   Boolean             @default(false)
+  aiSourceText  String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  options       CompositionOption[]
+  parentStep    CompositionStep?    @relation("StepHierarchy", fields: [parentStepId], references: [id])
+  subSteps      CompositionStep[]   @relation("StepHierarchy")
+  product       Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model CompositionOption {
+  id                  String          @id @default(uuid())
+  stepId              String
+  name                String
+  prices              Json
+  isVisible           Boolean         @default(true)
+  order               Int             @default(0)
+  linkedComponentId   String?
+  linkedProductId     String?
+  aiGenerated         Boolean         @default(false)
+  aiSourceText        String?
+  aiMappingConfidence Float?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  linkedComponent     Component?      @relation("LinkedComponent", fields: [linkedComponentId], references: [id])
+  linkedProduct       Product?        @relation("LinkedProduct", fields: [linkedProductId], references: [id])
+  step                CompositionStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+}
+
+model ProductTagRelation {
+  id        String  @id @default(uuid())
+  productId String
+  tag       String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, tag])
+}
+
+model ProductRelation {
+  id                String       @id @default(uuid())
+  sourceProductId   String
+  targetProductId   String
+  relationType      RelationType
+  suggestionContext String[]
+  confidence        Float        @default(1.0)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  sourceProduct     Product      @relation("SourceProduct", fields: [sourceProductId], references: [id], onDelete: Cascade)
+  targetProduct     Product      @relation("TargetProduct", fields: [targetProductId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceProductId, targetProductId, relationType])
+}
+
+model MenuUploadSession {
+  id                         String             @id @default(uuid())
+  storeId                    String
+  originalFileName           String
+  fileType                   String
+  fileSize                   Int?
+  extractedText              String?
+  aiProcessingStatus         AIProcessingStatus @default(PENDING)
+  overallConfidence          Float?
+  compositionAnalysis        Json?
+  componentLibraryCreated    Boolean            @default(false)
+  componentsCreated          Int                @default(0)
+  componentCategoriesCreated Int                @default(0)
+  productsCreatedCount       Int                @default(0)
+  productsWithComposition    Int                @default(0)
+  categoriesCreated          Int                @default(0)
+  suggestionsCount           Int                @default(0)
+  extractedProducts          Json?
+  detectedComponents         Json?
+  mappingRules               Json?
+  needsReview                Boolean            @default(false)
+  reviewNotes                String?
+  validatedAt                DateTime?
+  validatedBy                String?
+  createdAt                  DateTime           @default(now())
+  completedAt                DateTime?
+  store                      Store              @relation(fields: [storeId], references: [id])
+  products                   Product[]
+
+  @@index([storeId, aiProcessingStatus])
+}
+
+model ComponentUsageStats {
+  id                     String    @id @default(uuid())
+  componentId            String
+  storeId                String
+  totalUsage             Int       @default(0)
+  weeklyUsage            Int       @default(0)
+  monthlyUsage           Int       @default(0)
+  customerAcceptanceRate Float?
+  averageRating          Float?
+  popularTimeSlots       String[]
+  seasonalTrends         Json?
+  lastUpdated            DateTime  @default(now())
+  component              Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  store                  Store     @relation(fields: [storeId], references: [id])
+
+  @@unique([componentId, storeId])
+}
+
+model ProductBehaviorData {
+  id                 String   @id @default(uuid())
+  productId          String
+  customerId         String
+  viewCount          Int      @default(0)
+  purchaseCount      Int      @default(0)
+  rejectionCount     Int      @default(0)
+  averageRating      Float?
+  preferredTime      String?
+  seasonalPreference Float?
+  weatherInfluence   Json?
+  lastInteraction    DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  customer           Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, customerId])
+}
+
+model UpsellSuggestion {
+  id                 String         @id @default(uuid())
+  productId          String
+  suggestedProductId String
+  suggestionType     SuggestionType @default(COMPLEMENT)
+  confidence         Float
+  successRate        Float?
+  averageUplift      Float?
+  timeContext        String[]
+  weatherContext     String[]
+  customerSegment    String[]
+  aiScript           String?
+  scriptVariations   Json?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  product            Product        @relation("ProductUpsells", fields: [productId], references: [id], onDelete: Cascade)
+  suggestedProduct   Product        @relation("SuggestedProduct", fields: [suggestedProductId], references: [id], onDelete: Cascade)
+
+  @@index([productId, confidence])
+}
+
+model CustomerBehavior {
+  id                   String    @id @default(uuid())
+  customerId           String    @unique
+  favoriteCategories   String[]
+  priceRangeMin        Float?
+  priceRangeMax        Float?
+  orderFrequency       String?
+  preferredTime        String?
+  dietaryRestrictions  String[]
+  allergies            String[]
+  spiceLevel           String?
+  pricesensitivity     String?
+  loyaltyScore         Float?
+  churnRisk            Float?
+  lifetimeValue        Float?
+  preferredLanguage    String?
+  communicationStyle   String?
+  responsePreference   String?
+  nextOrderProbability Float?
+  predictedOrderValue  Float?
+  bestContactTime      String?
+  lastAnalysis         DateTime?
+  dataQuality          Float?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  customer             Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CallLog {
+  id              String    @id @default(uuid())
+  storeId         String
+  customerId      String?
+  phoneNumber     String
+  duration        Int
+  timestamp       DateTime  @default(now())
+  transcript      String?
+  aiAnalysis      Json?
+  intent          String?
+  confidence      Float?
+  emailSent       Boolean   @default(false)
+  customerCreated Boolean   @default(false)
+  actions         Action[]
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  store           Store     @relation(fields: [storeId], references: [id])
+
+  @@index([storeId, timestamp])
+  @@index([phoneNumber])
+}
+
+model Action {
+  id        String   @id @default(uuid())
+  callLogId String
+  type      String
+  status    String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  callLog   CallLog  @relation(fields: [callLogId], references: [id], onDelete: Cascade)
+}
+
+model ServiceCriteria {
+  id                 String   @id @default(uuid())
+  storeId            String
+  serviceType        String
+  acceptanceCriteria String[]
+  rejectionCriteria  String[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  store              Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, serviceType])
+}
+
+model IntelligentAIConfig {
+  id               String   @id @default(uuid())
+  storeId          String   @unique
+  weatherTriggers  Json     @default("[]")
+  customerSegments Json     @default("[]")
+  predictiveRules  Json     @default("[]")
+  aiOptimization   Json     @default("{}")
+  voiceOnboarding  Json     @default("{}")
+  automationLevel  Int      @default(90)
+  isFullyAutomated Boolean  @default(true)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  lastUpdated      DateTime @default(now())
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+model WeatherRecommendation {
+  id             String    @id @default(uuid())
+  storeId        String    @unique
+  currentWeather Json
+  activeProducts Json      @default("[]")
+  lastUpdated    DateTime  @default(now())
+  nextUpdate     DateTime?
+  isActive       Boolean   @default(true)
+  store          Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+model CustomerExchange {
+  id          String       @id @default(uuid())
+  customerId  String
+  storeId     String
+  type        ExchangeType @default(VISIT)
+  description String
+  content     Json?
+  metadata    Json?
+  orderId     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order       Order?       @relation(fields: [orderId], references: [id])
+  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, storeId])
+  @@index([storeId, type])
+  @@index([createdAt])
+}
+
+model PreparationTicket {
+  id           String         @id @default(uuid())
+  ticketNumber String         @unique
+  orderId      String         @unique
+  storeId      String
+  items        Json
+  status       TicketStatus   @default(PENDING)
+  priority     TicketPriority @default(NORMAL)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  completedAt  DateTime?
+  order        Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  store        Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+  @@index([createdAt])
+  @@index([status, priority])
+}
+
+model ActivityLog {
+  id          String       @id @default(uuid())
+  storeId     String
+  customerId  String?
+  type        ActivityType @default(ORDER)
+  entityId    String
+  title       String
+  description String?
+  amount      Float?
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, type])
+  @@index([storeId, createdAt])
+  @@index([customerId])
+}
+
+model StoreMetrics {
+  id                   String   @id @default(uuid())
+  storeId              String
+  date                 String
+  totalCalls           Int      @default(0)
+  orderCompleted       Int      @default(0)
+  orderFailed          Int      @default(0)
+  reservationCompleted Int      @default(0)
+  reservationFailed    Int      @default(0)
+  complaintCompleted   Int      @default(0)
+  complaintFailed      Int      @default(0)
+  infoCompleted        Int      @default(0)
+  infoFailed           Int      @default(0)
+  averageWaitTime      Float?
+  maxConcurrentCalls   Int      @default(1)
+  queueOverflows       Int      @default(0)
+  redirectionCount     Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  store                Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date])
+  @@index([storeId, date])
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  storeId         String
+  customerId      String
+  serviceType     String
+  title           String
+  description     String?
+  startDateTime   DateTime
+  endDateTime     DateTime
+  partySize       Int               @default(1)
+  status          ReservationStatus @default(PENDING)
+  specialRequests String?
+  contactInfo     Json?
+  metadata        Json?
+  price           Float?
+  deposit         Float?
+  paymentStatus   PaymentStatus     @default(PENDING)
+  notes           String?
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  customer        Customer          @relation(fields: [customerId], references: [id])
+  store           Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, startDateTime])
+  @@index([customerId])
+  @@index([status])
+}
+
+model Consultation {
+  id               String             @id @default(uuid())
+  storeId          String
+  customerId       String
+  consultationType String
+  title            String
+  description      String?
+  scheduledAt      DateTime
+  duration         Int
+  status           ConsultationStatus @default(SCHEDULED)
+  consultantName   String?
+  location         String?
+  meetingLink      String?
+  price            Float?
+  hourlyRate       Float?
+  paymentStatus    PaymentStatus      @default(PENDING)
+  clientDocuments  Json?
+  consultantNotes  String?
+  followUpRequired Boolean            @default(false)
+  followUpDate     DateTime?
+  outcome          String?
+  recommendations  String?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  cancelReason     String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  customer         Customer           @relation(fields: [customerId], references: [id])
+  store            Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, scheduledAt])
+  @@index([customerId])
+  @@index([status])
+}
+
+model UniversalService {
+  id                String                 @id @default(uuid())
+  storeId           String
+  name              String
+  description       String?
+  pattern           ServicePattern         @default(FLEXIBLE_BOOKING)
+  icon              String?
+  color             String?
+  isActive          Boolean                @default(true)
+  order             Int                    @default(0)
+  settings          Json                   @default("{}")
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  bookings          ServiceBooking[]
+  serviceCategories ServiceCategory[]
+  customFields      ServiceCustomField[]
+  scheduleConfig    ServiceScheduleConfig?
+  variants          ServiceVariant[]
+  subServices       SubService[]
+  store             Store                  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, name])
+  @@index([storeId, pattern])
+}
+
+model ServiceCategory {
+  id          String           @id @default(uuid())
+  serviceId   String
+  name        String
+  description String?
+  icon        String?
+  color       String?
+  isActive    Boolean          @default(true)
+  order       Int              @default(0)
+  settings    Json             @default("{}")
+  pricing     Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  bookings    ServiceBooking[]
+  service     UniversalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  products    ServiceProduct[]
+
+  @@unique([serviceId, name])
+}
+
+model ServiceProduct {
+  id             String           @id @default(uuid())
+  categoryId     String
+  name           String
+  description    String?
+  images         String[]         @default([])
+  specifications Json?
+  isActive       Boolean          @default(true)
+  isAvailable    Boolean          @default(true)
+  stock          Int?
+  order          Int              @default(0)
+  pricing        Json
+  metadata       Json             @default("{}")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  bookings       ServiceBooking[]
+  category       ServiceCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, name])
+}
+
+model SubService {
+  id           String           @id @default(uuid())
+  serviceId    String
+  name         String
+  description  String?
+  isActive     Boolean          @default(true)
+  order        Int              @default(0)
+  duration     Json?
+  capacity     Json?
+  pricing      Json             @default("{}")
+  settings     Json             @default("{}")
+  requirements String[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  bookings     ServiceBooking[]
+  options      ServiceOption[]
+  service      UniversalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, name])
+  @@index([serviceId, isActive])
+}
+
+model ServiceOption {
+  id           String            @id @default(uuid())
+  subServiceId String
+  name         String
+  description  String?
+  type         ServiceOptionType @default(ADDON)
+  isRequired   Boolean           @default(false)
+  isActive     Boolean           @default(true)
+  order        Int               @default(0)
+  pricing      Json              @default("{}")
+  conditions   Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  subService   SubService        @relation(fields: [subServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([subServiceId, name])
+}
+
+model ServiceScheduleConfig {
+  id           String           @id @default(uuid())
+  serviceId    String           @unique
+  type         ScheduleType     @default(FLEXIBLE_BOOKING)
+  workingHours Json             @default("{}")
+  slotConfig   Json?
+  bookingRules Json             @default("{}")
+  exceptions   Json             @default("[]")
+  serviceZones Json?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  service      UniversalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model ServiceCustomField {
+  id         String           @id @default(uuid())
+  serviceId  String
+  name       String
+  label      String
+  type       CustomFieldType  @default(TEXT)
+  isRequired Boolean          @default(false)
+  isActive   Boolean          @default(true)
+  order      Int              @default(0)
+  config     Json             @default("{}")
+  conditions Json?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  service    UniversalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, name])
+}
+
+model ServiceBooking {
+  id                String               @id @default(uuid())
+  storeId           String
+  serviceId         String
+  categoryId        String?
+  productId         String?
+  subServiceId      String?
+  customerId        String
+  title             String
+  description       String?
+  status            ServiceBookingStatus @default(PENDING)
+  startDateTime     DateTime?
+  endDateTime       DateTime?
+  duration          Int?
+  bookingData       Json                 @default("{}")
+  selectedOptions   Json                 @default("[]")
+  customFieldValues Json                 @default("{}")
+  pricing           Json                 @default("{}")
+  totalAmount       Float?
+  source            String               @default("PHONE")
+  metadata          Json?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  confirmedAt       DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  variantId         String?
+  category          ServiceCategory?     @relation(fields: [categoryId], references: [id])
+  customer          Customer             @relation(fields: [customerId], references: [id])
+  product           ServiceProduct?      @relation(fields: [productId], references: [id])
+  service           UniversalService     @relation(fields: [serviceId], references: [id])
+  store             Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  subService        SubService?          @relation(fields: [subServiceId], references: [id])
+  variant           ServiceVariant?      @relation("ServiceBookingVariant", fields: [variantId], references: [id])
+
+  @@index([storeId, startDateTime])
+  @@index([serviceId, status])
+  @@index([customerId])
+}
+
+model ServiceType {
+  id          String   @id @default(uuid())
+  storeId     String
+  category    String
+  name        String
+  description String?
+  duration    Int?
+  price       Float?
+  isActive    Boolean  @default(true)
+  settings    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, category, name])
+  @@index([storeId, category])
+}
+
+model NotificationConfig {
+  id           String                   @id @default(uuid())
+  storeId      String
+  businessId   String
+  activityType NotificationActivityType
+  isActive     Boolean                  @default(true)
+  conditions   Json?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  actions      NotificationAction[]
+  business     Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  store        Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  queueItems   NotificationQueueItem[]
+
+  @@unique([storeId, activityType])
+  @@index([storeId, activityType])
+  @@index([businessId])
+}
+
+model NotificationAction {
+  id         String                  @id @default(uuid())
+  configId   String
+  actionType NotificationActionType
+  provider   String?
+  settings   Json
+  delay      Int                     @default(0)
+  priority   NotificationPriority    @default(NORMAL)
+  isActive   Boolean                 @default(true)
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+  config     NotificationConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
+  queueItems NotificationQueueItem[]
+
+  @@index([configId])
+  @@index([actionType])
+}
+
+model NotificationQueueItem {
+  id           String                   @id @default(uuid())
+  storeId      String
+  activityId   String
+  activityType NotificationActivityType
+  configId     String
+  actionId     String
+  status       NotificationStatus       @default(PENDING)
+  priority     NotificationPriority     @default(NORMAL)
+  payload      Json
+  scheduledAt  DateTime                 @default(now())
+  processedAt  DateTime?
+  retryCount   Int                      @default(0)
+  maxRetries   Int                      @default(3)
+  errorMessage String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  action       NotificationAction       @relation(fields: [actionId], references: [id])
+  config       NotificationConfig       @relation(fields: [configId], references: [id])
+
+  @@index([storeId, status])
+  @@index([activityId])
+  @@index([priority, scheduledAt])
+  @@index([status, priority])
+}
+
+model NotificationTemplate {
+  id           String                   @id @default(uuid())
+  storeId      String
+  actionType   NotificationActionType
+  activityType NotificationActivityType
+  name         String
+  subject      String?
+  body         String
+  variables    Json?
+  isDefault    Boolean                  @default(false)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  store        Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, actionType, activityType, name])
+  @@index([storeId, actionType])
+  @@index([activityType])
+}
+
+model ServiceVariant {
+  id                  String                      @id @default(uuid())
+  serviceId           String
+  name                String
+  description         String?
+  isActive            Boolean                     @default(true)
+  uniqueId            String?
+  specifications      Json?
+  capacityConfig      Json?
+  pricingConfig       Json?
+  metadata            Json                        @default("{}")
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  bookings            ServiceBooking[]            @relation("ServiceBookingVariant")
+  service             UniversalService            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  resourceAssignments VariantResourceAssignment[]
+
+  @@unique([serviceId, name])
+  @@index([serviceId, isActive])
+  @@index([uniqueId])
+}
+
+model ServiceResource {
+  id             String                      @id @default(uuid())
+  storeId        String
+  type           ResourceType                @default(EQUIPMENT)
+  name           String
+  description    String?
+  isActive       Boolean                     @default(true)
+  uniqueId       String?
+  specifications Json?
+  availability   Json?
+  constraints    Json?
+  costs          Json?
+  metadata       Json                        @default("{}")
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+  store          Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  assignments    VariantResourceAssignment[]
+
+  @@unique([storeId, name])
+  @@index([storeId, type, isActive])
+  @@index([uniqueId])
+}
+
+model VariantResourceAssignment {
+  id                String          @id @default(uuid())
+  variantId         String
+  resourceId        String
+  assignmentType    AssignmentType  @default(REQUIRED)
+  isActive          Boolean         @default(true)
+  priority          Int             @default(0)
+  conflictRules     Json?
+  availabilityRules Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  resource          ServiceResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  variant           ServiceVariant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, resourceId])
+  @@index([variantId])
+  @@index([resourceId])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  CLIENT
+  END_USER
+}
+
+enum BusinessType {
+  PRODUCTS
+  RESERVATIONS
+  CONSULTATION
+}
+
+enum BusinessCategory {
+  RESTAURANT
+  BEAUTY
+  HAIRDRESSER
+  AUTOMOTIVE
+  PROFESSIONAL
+  ENTERTAINMENT
+  HEALTH
+  RETAIL
+  SERVICES
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum CustomerStatus {
+  NEW
+  REGULAR
+  VIP
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionPeriod {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionPaymentType {
+  STRIPE_AUTO
+  MANUAL
+}
+
+enum ReportStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ProductSourceType {
+  MANUAL
+  AI_UPLOAD
+  AI_GENERATED
+  API_IMPORT
+  COMPONENT_ASSEMBLY
+}
+
+enum AIProcessingStatus {
+  PENDING
+  EXTRACTING_TEXT
+  ANALYZING_STRUCTURE
+  DETECTING_COMPOSITIONS
+  CREATING_COMPONENTS
+  ASSEMBLING_PRODUCTS
+  COMPLETED
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+  DRAFT
+}
+
+enum VariationType {
+  SIZE
+  COLOR
+  MATERIAL
+  DURATION
+  CUSTOM
+}
+
+enum SelectionType {
+  SINGLE
+  MULTIPLE
+}
+
+enum ExchangeType {
+  CALL
+  EMAIL
+  VISIT
+  ORDER
+  COMPLAINT
+  INFORMATION
+  RESERVATION
+  CONSULTATION
+}
+
+enum TicketStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ActivityType {
+  ORDER
+  RESERVATION
+  CONSULTATION
+  CALL
+  VISIT
+  COMPLAINT
+  PAYMENT
+}
+
+enum RelationType {
+  SUGGESTION
+  BUNDLE
+  ACCESSORY
+  ALTERNATIVE
+  UPSELL
+}
+
+enum SuggestionType {
+  COMPLEMENT
+  UPGRADE
+  SEASONAL
+  BEHAVIORAL
+  TRENDING
+  PROFITABLE
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ConsultationStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum ServicePattern {
+  FIXED_SLOTS
+  FLEXIBLE_BOOKING
+  AVAILABILITY
+  ZONE_DELIVERY
+  EVENT_BOOKING
+  CLASS_SESSION
+  INSTANT_SERVICE
+}
+
+enum ScheduleType {
+  FIXED_SLOTS
+  FLEXIBLE_BOOKING
+  AVAILABILITY_CHECK
+  ZONE_BASED
+  NO_SCHEDULE
+}
+
+enum ServiceOptionType {
+  ADDON
+  UPGRADE
+  REQUIREMENT
+  DEPLOYMENT
+  INSURANCE
+  CUSTOMIZATION
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  EMAIL
+  PHONE
+  SELECT
+  MULTISELECT
+  CHECKBOX
+  DATE
+  TIME
+  DATETIME
+  FILE
+  ADDRESS
+}
+
+enum ServiceBookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+enum PhoneNumberStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  ERROR
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  ANSWERED
+  COMPLETED
+  BUSY
+  FAILED
+  NO_ANSWER
+  CANCELLED
+}
+
+enum NotificationActivityType {
+  ORDER
+  SERVICE
+  CONSULTATION
+  SIGNALEMENT
+}
+
+enum NotificationActionType {
+  EMAIL
+  WHATSAPP
+  PRINT
+  CALENDAR
+  N8N_WEBHOOK
+  SMS
+  SLACK
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum ResourceType {
+  EMPLOYEE
+  EQUIPMENT
+  LOCATION
+  VIRTUAL
+}
+
+enum AssignmentType {
+  REQUIRED
+  OPTIONAL
+  PREFERRED
+  EXCLUSIVE
+}

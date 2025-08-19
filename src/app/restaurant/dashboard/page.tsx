@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -223,6 +223,59 @@ export default function RestaurantDashboard() {
   const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const { language, t } = useLanguage();
+  const [userStatus, setUserStatus] = useState<any>(null);
+
+  // Fonction pour vérifier le statut utilisateur
+  const checkUserStatus = async () => {
+    try {
+      const response = await fetch('/api/user/status');
+      if (response.ok) {
+        const status = await response.json();
+        setUserStatus(status);
+        
+        // Ne plus rediriger automatiquement - l'utilisateur sera déjà sur /restaurant/stores après le paiement
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut:', error);
+    }
+  };
+
+  // Vérifier le statut utilisateur au chargement
+  useEffect(() => {
+    checkUserStatus();
+  }, [router]);
+
+  // Gérer le retour de Stripe
+  useEffect(() => {
+    const handleStripeSuccess = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const success = urlParams.get('success');
+      const sessionId = urlParams.get('session_id');
+      
+      if (success === 'true' && sessionId) {
+        try {
+          const response = await fetch('/api/stripe/success', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+          });
+          
+          if (response.ok) {
+            // Nettoyer l'URL sans recharger la page
+            window.history.replaceState({}, '', '/restaurant/dashboard');
+            // Au lieu de recharger, vérifier directement le statut utilisateur
+            setTimeout(() => {
+              checkUserStatus();
+            }, 500);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la connexion automatique:', error);
+        }
+      }
+    };
+
+    handleStripeSuccess();
+  }, []);
 
   const handleViewClientFile = (phone: string) => {
     const customerData = customersData[phone] || defaultCustomer(phone);
@@ -290,14 +343,14 @@ export default function RestaurantDashboard() {
       total: { fr: "TOTAL", en: "TOTAL" },
       thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
       
-      addFirstPOS: { fr: "Créez votre premier point de vente", en: "Create your first point of sale" },
+      addFirstPOS: { fr: "Créez votre première activité", en: "Create your first business activity" },
       addPOSDescription: { fr: "Commencez à configurer votre activité pour recevoir vos premières demandes avec Kalliky.ai.", en: "Start configuring your business to receive your first requests with Kalliky.ai." },
-      addPOSButton: { fr: "Ajouter un point de vente", en: "Add a point of sale" },
+      addPOSButton: { fr: "Ajouter une activité", en: "Add a business activity" },
   }
     
   return (
     <>
-    <div className="flex-1 space-y-6">
+    <div className="flex-1 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">{t(translations.dashboardTitle)}</h2>
@@ -320,18 +373,18 @@ export default function RestaurantDashboard() {
         </div>
 
         {!hasStores && (
-             <Card className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all">
+             <Card className="glass-effect shadow-apple rounded-2xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
                 <Link href="/restaurant/stores?action=new" className="block">
                     <CardHeader className="flex flex-col md:flex-row md:items-center gap-4 space-y-0">
-                        <div className="p-4 bg-primary/10 rounded-full w-fit">
-                            <Store className="h-8 w-8 text-primary" />
+                        <div className="p-4 bg-black/10 rounded-2xl w-fit">
+                            <Store className="h-8 w-8 text-black" />
                         </div>
                         <div className="flex-1">
                             <CardTitle>{t(translations.addFirstPOS)}</CardTitle>
                             <CardDescription>{t(translations.addPOSDescription)}</CardDescription>
                         </div>
                         <div className="ml-auto">
-                            <Button>
+                            <Button className="rounded-xl">
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 {t(translations.addPOSButton)}
                             </Button>
@@ -343,7 +396,7 @@ export default function RestaurantDashboard() {
 
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">{t(translations.totalRevenue)}</CardTitle>
               </CardHeader>
@@ -355,7 +408,7 @@ export default function RestaurantDashboard() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">{t(translations.orders)}</CardTitle>
               </CardHeader>
@@ -367,7 +420,7 @@ export default function RestaurantDashboard() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">{t(translations.avgBasket)}</CardTitle>
               </CardHeader>
@@ -379,7 +432,7 @@ export default function RestaurantDashboard() {
                 </div>
               </CardContent>
             </Card>
-             <Card>
+             <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">{t(translations.uniqueCustomers)}</CardTitle>
               </CardHeader>
@@ -394,7 +447,7 @@ export default function RestaurantDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="glass-effect shadow-apple rounded-2xl border-0">
               <CardHeader>
                 <CardTitle>{t(translations.salesPerformance)}</CardTitle>
                 <CardDescription>{t(translations.monthlyRevenue)}</CardDescription>
@@ -431,7 +484,7 @@ export default function RestaurantDashboard() {
               </CardContent>
             </Card>
 
-             <Card>
+             <Card className="glass-effect shadow-apple rounded-2xl border-0">
               <CardHeader>
                 <CardTitle>{t(translations.recentOrders)}</CardTitle>
                 <CardDescription>

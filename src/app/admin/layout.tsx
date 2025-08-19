@@ -3,10 +3,12 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter, usePathname } from "next/navigation"
 import {
   Building,
   DollarSign,
   LayoutDashboard,
+  LogOut,
   Settings,
   Users,
 } from "lucide-react"
@@ -25,12 +27,27 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Logo } from "@/components/logo"
+import { authService } from "@/services/auth.service"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const { toast } = useToast()
+
+  const handleLogout = () => {
+    authService.logout()
+    toast({
+      title: "Déconnexion réussie",
+      description: "À bientôt !",
+    })
+    router.push("/login")
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -44,7 +61,7 @@ export default function AdminLayout({
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive // Assuming dashboard is the default active page
+                isActive={pathname === '/admin/dashboard'}
                 tooltip="Tableau de bord"
               >
                 <Link href="/admin/dashboard">
@@ -54,15 +71,23 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Restaurateurs">
-                <Link href="#">
+              <SidebarMenuButton 
+                asChild 
+                isActive={pathname === '/admin/clients'}
+                tooltip="Clients"
+              >
+                <Link href="/admin/clients">
                   <Users />
-                  <span>Restaurateurs</span>
+                  <span>Clients</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Facturation">
+              <SidebarMenuButton 
+                asChild 
+                isActive={pathname === '/admin/billing'}
+                tooltip="Facturation"
+              >
                 <Link href="#">
                   <DollarSign />
                   <span>Facturation</span>
@@ -70,7 +95,11 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Paramètres">
+              <SidebarMenuButton 
+                asChild 
+                isActive={pathname === '/admin/settings'}
+                tooltip="Paramètres"
+              >
                 <Link href="/admin/settings">
                   <Settings />
                   <span>Paramètres</span>
@@ -91,13 +120,23 @@ export default function AdminLayout({
                 admin@kalliky.ai
               </p>
             </div>
-            <Button variant="ghost" size="icon" className="text-sidebar-foreground/70" asChild>
-                <Link href="/"><Settings /></Link>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-sidebar-foreground/70 hover:text-red-500" 
+              onClick={handleLogout}
+              title="Se déconnecter"
+            >
+              <LogOut />
             </Button>
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <div className="p-4 sm:p-6 lg:p-8">
+          {children}
+        </div>
+      </SidebarInset>
     </SidebarProvider>
   )
 }

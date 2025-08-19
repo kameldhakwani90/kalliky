@@ -2,13 +2,13 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BookOpen, BrainCircuit, Calendar as CalendarIcon, Car, ConciergeBell, Eye, Phone, Receipt, Search, Sparkles, User, Utensils } from 'lucide-react';
+import { ArrowLeft, BookOpen, BrainCircuit, Calendar as CalendarIcon, Car, ConciergeBell, Eye, Phone, Receipt, Search, Sparkles, User, Utensils, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -69,40 +69,16 @@ export default function StoreActivityPage() {
     const router = useRouter();
     const { t } = useLanguage();
     const storeId = params.storeId as string;
-    const store = initialStores.find(s => s.id === storeId);
+    const [store, setStore] = useState<Store | null>(null);
+    const [storeLoading, setStoreLoading] = useState(true);
     
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
-    
-    const activities = mockActivities[storeId] || [];
-
-    const filteredActivities = useMemo(() => {
-        return activities.filter(activity => {
-            const dateMatch = !date || format(activity.date, "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
-            const searchMatch = !searchTerm || 
-                activity.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                activity.phone.includes(searchTerm) ||
-                activity.id.toLowerCase().includes(searchTerm.toLowerCase());
-            return dateMatch && searchMatch;
-        });
-    }, [activities, date, searchTerm]);
-    
-    const totalPages = Math.ceil(filteredActivities.length / ITEMS_PER_PAGE);
-
-    const paginatedActivities = useMemo(() => {
-        return filteredActivities.slice(
-            (currentPage - 1) * ITEMS_PER_PAGE,
-            currentPage * ITEMS_PER_PAGE
-        );
-    }, [filteredActivities, currentPage]);
-
-
-    if (!store) {
-        return <div>Boutique non trouvée.</div>;
-    }
-
-    const Icon = getServiceIcon(store.serviceType, store.name);
+    const [activities, setActivities] = useState<ActivityLog[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [totalActivities, setTotalActivities] = useState(0);
 
     const translations = {
         back: { fr: "Retour à la sélection", en: "Back to selection" },
@@ -120,6 +96,207 @@ export default function StoreActivityPage() {
         next: { fr: "Suivant", en: "Next" },
         pageOf: { fr: "Page {current} sur {total}", en: "Page {current} of {total}" },
     };
+
+    // Charger les informations du store
+    useEffect(() => {
+        const fetchStore = async () => {
+            try {
+                setStoreLoading(true);
+                const response = await fetch('/api/restaurant/activities');
+                if (response.ok) {
+                    const data = await response.json();
+                    // Trouver le store dans les données de l'API
+                    if (Array.isArray(data)) {
+                        for (const business of data) {
+                            if (business.stores && Array.isArray(business.stores)) {
+                                const foundStore = business.stores.find((s: any) => s.id === storeId);
+                                if (foundStore) {
+                                    let settings: any = {};
+                                    try {
+                                        settings = foundStore.settings ? 
+                                            (typeof foundStore.settings === 'string' ? JSON.parse(foundStore.settings) : foundStore.settings) 
+                                            : {};
+                                    } catch (e) {
+                                        settings = {};
+                                    }
+                                    
+                                    setStore({
+                                        id: foundStore.id,
+                                        name: business.name || foundStore.name || 'Boutique',
+                                        address: foundStore.address || 'Adresse non définie',
+                                        serviceType: settings.serviceType || 'products'
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Si pas trouvé dans l'API, utiliser les données mockées
+                if (!store) {
+                    const mockStore = initialStores.find(s => s.id === storeId);
+                    if (mockStore) {
+                        setStore(mockStore);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching store:', error);
+                // Fallback vers les données mockées
+                const mockStore = initialStores.find(s => s.id === storeId);
+                if (mockStore) {
+                    setStore(mockStore);
+                }
+            } finally {
+                setStoreLoading(false);
+            }
+        };
+        
+        fetchStore();
+    }, [storeId]);
+
+    const totalPages = Math.ceil(totalActivities / ITEMS_PER_PAGE);
+
+    // Charger les activités depuis l'API
+    useEffect(() => {
+        const fetchActivities = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                
+                const params = new URLSearchParams({
+                    page: currentPage.toString(),
+                    limit: ITEMS_PER_PAGE.toString()
+                });
+                
+                if (date) {
+                    params.append('date', format(date, 'yyyy-MM-dd'));
+                }
+                
+                if (searchTerm) {
+                    params.append('search', searchTerm);
+                }
+                
+                const response = await fetch(`/api/restaurant/activities/${storeId}?${params}`);
+                
+                if (!response.ok) {
+                    // En cas d'erreur, utiliser les données mockées pour ce store
+                    console.warn('API activities non disponible, utilisation des données mockées');
+                    const mockData = mockActivities[storeId] || [];
+                    
+                    const transformedActivities: ActivityLog[] = mockData.map((activity: any, index: number) => ({
+                        id: activity.id || `mock-${index}`,
+                        type: activity.type,
+                        customer: activity.customer,
+                        customerId: activity.customerId,
+                        phone: activity.phone,
+                        date: activity.date,
+                        amount: activity.amount
+                    }));
+                    
+                    setActivities(transformedActivities);
+                    setTotalActivities(mockData.length);
+                    setLoading(false);
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                const transformedActivities: ActivityLog[] = data.activities.map((activity: any, index: number) => ({
+                    id: activity.orderNumber || activity.id || `activity-${index}`,
+                    type: activity.type === 'ORDER' ? 'Commande' as ActivityType : 
+                          activity.type === 'RESERVATION' ? 'Réservation' as ActivityType : 
+                          'Consultation' as ActivityType,
+                    customer: activity.customerName || 'Client Anonyme',
+                    customerId: activity.customerId,
+                    phone: activity.phone || 'N/A',
+                    date: new Date(activity.createdAt),
+                    amount: activity.amount || 'N/A'
+                }));
+                
+                setActivities(transformedActivities);
+                setTotalActivities(data.pagination.total);
+                
+            } catch (error: any) {
+                console.error('Error fetching activities:', error);
+                setError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (storeId) {
+            fetchActivities();
+        }
+    }, [storeId, currentPage, date, searchTerm]);
+
+
+    if (storeLoading) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="ml-2">Chargement...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (!store) {
+        return <div>Boutique non trouvée.</div>;
+    }
+
+    if (loading) {
+        return (
+            <div className="space-y-8">
+                <header className="mb-4">
+                    <Button variant="ghost" onClick={() => router.push('/restaurant/activity')} className="-ml-4 mb-2">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        {t(translations.back)}
+                    </Button>
+                    <div className="flex items-center gap-4">
+                        <Utensils className="h-8 w-8"/>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">{t(translations.activityTitle)}: {store?.name || 'Boutique'}</h1>
+                            <p className="text-muted-foreground">{t(translations.requestsList)}</p>
+                        </div>
+                    </div>
+                </header>
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="ml-2">Chargement des activités...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="space-y-8">
+                <header className="mb-4">
+                    <Button variant="ghost" onClick={() => router.push('/restaurant/activity')} className="-ml-4 mb-2">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        {t(translations.back)}
+                    </Button>
+                    <div className="flex items-center gap-4">
+                        <Utensils className="h-8 w-8"/>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">{t(translations.activityTitle)}: {store?.name || 'Boutique'}</h1>
+                            <p className="text-muted-foreground">{t(translations.requestsList)}</p>
+                        </div>
+                    </div>
+                </header>
+                <div className="text-center py-12">
+                    <p className="text-red-500">Erreur: {error}</p>
+                    <Button className="mt-4" onClick={() => window.location.reload()}>
+                        Réessayer
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    const Icon = getServiceIcon(store.serviceType, store.name);
 
     return (
         <div className="space-y-8">
@@ -173,8 +350,15 @@ export default function StoreActivityPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedActivities.map((activity) => (
-                                    <TableRow key={activity.id}>
+                                {activities.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-8">
+                                            <p className="text-muted-foreground">Aucune activité trouvée</p>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    activities.map((activity) => (
+                                        <TableRow key={activity.id}>
                                         <TableCell>
                                             <p className="font-mono text-sm">{activity.id}</p>
                                         </TableCell>
@@ -182,7 +366,12 @@ export default function StoreActivityPage() {
                                             <p className="font-medium">{activity.customer}</p>
                                             <p className="text-xs text-muted-foreground">{activity.phone}</p>
                                         </TableCell>
-                                        <TableCell className="hidden sm:table-cell">{format(activity.date, "dd/MM/yyyy HH:mm")}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">
+                                            {activity.date && !isNaN(new Date(activity.date).getTime()) 
+                                                ? format(new Date(activity.date), "dd/MM/yyyy HH:mm")
+                                                : 'Date invalide'
+                                            }
+                                        </TableCell>
                                         <TableCell className="hidden md:table-cell">{activity.amount}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="sm" onClick={(e) => {
@@ -194,8 +383,9 @@ export default function StoreActivityPage() {
                                                 {t(translations.view)}
                                             </Button>
                                         </TableCell>
-                                    </TableRow>
-                                ))}
+                                        </TableRow>
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </div>

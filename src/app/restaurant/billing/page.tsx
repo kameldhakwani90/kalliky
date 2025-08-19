@@ -1,455 +1,1085 @@
-
-
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Download, CheckCircle, ArrowRight, Info, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Download, CheckCircle, ArrowRight, Info, Loader2, Building, Euro, TrendingUp, CreditCard, Plus, Trash2, StopCircle, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/language-context";
+import { toast } from "sonner";
+import PlanChangeModal from '@/components/billing/PlanChangeModal';
+import CancelSubscriptionModal from '@/components/billing/CancelSubscriptionModal';
 
-const invoices = [
-    { id: "INV-2024-005", date: new Date("2024-05-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
-    { id: "INV-2024-004", date: new Date("2024-04-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
-    { id: "INV-2024-003", date: new Date("2024-03-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
-    { id: "INV-2024-002", date: new Date("2024-02-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
-    { id: "INV-2024-001", date: new Date("2024-01-01"), amount: 32900, status: "Payée", pdfUrl: "#" },
-];
+interface ActivityBilling {
+  storeId: string;
+  storeName: string;
+  businessName: string;
+  plan: 'STARTER' | 'PRO' | 'BUSINESS';
+  status: string;
+  baseCost: number;
+  usage: {
+    orderCount: number;
+    totalRevenue: number;
+    commissionAmount: number;
+  };
+  totalCost: number;
+  isActive: boolean;
+}
 
-const starterFeatures = [
-    { text: {fr: "Appels vocaux automatisés", en: "Automated voice calls"} },
-    { text: {fr: "Ticket vocal (création auto)", en: "Voice ticket (auto creation)"} },
-    { text: {fr: "Paiement par lien Stripe", en: "Stripe payment link"} },
-    { text: {fr: "Historique commandes de base", en: "Basic order history"} },
-    { text: {fr: "Dashboard commandes & paiements", en: "Orders & payments dashboard"} },
-    { text: {fr: "Facturation Stripe auto", en: "Auto Stripe billing"} },
-    { text: {fr: "Menu via Excel (upload)", en: "Menu via Excel (upload)"} },
-    { text: {fr: "Support par Email", en: "Email Support"} },
-];
+interface ConsolidatedBilling {
+  totalActivities: number;
+  totalBaseCost: number;
+  totalUsageCost: number;
+  totalAmount: number;
+  activities: ActivityBilling[];
+  period: string;
+}
 
-const proFeatures = [
-    { text: {fr: "Fiche client complète", en: "Complete customer file"} },
-    { text: {fr: "Mémoire IA client (préférences, upsell)", en: "Customer AI memory (preferences, upsell)"} },
-    { text: {fr: "Upsell intelligent (basé sur l'historique)", en: "Smart upsell (based on history)"} },
-    { text: {fr: "Gestion avancée des signalements", en: "Advanced report management"} },
-    { text: {fr: "Dashboard + stats IA usage", en: "Dashboard + AI usage stats"} },
-    { text: {fr: "Support Email prioritaire 24h", en: "24h Priority Email Support"} },
-];
+interface PaymentMethod {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+}
 
-const businessFeatures = [
-    { text: {fr: "Ticket vocal sur mesure", en: "Custom voice ticket"} },
-    { text: {fr: "Paiement via WhatsApp etc.", en: "Payment via WhatsApp etc."} },
-    { text: {fr: "Historique avec export API/CRM", en: "History with API/CRM export"} },
-    { text: {fr: "IA dédiée / scénario complexe", en: "Dedicated AI / complex scenario"} },
-    { text: {fr: "Suggestion dynamique (météo...)", en: "Dynamic suggestion (weather...)"} },
-    { text: {fr: "Dashboard multi-site", en: "Multi-site dashboard"} },
-    { text: {fr: "Account manager dédié", en: "Dedicated account manager"} },
-];
-
-const plans = [
-  {
-    name: "Starter",
-    price: "129€",
-    priceValue: 129,
-    priceDetails: {fr: "/ mois + 10% commission", en: "/ month + 10% commission"},
-    target: {fr: "Petit restaurant local", en: "Small local restaurant"},
-    features: starterFeatures,
-    recommended: false,
-    buttonText: {fr: "Choisir", en: "Choose"}
-  },
-  {
-    name: "Pro",
-    subtitle: {fr: "IA + historique", en: "AI + history"},
-    price: "329€",
-    priceValue: 329,
-    priceDetails: {fr: "/ mois + 1€ / ticket", en: "/ month + €1 / ticket"},
-    target: {fr: "Restaurateurs réguliers ou chaîne", en: "Regular restaurateurs or chain"},
-    features: proFeatures,
-    basePlan: {fr: "Starter", en: "Starter"},
-    recommended: true,
-    buttonText: {fr: "Plan Actuel", en: "Current Plan"}
-  },
-  {
-    name: "Business",
-    subtitle: {fr: "Sur mesure", en: "Custom"},
-    price: {fr: "Sur devis", en: "On quote"},
-    priceValue: 800, // Example value for proration calculation
-    priceDetails: {fr: "personnalisé", en: "custom"},
-    target: {fr: "Groupes, franchises, haut volume", en: "Groups, franchises, high volume"},
-    features: businessFeatures,
-    basePlan: {fr: "Pro", en: "Pro"},
-    recommended: false,
-    buttonText: {fr: "Nous contacter", en: "Contact Us"}
-  },
-];
-
-
-const currentPlanName = "Pro";
-const ITEMS_PER_PAGE = 5;
+interface Invoice {
+  id: string;
+  date: string;
+  amount: number;
+  status: string;
+  stripeInvoiceId: string;
+  pdfUrl?: string;
+}
 
 export default function BillingPage() {
-    const { t } = useLanguage();
-    const [date, setDate] = useState<Date | undefined>(undefined);
-    const [selectedPlanName, setSelectedPlanName] = useState<string>(currentPlanName);
-    const [isUpdatePaymentOpen, setIsUpdatePaymentOpen] = useState(false);
-    const [isChangePlanOpen, setIsChangePlanOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
+  const { t } = useLanguage();
+  const [billingData, setBillingData] = useState<ConsolidatedBilling | null>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(false);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+  const [planChangeModal, setPlanChangeModal] = useState<{
+    isOpen: boolean;
+    storeId: string;
+    storeName: string;
+    currentPlan: 'STARTER' | 'PRO' | 'BUSINESS';
+  }>({ isOpen: false, storeId: '', storeName: '', currentPlan: 'STARTER' });
+  const [cancelModal, setCancelModal] = useState<{
+    isOpen: boolean;
+    storeId: string;
+    storeName: string;
+    plan: 'STARTER' | 'PRO' | 'BUSINESS';
+  }>({ isOpen: false, storeId: '', storeName: '', plan: 'STARTER' });
 
-    const totalPages = Math.ceil(invoices.length / ITEMS_PER_PAGE);
+  const translations = {
+    title: { fr: "Facturation et Abonnements", en: "Billing and Subscriptions" },
+    description: { fr: "Gérez vos abonnements et consultez vos factures", en: "Manage your subscriptions and view your invoices" },
+    currentBilling: { fr: "Facturation Actuelle", en: "Current Billing" },
+    period: { fr: "Période", en: "Period" },
+    activities: { fr: "Activités", en: "Activities" },
+    baseCost: { fr: "Coût de base", en: "Base cost" },
+    usage: { fr: "Usage", en: "Usage" },
+    total: { fr: "Total", en: "Total" },
+    payNow: { fr: "Payer maintenant", en: "Pay now" },
+    activity: { fr: "Activité", en: "Activity" },
+    plan: { fr: "Plan", en: "Plan" },
+    orders: { fr: "commandes", en: "orders" },
+    revenue: { fr: "CA", en: "Revenue" },
+    commission: { fr: "Commission", en: "Commission" },
+    perOrder: { fr: "par commande", en: "per order" },
+    active: { fr: "Actif", en: "Active" },
+    inactive: { fr: "Inactif", en: "Inactive" },
+    loading: { fr: "Chargement...", en: "Loading..." },
+    noActivities: { fr: "Aucune activité", en: "No activities" },
+    createActivity: { fr: "Créer une activité", en: "Create activity" },
+    paymentMethods: { fr: "Moyens de paiement", en: "Payment methods" },
+    paymentMethodsDescription: { fr: "Gérez vos cartes bancaires enregistrées", en: "Manage your saved payment cards" },
+    addCard: { fr: "Ajouter une carte", en: "Add card" },
+    defaultCard: { fr: "Carte par défaut", en: "Default card" },
+    expires: { fr: "Expire", en: "Expires" },
+    remove: { fr: "Supprimer", en: "Remove" },
+    noCards: { fr: "Aucune carte enregistrée", en: "No saved cards" },
+    addFirstCard: { fr: "Ajoutez votre première carte pour simplifier vos futurs paiements", en: "Add your first card to simplify future payments" },
+    invoiceHistory: { fr: "Historique des factures", en: "Invoice history" },
+    invoiceHistoryDescription: { fr: "Consultez et téléchargez vos factures", en: "View and download your invoices" },
+    invoiceNumber: { fr: "N° Facture", en: "Invoice #" },
+    date: { fr: "Date", en: "Date" },
+    amount: { fr: "Montant", en: "Amount" },
+    status: { fr: "Statut", en: "Status" },
+    actions: { fr: "Actions", en: "Actions" },
+    download: { fr: "Télécharger", en: "Download" },
+    paid: { fr: "Payée", en: "Paid" },
+    pending: { fr: "En attente", en: "Pending" },
+    noInvoices: { fr: "Aucune facture", en: "No invoices" },
+    noInvoicesDescription: { fr: "Vos factures apparaîtront ici une fois vos premiers paiements effectués", en: "Your invoices will appear here once your first payments are made" },
+    overview: { fr: "Vue d'ensemble", en: "Overview" },
+    subscriptions: { fr: "Abonnements", en: "Subscriptions" },
+    invoices: { fr: "Factures", en: "Invoices" },
+    paymentMethodsTab: { fr: "Moyens de paiement", en: "Payment methods" },
+  };
 
-    const paginatedInvoices = invoices.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+  useEffect(() => {
+    loadBillingData();
+    loadPaymentMethods();
+    loadInvoices();
+  }, []);
 
-    const handleSavePayment = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log("Simulating saving new card...");
-        // Here you would normally send the data to your payment provider (Stripe)
-        setIsUpdatePaymentOpen(false);
+  const loadBillingData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Récupérer les activités
+      const activitiesResponse = await fetch('/api/restaurant/activities');
+      if (!activitiesResponse.ok) throw new Error('Erreur lors du chargement des activités');
+      
+      const data = await activitiesResponse.json();
+      // L'API retourne { stores, activities }, récupérer les stores qui contiennent les activités
+      const activities = data.stores || [];
+      setActivities(activities);
+      
+      // Récupérer l'usage du mois en cours
+      const currentPeriod = new Date().toISOString().slice(0, 7);
+      const usageResponse = await fetch(`/api/restaurant/usage?period=${currentPeriod}`);
+      let usageData = [];
+      
+      if (usageResponse.ok) {
+        usageData = await usageResponse.json();
+      } else {
+        console.warn('Aucune donnée d\'usage trouvée, utilisation de valeurs par défaut');
+      }
+
+      // Construire les données de facturation
+      const activityBilling: ActivityBilling[] = [];
+      let totalBaseCost = 0;
+      let totalUsageCost = 0;
+
+      for (const store of activities) {
+        if (store.subscription) {
+          const settings = store.settings ? (typeof store.settings === 'string' ? JSON.parse(store.settings) : store.settings) : {};
+          // Chercher les données d'usage pour ce store
+          const usageRecord = usageData.find((u: any) => u.storeId === store.id);
+          const usage = usageRecord ? {
+            orderCount: usageRecord.orderCount || 0,
+            totalRevenue: usageRecord.totalRevenue || 0,
+            commissionAmount: usageRecord.commissionAmount || 0
+          } : {
+            orderCount: 0,
+            totalRevenue: 0,
+            commissionAmount: 0
+          };
+
+          // Calculer les coûts selon le plan
+          let baseCost = 0;
+          let usageCost = 0;
+
+          switch (store.subscription.plan) {
+            case 'STARTER':
+              baseCost = 129;
+              usageCost = usage.commissionAmount; // 10% du CA
+              break;
+            case 'PRO':
+              baseCost = 329;
+              usageCost = usage.orderCount * 1; // 1€ par commande
+              break;
+            case 'BUSINESS':
+              baseCost = 800;
+              usageCost = 0; // Pas de frais d'usage
+              break;
+          }
+
+          totalBaseCost += baseCost;
+          totalUsageCost += usageCost;
+
+          activityBilling.push({
+            storeId: store.id,
+            storeName: store.name,
+            businessName: store.name, // Utiliser le nom du store comme nom de business
+            plan: store.subscription.plan,
+            status: store.subscription.status,
+            baseCost,
+            usage: {
+              orderCount: usage.orderCount,
+              totalRevenue: usage.totalRevenue,
+              commissionAmount: usage.commissionAmount
+            },
+            totalCost: baseCost + usageCost,
+            isActive: store.isActive && store.subscription.isActive
+          });
+        }
+      }
+
+      setBillingData({
+        totalActivities: activityBilling.length,
+        totalBaseCost,
+        totalUsageCost,
+        totalAmount: totalBaseCost + totalUsageCost,
+        activities: activityBilling,
+        period: format(new Date(), 'MMMM yyyy')
+      });
+
+    } catch (error) {
+      console.error('Error loading billing data:', error);
+      toast.error('Erreur lors du chargement des données de facturation');
+    } finally {
+      setIsLoading(false);
     }
-    
-    const selectedPlan = plans.find(p => p.name === selectedPlanName);
-    const currentPlan = plans.find(p => p.name === currentPlanName);
+  };
 
-    const daysInMonth = 30;
-    const daysRemaining = 15;
-    const proratedCost = selectedPlan && currentPlan ? (((selectedPlan.priceValue - currentPlan.priceValue) / daysInMonth) * daysRemaining) : 0;
+  const handlePayment = async () => {
+    try {
+      setIsPaymentLoading(true);
+      
+      const response = await fetch('/api/stripe/checkout-consolidated', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-    const translations = {
-        title: { fr: "Facturation et Abonnement", en: "Billing and Subscription" },
-        description: { fr: "Gérez votre plan et consultez votre historique de facturation pour le service Kalliky.ai.", en: "Manage your plan and view your billing history for the Kalliky.ai service." },
-        currentSubscription: { fr: "Votre Abonnement Actuel", en: "Your Current Subscription" },
-        proPlan: { fr: "Plan Pro (IA + historique)", en: "Pro Plan (AI + history)" },
-        renewedOn: { fr: "Votre abonnement sera renouvellé le 1er juin 2024.", en: "Your subscription will be renewed on June 1, 2024." },
-        changePlan: { fr: "Changer de plan", en: "Change Plan" },
-        paymentMethod: { fr: "Moyen de Paiement", en: "Payment Method" },
-        cardDescription: { fr: "La carte utilisée pour votre abonnement Kalliky.ai.", en: "The card used for your Kalliky.ai subscription." },
-        cardEndingIn: { fr: "Visa se terminant par 4242", en: "Visa ending in 4242" },
-        expires: { fr: "Expire le 12/26", en: "Expires 12/26" },
-        update: { fr: "Mettre à jour", en: "Update" },
-        invoicesHistory: { fr: "Historique des Factures", en: "Invoices History" },
-        invoicesDescription: { fr: "Retrouvez toutes vos factures pour votre abonnement Kalliky.ai.", en: "Find all your invoices for your Kalliky.ai subscription." },
-        chooseDate: { fr: "Choisir une date", en: "Choose a date" },
-        invoiceNo: { fr: "Facture N°", en: "Invoice No." },
-        date: { fr: "Date", en: "Date" },
-        amount: { fr: "Montant", en: "Amount" },
-        status: { fr: "Statut", en: "Status" },
-        download: { fr: "Télécharger", en: "Download" },
-        changeSubscription: { fr: "Changer votre abonnement", en: "Change your subscription" },
-        selectPlan: { fr: "Sélectionnez le plan qui correspond le mieux à vos besoins.", en: "Select the plan that best suits your needs." },
-        currentPlanBadge: { fr: "Plan Actuel", en: "Current Plan" },
-        allFeaturesOf: { fr: "Toutes les fonctionnalités du plan", en: "All the features of the plan" },
-        selected: { fr: "Sélectionné", en: "Selected" },
-        terms: { fr: "En continuant, vous acceptez nos", en: "By continuing, you accept our" },
-        tos: { fr: "CGU", en: "TOS" },
-        tos_long: { fr: "Conditions Générales d'Utilisation", en: "Terms of Service" },
-        privacy: { fr: "Politique de Confidentialité (RGPD)", en: "Privacy Policy (GDPR)" },
-        confirmChange: { fr: "Confirmer le changement", en: "Confirm Change" },
-        planChangeConfirmation: { fr: "Confirmation du changement de plan", en: "Plan Change Confirmation" },
-        aboutToSwitch: { fr: "Vous êtes sur le point de passer du plan", en: "You are about to switch from the" },
-        toPlan: { fr: "au plan", en: "to the" },
-        planChange: { fr: "Changement de plan", en: "Plan change" },
-        proratedAdjustment: { fr: "Ajustement au prorata", en: "Prorated adjustment" },
-        totalBilledToday: { fr: "Total facturé aujourd'hui", en: "Total billed today" },
-        nextBilling: { fr: "Prochain prélèvement le 01/07/2024", en: "Next billing on 01/07/2024" },
-        cancel: { fr: "Annuler", en: "Cancel" },
-        confirmAndPay: { fr: "Confirmer et Payer", en: "Confirm and Pay" },
-        updatePaymentMethod: { fr: "Mettre à jour votre moyen de paiement", en: "Update your payment method" },
-        updatePaymentDescription: { fr: "Saisissez les informations de votre nouvelle carte. Votre prochain prélèvement utilisera ce moyen de paiement.", en: "Enter your new card information. Your next payment will use this payment method." },
-        cardName: { fr: "Nom sur la carte", en: "Name on card" },
-        cardNamePlaceholder: { fr: "Ex: Jean Dupont", en: "Ex: John Doe" },
-        cardNumber: { fr: "Numéro de carte", en: "Card number" },
-        cardExpiry: { fr: "Expiration (MM/AA)", en: "Expiration (MM/YY)" },
-        cvc: { fr: "CVC", en: "CVC" },
-        securePayments: { fr: "Paiements sécurisés par", en: "Secure payments by" },
-        save: { fr: "Enregistrer", en: "Save" },
-        paid: { fr: "Payée", en: "Paid" },
-        previous: { fr: "Précédent", en: "Previous" },
-        next: { fr: "Suivant", en: "Next" },
-        pageOf: { fr: "Page {current} sur {total}", en: "Page {current} of {total}" },
-        searchPlaceholder: { fr: "Rechercher par N°...", en: "Search by No...." },
-    };
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création de la session de paiement');
+      }
 
+      const { sessionUrl } = await response.json();
+      window.location.href = sessionUrl;
 
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast.error(error.message || 'Erreur lors du paiement');
+      setIsPaymentLoading(false);
+    }
+  };
+
+  const loadPaymentMethods = async () => {
+    try {
+      setIsLoadingPaymentMethods(true);
+      const response = await fetch('/api/stripe/payment-methods');
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentMethods(data.paymentMethods || []);
+      }
+    } catch (error) {
+      console.error('Error loading payment methods:', error);
+    } finally {
+      setIsLoadingPaymentMethods(false);
+    }
+  };
+
+  const loadInvoices = async () => {
+    try {
+      setIsLoadingInvoices(true);
+      const response = await fetch('/api/restaurant/billing/invoices');
+      if (response.ok) {
+        const data = await response.json();
+        setInvoices(data.invoices || []);
+      }
+    } catch (error) {
+      console.error('Error loading invoices:', error);
+    } finally {
+      setIsLoadingInvoices(false);
+    }
+  };
+
+  const handleAddCard = async () => {
+    // Créer une session Setup Intent pour ajouter une nouvelle carte
+    try {
+      const response = await fetch('/api/stripe/setup-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        const { setupUrl } = await response.json();
+        window.location.href = setupUrl;
+      }
+    } catch (error) {
+      console.error('Error creating setup intent:', error);
+      toast.error('Erreur lors de l\'ajout de la carte');
+    }
+  };
+
+  const handleOpenPlanChangeModal = (storeId: string, storeName: string, currentPlan: 'STARTER' | 'PRO' | 'BUSINESS') => {
+    setPlanChangeModal({
+      isOpen: true,
+      storeId,
+      storeName,
+      currentPlan
+    });
+  };
+
+  const handleOpenCancelModal = (storeId: string, storeName: string, plan: 'STARTER' | 'PRO' | 'BUSINESS') => {
+    setCancelModal({
+      isOpen: true,
+      storeId,
+      storeName,
+      plan
+    });
+  };
+
+  const handlePlanChange = async (newPlan: string) => {
+    try {
+      const response = await fetch('/api/restaurant/subscriptions/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          storeId: planChangeModal.storeId,
+          newPlan 
+        })
+      });
+
+      if (response.ok) {
+        const isUpgrade = newPlan > planChangeModal.currentPlan;
+        toast.success(
+          isUpgrade 
+            ? '🚀 Upgrade effectué avec succès ! Les nouvelles fonctionnalités sont disponibles immédiatement.'
+            : '✅ Changement de plan effectué avec succès.'
+        );
+        setPlanChangeModal({ isOpen: false, storeId: '', storeName: '', currentPlan: 'STARTER' });
+        // Recharger les données
+        await loadBillingData();
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Erreur lors du changement de plan');
+      }
+    } catch (error) {
+      console.error('Error changing plan:', error);
+      toast.error('Erreur lors du changement de plan');
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    try {
+      const response = await fetch('/api/restaurant/subscriptions/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeId: cancelModal.storeId })
+      });
+
+      if (response.ok) {
+        toast.success('Abonnement arrêté avec succès');
+        setCancelModal({ isOpen: false, storeId: '', storeName: '', plan: 'STARTER' });
+        // Recharger les données
+        await loadBillingData();
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Erreur lors de l\'arrêt de l\'abonnement');
+      }
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      toast.error('Erreur lors de l\'arrêt de l\'abonnement');
+    }
+  };
+
+  const handleRemoveCard = async (paymentMethodId: string) => {
+    try {
+      const response = await fetch('/api/stripe/payment-methods', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentMethodId })
+      });
+
+      if (response.ok) {
+        setPaymentMethods(prev => prev.filter(pm => pm.id !== paymentMethodId));
+        toast.success('Carte supprimée avec succès');
+      } else {
+        throw new Error('Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('Error removing card:', error);
+      toast.error('Erreur lors de la suppression de la carte');
+    }
+  };
+
+  const getCardBrandColor = (brand: string) => {
+    switch (brand.toLowerCase()) {
+      case 'visa': return 'text-blue-600';
+      case 'mastercard': return 'text-red-600';
+      case 'amex': return 'text-green-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getPlanColor = (plan: string) => {
+    switch (plan) {
+      case 'STARTER': return 'bg-green-100 text-green-700';
+      case 'PRO': return 'bg-blue-100 text-blue-700';
+      case 'BUSINESS': return 'bg-purple-100 text-purple-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  if (isLoading) {
     return (
-        <div className="space-y-6">
-             <header>
-                <h1 className="text-3xl font-bold tracking-tight">{t(translations.title)}</h1>
-                <p className="text-muted-foreground">{t(translations.description)}</p>
-            </header>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">{t(translations.loading)}</span>
+        </div>
+      </div>
+    );
+  }
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t(translations.currentSubscription)}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-baseline">
-                           <p className="text-lg font-semibold">{t(translations.proPlan)}</p>
-                           <p><span className="text-3xl font-bold">329€</span>/mois</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{t(translations.renewedOn)}</p>
-                        
-                        <Dialog open={isChangePlanOpen} onOpenChange={setIsChangePlanOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" className="w-full">{t(translations.changePlan)}</Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-6xl">
-                                <DialogHeader>
-                                    <DialogTitle className="text-center text-2xl font-headline">{t(translations.changeSubscription)}</DialogTitle>
-                                    <DialogDescription className="text-center">
-                                        {t(translations.selectPlan)}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid md:grid-cols-3 gap-6 py-6">
-                                    {plans.map((plan) => (
-                                    <Card 
-                                        key={plan.name} 
-                                        className={cn(
-                                            "cursor-pointer flex flex-col", 
-                                            {"border-primary border-2 shadow-lg": selectedPlanName === plan.name}
-                                        )}
-                                        onClick={() => setSelectedPlanName(plan.name)}
-                                    >
-                                        <CardHeader className="text-center">
-                                            <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
-                                            {plan.subtitle && <p className="text-sm font-semibold text-primary">{t(plan.subtitle)}</p>}
-                                            <p className="text-muted-foreground text-sm">{t(plan.target)}</p>
-                                            <p className="text-3xl font-bold pt-4">{typeof plan.price === 'string' ? plan.price : t(plan.price)}<span className="text-base font-normal text-muted-foreground">{t(plan.priceDetails)}</span></p>
-                                            {currentPlanName === plan.name && <Badge variant="secondary" className="w-fit mx-auto mt-2">{t(translations.currentPlanBadge)}</Badge>}
-                                        </CardHeader>
-                                        <CardContent className="flex-1 text-left">
-                                            {plan.basePlan && (
-                                                <>
-                                                    <p className="text-sm font-semibold mb-3">{t(translations.allFeaturesOf)} {t(plan.basePlan)} :</p>
-                                                    <Separator className="mb-4" />
-                                                </>
-                                            )}
-                                            <ul className="space-y-3 text-sm">
-                                                {plan.features.map((feature, i) => (
-                                                  <li key={i} className="flex items-start gap-3">
-                                                    <CheckCircle className="h-5 w-5 text-green-500 mt-px flex-shrink-0" />
-                                                    <span>{t(feature.text)}</span>
-                                                  </li>
-                                                ))}
-                                            </ul>
-                                        </CardContent>
-                                        <CardFooter>
-                                            <Button className="w-full" variant={selectedPlanName === plan.name ? (plan.name === "Business" ? 'default' : 'secondary') : "outline"} disabled={currentPlanName === plan.name}>
-                                                {currentPlanName === plan.name ? t(plan.buttonText) : (selectedPlanName === plan.name ? t(translations.selected) : t(plan.buttonText))}
-                                            </Button>
-                                        </CardFooter>
-                                    </Card>
-                                    ))}
-                                </div>
-                                <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full border-t pt-4">
-                                     <div className="text-xs text-muted-foreground text-center sm:text-left">
-                                         {t(translations.terms)} <a href="#" className="underline">CGV</a>, <a href="#" className="underline">{t(translations.tos)}</a> {t({fr: "et notre", en: "and our"})} <a href="#" className="underline">{t(translations.privacy)}</a>.
-                                     </div>
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                           <Button disabled={selectedPlanName === currentPlanName}>
-                                                {t(translations.confirmChange)}
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>{t(translations.planChangeConfirmation)}</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    {t(translations.aboutToSwitch)} <span className="font-bold">{currentPlan?.name}</span> {t(translations.toPlan)} <span className="font-bold">{selectedPlan?.name}</span>.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                             <div className="my-4 p-4 bg-muted rounded-md text-sm space-y-2">
-                                                 <div className="flex justify-between">
-                                                    <span>{t(translations.planChange)}</span>
-                                                    <span className="font-medium">{currentPlan?.name} <ArrowRight className="inline h-3 w-3 mx-1"/> {selectedPlan?.name}</span>
-                                                 </div>
-                                                 <div className="flex justify-between">
-                                                    <span className="flex items-center">{t(translations.proratedAdjustment)} <Info className="h-3 w-3 ml-1.5 cursor-help" /></span>
-                                                    <span className="font-medium">{proratedCost.toFixed(2)}€</span>
-                                                 </div>
-                                                 <Separator />
-                                                  <div className="flex justify-between font-bold text-base">
-                                                    <span>{t(translations.totalBilledToday)}</span>
-                                                    <span>{proratedCost.toFixed(2)}€</span>
-                                                 </div>
-                                                  <Separator />
-                                                 <div className="flex justify-between text-xs text-muted-foreground">
-                                                    <span>{t(translations.nextBilling)}</span>
-                                                    <span>{(selectedPlan?.priceValue ?? 0).toFixed(2)}€</span>
-                                                 </div>
-                                             </div>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>{t(translations.cancel)}</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => setIsChangePlanOpen(false)}>{t(translations.confirmAndPay)}</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+  // Afficher les activités sans abonnement aussi
+  const hasActivitiesWithSubscriptions = billingData && billingData.activities.length > 0;
+  const allActivities = activities || [];
 
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t(translations.paymentMethod)}</CardTitle>
-                         <CardDescription>{t(translations.cardDescription)}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-4 p-4 bg-muted rounded-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 38 24" fill="none"><path d="M34.95 4.5h-32A2.95 2.95 0 0 0 0 7.45v13.1A2.95 2.95 0 0 0 2.95 23.5h32A2.95 2.95 0 0 0 37.95 20.55V7.45A2.95 2.95 0 0 0 34.95 4.5Zm-28.5 13.1a1.47 1.47 0 1 1 0-2.95 1.47 1.47 0 0 1 0 2.95Zm10.41 0a1.47 1.47 0 1 1 0-2.95 1.47 1.47 0 0 1 0 2.95Z" fill="#242328"/><path d="M2.95.5h32A2.95 2.95 0 0 1 37.95 3.45v1.05h-38V3.45A2.95 2.95 0 0 1 2.95.5Z" fill="#242328"/></svg>
-                            <div>
-                                <p className="font-semibold">{t(translations.cardEndingIn)}</p>
-                                <p className="text-sm text-muted-foreground">{t(translations.expires)}</p>
-                            </div>
-                        </div>
-                         <Dialog open={isUpdatePaymentOpen} onOpenChange={setIsUpdatePaymentOpen}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" className="w-full">{t(translations.update)}</Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <form onSubmit={handleSavePayment}>
-                                <DialogHeader>
-                                <DialogTitle>{t(translations.updatePaymentMethod)}</DialogTitle>
-                                <DialogDescription>
-                                    {t(translations.updatePaymentDescription)}
-                                </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                        <Label htmlFor="card-name">{t(translations.cardName)}</Label>
-                                        <Input id="card-name" placeholder={t(translations.cardNamePlaceholder)} required/>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="card-number">{t(translations.cardNumber)}</Label>
-                                        <Input id="card-number" placeholder="0000 0000 0000 0000" required/>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="card-expiry">{t(translations.cardExpiry)}</Label>
-                                            <Input id="card-expiry" placeholder="MM/AA" required/>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="card-cvc">{t(translations.cvc)}</Label>
-                                            <Input id="card-cvc" placeholder="123" required/>
-                                        </div>
-                                    </div>
-                                </div>
-                                <DialogFooter className="flex-col gap-y-2 sm:flex-row sm:justify-between sm:items-center">
-                                <p className="text-xs text-muted-foreground text-center sm:text-left">
-                                    {t(translations.securePayments)} <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a>.
-                                </p>
-                                <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setIsUpdatePaymentOpen(false)}>{t(translations.cancel)}</Button>
-                                    <Button type="submit">{t(translations.save)}</Button>
-                                </div>
-                                </DialogFooter>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-                    </CardContent>
-                </Card>
+  // Log pour debug - TRÈS VISIBLE
+  console.log('🔍 BILLING PAGE DEBUG:', {
+    hasActivitiesWithSubscriptions,
+    allActivitiesLength: allActivities.length,
+    billingData,
+    activities,
+    invoicesLength: invoices.length,
+    loading: isLoading
+  });
+
+  // Debug spécial pour voir si les cards se rendent
+  console.log('🎯 CARDS SHOULD BE VISIBLE - Store count:', allActivities.length);
+  
+  // Alert temporaire pour confirmer que le code est chargé
+  if (typeof window !== 'undefined' && !window.billingPageLoaded) {
+    window.billingPageLoaded = true;
+    setTimeout(() => {
+      alert('✅ PAGE FACTURATION MISE À JOUR - Vérifiez la console pour les logs de debug');
+    }, 1000);
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="max-w-7xl mx-auto p-6 space-y-8">
+        {/* Header avec style Apple moderne */}
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 mb-6 shadow-2xl shadow-blue-500/20">
+            <Euro className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-blue-800 to-purple-700 bg-clip-text text-transparent">{t(translations.title)}</h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{t(translations.description)}</p>
+        </div>
+
+        {/* Onglets avec style Apple */}
+        <Tabs defaultValue="overview" className="w-full">
+          <div className="flex justify-center mb-8">
+            <TabsList className="inline-flex h-12 items-center justify-center rounded-2xl bg-gray-100/80 p-1 text-gray-600 backdrop-blur-sm border-0 shadow-lg">
+              <TabsTrigger 
+                value="overview" 
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-2 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-lg data-[state=active]:shadow-black/10 hover:bg-gray-50 hover:text-gray-900"
+              >
+                <TrendingUp className="h-4 w-4" />
+                {t(translations.overview)}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="subscriptions" 
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-2 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-lg data-[state=active]:shadow-black/10 hover:bg-gray-50 hover:text-gray-900"
+              >
+                <Building className="h-4 w-4" />
+                {t(translations.subscriptions)}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="invoices" 
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-2 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-lg data-[state=active]:shadow-black/10 hover:bg-gray-50 hover:text-gray-900"
+              >
+                <Download className="h-4 w-4" />
+                {t(translations.invoices)}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="payment-methods" 
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-2 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-lg data-[state=active]:shadow-black/10 hover:bg-gray-50 hover:text-gray-900"
+              >
+                <CreditCard className="h-4 w-4" />
+                {t(translations.paymentMethodsTab)}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Contenu des onglets */}
+          <TabsContent value="overview" className="space-y-6 animate-in fade-in-50 duration-500">
+            {/* INDICATEUR VISUAL - À SUPPRIMER PLUS TARD */}
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              🟢 SECTION VUE D'ENSEMBLE CHARGÉE - {new Date().toLocaleTimeString()} - {allActivities.length} boutiques
+            </div>
+            
+            {/* Vue d'ensemble - Statistiques toujours visibles */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="group glass-effect shadow-apple rounded-2xl border-0 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 overflow-hidden hover:-translate-y-1">
+                <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600"></div>
+                <CardContent className="p-6 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 mb-4 shadow-lg">
+                    <Building className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-1">
+                    {allActivities.length}
+                  </div>
+                  <div className="text-sm text-gray-600 font-medium">Boutiques créées</div>
+                </CardContent>
+              </Card>
+
+              <Card className="group glass-effect shadow-apple rounded-2xl border-0 hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 overflow-hidden hover:-translate-y-1">
+                <div className="h-1 w-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
+                <CardContent className="p-6 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 mb-4 shadow-lg">
+                    <CheckCircle className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent mb-1">
+                    {billingData?.totalActivities || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 font-medium">Avec abonnement</div>
+                </CardContent>
+              </Card>
+
+              <Card className="group glass-effect shadow-apple rounded-2xl border-0 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 overflow-hidden hover:-translate-y-1">
+                <div className="h-1 w-full bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600"></div>
+                <CardContent className="p-6 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 mb-4 shadow-lg">
+                    <Euro className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent mb-1">
+                    {billingData?.totalAmount ? billingData.totalAmount.toFixed(0) : '0'}€
+                  </div>
+                  <div className="text-sm text-gray-600 font-medium">Facturation mensuelle</div>
+                </CardContent>
+              </Card>
+
+              <Card className="group glass-effect shadow-apple rounded-2xl border-0 hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 overflow-hidden hover:-translate-y-1">
+                <div className="h-1 w-full bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600"></div>
+                <CardContent className="p-6 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 mb-4 shadow-lg">
+                    <TrendingUp className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent mb-1">
+                    {invoices.length}
+                  </div>
+                  <div className="text-sm text-gray-600 font-medium">Factures émises</div>
+                </CardContent>
+              </Card>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <CardTitle>{t(translations.invoicesHistory)}</CardTitle>
-                            <CardDescription>{t(translations.invoicesDescription)}</CardDescription>
-                        </div>
-                        <div className="flex flex-col sm:flex-row items-center gap-2">
-                           <div className="relative flex-1 w-full">
-                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder={t(translations.searchPlaceholder)} className="pl-10" />
-                           </div>
-                           <Popover>
-                               <PopoverTrigger asChild>
-                                   <Button variant={"outline"} className="w-full sm:w-[240px] justify-start text-left font-normal">
-                                       <CalendarIcon className="mr-2 h-4 w-4" />
-                                       {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
-                                   </Button>
-                               </PopoverTrigger>
-                               <PopoverContent className="w-auto p-0" align="start">
-                                   <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                               </PopoverContent>
-                           </Popover>
-                        </div>
+            {/* Section principale selon le statut */}
+            {hasActivitiesWithSubscriptions ? (
+              // Avec abonnements actifs
+              <Card className="group glass-effect shadow-apple rounded-2xl border-0 hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500"></div>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-700 bg-clip-text text-transparent flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                      <Euro className="h-6 w-6 text-white" />
                     </div>
+                    {t(translations.currentBilling)} - {billingData?.period}
+                  </CardTitle>
+                  <CardDescription className="text-gray-600 text-lg">
+                    {billingData?.totalActivities} {t(translations.activities)} actives • Prochaine facturation le {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('fr-FR')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-6 bg-gradient-to-br from-gray-50/50 to-gray-100/30 rounded-2xl border border-gray-200/50">
+                    <div className="space-y-2">
+                      <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        {billingData?.totalAmount.toFixed(2)}€
+                      </div>
+                      <div className="text-sm text-gray-600 font-medium">
+                        Total mensuel TTC • {billingData?.totalBaseCost.toFixed(0)}€ fixe + {billingData?.totalUsageCost.toFixed(0)}€ usage
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handlePayment}
+                      disabled={isPaymentLoading}
+                      size="lg"
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 rounded-2xl px-8 py-3"
+                    >
+                      {isPaymentLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                      <Euro className="mr-2 h-5 w-5" />
+                      {t(translations.payNow)}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : allActivities.length === 0 ? (
+              // Aucune boutique - invite à créer
+              <Card className="group glass-effect shadow-apple rounded-2xl border-0 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 overflow-hidden">
+                <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500"></div>
+                <CardContent className="p-8 text-center space-y-6">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 mb-6">
+                    <Building className="h-10 w-10 text-blue-600" />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                      Créez votre première boutique
+                    </h3>
+                    <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                      Commencez par créer votre première boutique pour pouvoir gérer vos abonnements et suivre votre facturation.
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => window.location.href = '/restaurant/stores?action=new'}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 rounded-2xl px-8 py-3"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Créer ma première boutique
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              // Sans abonnements - encourager l'activation
+              <Card className="group glass-effect shadow-apple rounded-2xl border-0 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 overflow-hidden">
+                <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500"></div>
+                <CardContent className="p-8 text-center space-y-6">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 mb-6">
+                    <Building className="h-10 w-10 text-blue-600" />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                      Activez vos abonnements
+                    </h3>
+                    <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                      Vous avez {allActivities.length} boutique{allActivities.length > 1 ? 's' : ''} créée{allActivities.length > 1 ? 's' : ''} prête{allActivities.length > 1 ? 's' : ''} à être activée{allActivities.length > 1 ? 's' : ''}.
+                      Choisissez un plan d'abonnement pour commencer à recevoir des appels et gérer votre activité.
+                    </p>
+                  </div>
+                  
+                  {allActivities.length > 0 && (
+                    <div className="bg-gradient-to-br from-gray-50/50 to-gray-100/30 rounded-2xl p-6 border border-gray-200/50">
+                      <h4 className="font-semibold text-gray-900 mb-4">Vos boutiques disponibles :</h4>
+                      <div className="grid gap-3 max-w-2xl mx-auto">
+                        {allActivities.slice(0, 3).map((store: any, index: number) => (
+                          <div key={store.id} className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                                <Building className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">{store.name}</p>
+                                <p className="text-sm text-gray-500">{store.address}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 rounded-full">
+                              Inactif
+                            </Badge>
+                          </div>
+                        ))}
+                        {allActivities.length > 3 && (
+                          <p className="text-sm text-gray-500 mt-2">
+                            +{allActivities.length - 3} autre{allActivities.length - 3 > 1 ? 's' : ''} boutique{allActivities.length - 3 > 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <Button 
+                    onClick={() => window.location.href = '/restaurant/stores?action=new'}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 rounded-2xl px-8 py-3"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    {allActivities.length > 0 ? 'Configurer mes abonnements' : 'Créer ma première boutique'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="subscriptions" className="space-y-6 animate-in fade-in-50 duration-500">
+            {/* Boutiques sans abonnement avec style Apple */}
+            {allActivities.length > 0 && !hasActivitiesWithSubscriptions && (
+              <Card className="glass-effect shadow-apple rounded-2xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                    <Building className="h-5 w-5 text-orange-600" />
+                    Boutiques disponibles
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Vos boutiques créées qui n'ont pas encore d'abonnement actif
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
+                  <div className="grid gap-4">
+                    {allActivities.map((store: any) => (
+                        <Card key={store.id} className="glass-effect shadow-apple rounded-xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <h3 className="font-semibold text-gray-900">{store.name}</h3>
+                                <p className="text-sm text-gray-600">{store.address}</p>
+                                <p className="text-sm text-gray-500">{store.serviceType}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 rounded-full px-3 py-1">
+                                  Pas d'abonnement
+                                </Badge>
+                                <Button 
+                                  size="sm"
+                                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300 rounded-xl"
+                                  onClick={() => window.location.href = '/restaurant/stores?action=new'}
+                                >
+                                  Souscrire un plan
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    }
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Facturation consolidée avec style Apple */}
+            {hasActivitiesWithSubscriptions && billingData && (
+              <Card className="glass-effect shadow-apple rounded-2xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                    <Euro className="h-5 w-5 text-blue-600" />
+                    {t(translations.currentBilling)} - {billingData.period}
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">
+                    {billingData.totalActivities} {t(translations.activities)} • {t(translations.total)} : {billingData.totalAmount.toFixed(2)}€
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Statistiques avec cartes animées */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="glass-effect shadow-apple rounded-xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+                      <CardContent className="p-4 text-center">
+                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 mb-3">
+                          <Building className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">{billingData.totalActivities}</div>
+                        <div className="text-sm text-gray-600 font-medium">{t(translations.activities)}</div>
+                      </CardContent>
+                    </Card>
+                    <Card className="glass-effect shadow-apple rounded-xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+                      <CardContent className="p-4 text-center">
+                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 mb-3">
+                          <Euro className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">{billingData.totalBaseCost.toFixed(2)}€</div>
+                        <div className="text-sm text-gray-600 font-medium">{t(translations.baseCost)}</div>
+                      </CardContent>
+                    </Card>
+                    <Card className="glass-effect shadow-apple rounded-xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+                      <CardContent className="p-4 text-center">
+                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 mb-3">
+                          <TrendingUp className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">{billingData.totalUsageCost.toFixed(2)}€</div>
+                        <div className="text-sm text-gray-600 font-medium">{t(translations.usage)}</div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Détail par activité avec table moderne */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">Détail par activité</h3>
+                    <div className="bg-white rounded-xl border border-gray-200/50 shadow-sm overflow-hidden">
+                      <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>{t(translations.invoiceNo)}</TableHead>
-                                <TableHead>{t(translations.date)}</TableHead>
-                                <TableHead>{t(translations.amount)}</TableHead>
-                                <TableHead>{t(translations.status)}</TableHead>
-                                <TableHead className="text-right">{t(translations.download)}</TableHead>
-                            </TableRow>
+                          <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                            <TableHead className="font-semibold text-gray-700">{t(translations.activity)}</TableHead>
+                            <TableHead className="font-semibold text-gray-700">{t(translations.plan)}</TableHead>
+                            <TableHead className="font-semibold text-gray-700">{t(translations.baseCost)}</TableHead>
+                            <TableHead className="font-semibold text-gray-700">{t(translations.usage)}</TableHead>
+                            <TableHead className="text-right font-semibold text-gray-700">{t(translations.total)}</TableHead>
+                            <TableHead className="text-center font-semibold text-gray-700">Actions</TableHead>
+                          </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {paginatedInvoices.map((invoice) => (
-                                <TableRow key={invoice.id}>
-                                    <TableCell className="font-medium">{invoice.id}</TableCell>
-                                    <TableCell>{format(invoice.date, "dd/MM/yyyy")}</TableCell>
-                                    <TableCell>{(invoice.amount / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}</TableCell>
-                                    <TableCell>
-                                        <Badge className={invoice.status === "Payée" ? "bg-green-100 text-green-800" : ""}>
-                                            {t(translations.paid)}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" asChild>
-                                            <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer">
-                                                <Download className="h-4 w-4" />
-                                            </a>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                          {billingData.activities.map((activity) => (
+                            <TableRow key={activity.storeId} className="hover:bg-gray-50/30 transition-colors duration-200">
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium text-gray-900">{activity.storeName}</div>
+                                  <div className="text-sm text-gray-500">{activity.businessName}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={cn(getPlanColor(activity.plan), "rounded-full px-2.5 py-1 font-medium")}>
+                                  {activity.plan}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium text-gray-900">{activity.baseCost.toFixed(2)}€</TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-600">
+                                  {activity.plan === 'PRO' && (
+                                    <div>{activity.usage.orderCount} {t(translations.orders)} × 1€</div>
+                                  )}
+                                  {activity.plan === 'STARTER' && (
+                                    <div>{activity.usage.totalRevenue.toFixed(2)}€ × 10%</div>
+                                  )}
+                                  {activity.plan === 'BUSINESS' && (
+                                    <div className="text-gray-500">Inclus</div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-semibold text-gray-900">
+                                {activity.totalCost.toFixed(2)}€
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenPlanChangeModal(activity.storeId, activity.storeName, activity.plan)}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 rounded-xl"
+                                  >
+                                    <RefreshCw className="mr-1 h-3 w-3" />
+                                    Changer
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenCancelModal(activity.storeId, activity.storeName, activity.plan)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 rounded-xl"
+                                  >
+                                    <StopCircle className="mr-1 h-3 w-3" />
+                                    Arrêter
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
                         </TableBody>
-                    </Table>
-                </CardContent>
-                <CardFooter>
-                    <div className="flex items-center justify-between w-full">
-                        <div className="text-xs text-muted-foreground">
-                             {t(translations.pageOf).replace('{current}', currentPage.toString()).replace('{total}', totalPages.toString())}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
-                                {t(translations.previous)}
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
-                                {t(translations.next)}
-                            </Button>
-                        </div>
+                      </Table>
                     </div>
-                </CardFooter>
+                  </div>
+
+                  <Separator className="my-6 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+                  
+                  {/* Section paiement avec style Apple */}
+                  <div className="flex justify-between items-center p-6 bg-gradient-to-br from-gray-50/50 to-gray-100/30 rounded-xl border border-gray-200/50">
+                    <div>
+                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{billingData.totalAmount.toFixed(2)}€</div>
+                      <div className="text-sm text-gray-600 font-medium">Total TTC</div>
+                    </div>
+                    <Button 
+                      onClick={handlePayment}
+                      disabled={isPaymentLoading}
+                      size="lg"
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 rounded-xl px-8"
+                    >
+                      {isPaymentLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {t(translations.payNow)}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="invoices" className="space-y-6 animate-in fade-in-50 duration-500">
+            {/* Section Historique des factures avec style Apple */}
+            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  <Download className="h-5 w-5 text-emerald-600" />
+                  {t(translations.invoiceHistory)}
+                </CardTitle>
+                <CardDescription className="text-gray-600">
+                  {t(translations.invoiceHistoryDescription)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingInvoices ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : invoices.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 mb-6">
+                      <Download className="h-8 w-8 text-emerald-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 text-gray-900">{t(translations.noInvoices)}</h3>
+                    <p className="text-gray-600 max-w-md mx-auto">{t(translations.noInvoicesDescription)}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-xl border border-gray-200/50 shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-emerald-50/50 hover:bg-emerald-50/50">
+                              <TableHead className="font-semibold text-gray-700">{t(translations.invoiceNumber)}</TableHead>
+                              <TableHead className="font-semibold text-gray-700">{t(translations.date)}</TableHead>
+                              <TableHead className="font-semibold text-gray-700">{t(translations.amount)}</TableHead>
+                              <TableHead className="font-semibold text-gray-700">{t(translations.status)}</TableHead>
+                              <TableHead className="text-right font-semibold text-gray-700">{t(translations.actions)}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {invoices.map((invoice) => (
+                              <TableRow key={invoice.id} className="hover:bg-emerald-50/20 transition-colors duration-200">
+                                <TableCell className="font-medium text-gray-900">
+                                  {invoice.id}
+                                </TableCell>
+                                <TableCell className="text-gray-700">
+                                  {format(new Date(invoice.date), 'dd/MM/yy')}
+                                </TableCell>
+                                <TableCell className="font-medium text-gray-900">
+                                  {(invoice.amount / 100).toFixed(2)}€
+                                </TableCell>
+                                <TableCell>
+                                  <Badge 
+                                    variant={invoice.status === 'Payée' ? 'default' : 'secondary'}
+                                    className={cn(
+                                      "rounded-full px-2.5 py-1 font-medium",
+                                      invoice.status === 'Payée' 
+                                        ? 'bg-emerald-100 text-emerald-700' 
+                                        : 'bg-amber-100 text-amber-700'
+                                    )}
+                                  >
+                                    {invoice.status === 'Payée' ? t(translations.paid) : t(translations.pending)}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {invoice.status === 'Payée' && invoice.pdfUrl && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-emerald-200 hover:bg-gradient-to-r hover:from-emerald-100 hover:to-emerald-200 hover:border-emerald-300 text-emerald-700 hover:text-emerald-800 transition-all duration-300 rounded-xl font-medium"
+                                      onClick={() => {
+                                        if (invoice.pdfUrl) {
+                                          window.open(invoice.pdfUrl, '_blank');
+                                        }
+                                      }}
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      {t(translations.download)}
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
             </Card>
-        </div>
-    )
+          </TabsContent>
+
+          <TabsContent value="payment-methods" className="space-y-6 animate-in fade-in-50 duration-500">
+            {/* Section Moyens de paiement avec style Apple */}
+            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                  {t(translations.paymentMethods)}
+                </CardTitle>
+                <CardDescription className="text-gray-600">
+                  {t(translations.paymentMethodsDescription)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPaymentMethods ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : paymentMethods.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 mb-6">
+                      <CreditCard className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 text-gray-900">{t(translations.noCards)}</h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">{t(translations.addFirstCard)}</p>
+                    <Button 
+                      onClick={handleAddCard}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 rounded-xl"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t(translations.addCard)}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-semibold text-gray-900">Cartes enregistrées</h4>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleAddCard}
+                        className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-blue-200 hover:bg-gradient-to-r hover:from-blue-100 hover:to-blue-200 hover:border-blue-300 text-blue-700 hover:text-blue-800 transition-all duration-300 rounded-xl font-medium"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t(translations.addCard)}
+                      </Button>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {paymentMethods.map((card) => (
+                        <Card key={card.id} className="glass-effect shadow-apple rounded-xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200">
+                                  <CreditCard className={cn("h-5 w-5", getCardBrandColor(card.brand))} />
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-semibold text-gray-900 capitalize">{card.brand}</span>
+                                    <span className="text-gray-600 font-mono">•••• {card.last4}</span>
+                                    {card.isDefault && (
+                                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 text-xs font-medium">
+                                        {t(translations.defaultCard)}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-gray-500">
+                                    {t(translations.expires)} {card.expMonth.toString().padStart(2, '0')}/{card.expYear.toString().slice(-2)}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleRemoveCard(card.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 rounded-xl"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                {t(translations.remove)}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Modal de changement de plan */}
+        <PlanChangeModal
+          isOpen={planChangeModal.isOpen}
+          onClose={() => setPlanChangeModal({ isOpen: false, storeId: '', storeName: '', currentPlan: 'STARTER' })}
+          currentPlan={planChangeModal.currentPlan}
+          storeName={planChangeModal.storeName}
+          storeId={planChangeModal.storeId}
+          onConfirm={handlePlanChange}
+        />
+
+        {/* Modal d'arrêt d'abonnement */}
+        <CancelSubscriptionModal
+          isOpen={cancelModal.isOpen}
+          onClose={() => setCancelModal({ isOpen: false, storeId: '', storeName: '', plan: 'STARTER' })}
+          storeName={cancelModal.storeName}
+          storeId={cancelModal.storeId}
+          plan={cancelModal.plan}
+          onConfirm={handleCancelSubscription}
+        />
+      </div>
+    </div>
+  );
 }

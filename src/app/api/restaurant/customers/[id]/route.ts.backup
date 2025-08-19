@@ -1,0 +1,304 @@
+import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
+import { prisma } from '@/lib/prisma';
+
+// GET - Récupérer les détails d'un client
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    
+    // For demo purposes, allow access to demo-customer-* and cust-* without auth
+    const token = request.cookies.get('auth-token')?.value;
+    let decoded: any = null;
+    
+    if (id.startsWith('demo-customer-') || id.startsWith('cust-') || id.startsWith('demo-')) {
+      // Use demo owner for demo customers
+      decoded = { userId: 'demo-owner' };
+    } else {
+      if (!token) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+      }
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      } catch (error) {
+        // Si JWT invalide, utiliser demo owner pour test
+        decoded = { userId: 'demo-owner' };
+      }
+    }
+    
+    // Récupérer le client avec toutes ses données
+    const customer = await prisma.customer.findFirst({
+      where: { 
+        id,
+        business: { ownerId: decoded.userId }
+      },
+      include: {
+        business: true,
+        orders: {
+          include: {
+            store: {
+              select: {
+                id: true,
+                name: true,
+                address: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        },
+        exchanges: {
+          include: {
+            store: {
+              select: {
+                id: true,
+                name: true,
+                address: true
+              }
+            },
+            order: {
+              select: {
+                id: true,
+                orderNumber: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        },
+        calls: {
+          orderBy: { createdAt: 'desc' }
+        },
+        aiSessions: {
+          orderBy: { createdAt: 'desc' }
+        },
+        _count: {
+          select: {
+            orders: true,
+            exchanges: true,
+            calls: true
+          }
+        }
+      }
+    });
+
+    if (!customer) {
+      // Pour les démos, retourner un client mock
+      if (id.startsWith('demo-') || id.startsWith('cust-')) {
+        const mockCustomer = {
+          id: id,
+          phone: '+33612345678',
+          firstName: id === 'demo-1' ? 'Sophie' : id === 'cust-1' ? 'Alice' : 'Client',
+          lastName: id === 'demo-1' ? 'Martin' : id === 'cust-1' ? 'Martin' : 'Demo',
+          email: null,
+          status: 'Fidèle',
+          avgBasket: '25.50€',
+          totalSpent: '245.50€',
+          orderCount: 8,
+          exchangeCount: 0,
+          callCount: 5,
+          firstSeen: '2024-01-15',
+          lastSeen: '2024-08-17',
+          history: [],
+          orderHistory: [],
+          exchangeHistory: [],
+          callHistory: [],
+          aiConversations: [],
+          business: {
+            id: 'demo-business',
+            name: 'Demo Business',
+            type: 'PRODUCTS'
+          }
+        };
+        return NextResponse.json(mockCustomer);
+      }
+      return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 });
+    }
+
+    // Calculer les statistiques
+    const totalSpent = customer.orders.reduce((sum, order) => sum + order.total, 0);
+    const orderCount = customer.orders.length;
+    const avgBasket = orderCount > 0 ? totalSpent / orderCount : 0;
+
+    // Déterminer le statut
+    let status: 'Nouveau' | 'Fidèle' | 'VIP' = 'Nouveau';
+    if (totalSpent > 200) {
+      status = 'VIP';
+    } else if (orderCount >= 3 || totalSpent > 50) {
+      status = 'Fidèle';
+    }
+
+    // Transformer l'historique des commandes
+    const orderHistory = customer.orders.map(order => ({
+      type: 'order' as const,
+      id: order.orderNumber,
+      date: order.createdAt.toISOString().split('T')[0],
+      items: Array.isArray(order.items) ? order.items : [],
+      total: order.total,
+      storeId: order.storeId,
+      storeName: order.store.name,
+      storeAddress: order.store.address
+    }));
+
+    // Transformer l'historique des échanges
+    const exchangeHistory = customer.exchanges.map(exchange => ({
+      type: 'exchange' as const,
+      id: exchange.id,
+      exchangeType: exchange.type,
+      date: exchange.createdAt.toISOString().split('T')[0],
+      description: exchange.description,
+      content: exchange.content,
+      metadata: exchange.metadata,
+      storeId: exchange.storeId,
+      storeName: exchange.store.name,
+      orderId: exchange.order?.orderNumber || null
+    }));
+
+    // Transformer l'historique des appels
+    const callHistory = customer.calls.map(call => ({
+      type: 'call' as const,
+      id: call.id,
+      date: (call.startedAt || call.createdAt).toISOString().split('T')[0],
+      duration: call.duration || 'N/A',
+      callType: 'INFO',
+      transcript: '',
+      audioUrl: call.recordingUrl
+    }));
+
+    // Transformer les conversations IA
+    const aiConversations = customer.aiSessions.map(session => ({
+      id: session.id,
+      callId: session.callId,
+      messages: Array.isArray(session.messages) ? session.messages : [],
+      extractedInfo: {
+        intent: (session.context as any)?.intent || 'unknown',
+        satisfaction: (session.context as any)?.satisfaction || 7,
+        customerName: (session.context as any)?.customerName || customer.firstName + ' ' + customer.lastName,
+        customerPhone: customer.phone,
+        reservation: (session.context as any)?.reservation || null,
+        inquiry: (session.context as any)?.inquiry || null
+      },
+      aiAnalysis: {
+        sentiment: (session.context as any)?.intent === 'reservation' ? 'positive' : 'neutral',
+        satisfaction: (session.context as any)?.satisfaction || 7,
+        summary: (session.context as any)?.intent === 'reservation' 
+          ? 'Client a effectué une réservation' 
+          : 'Demande d\'information du client'
+      }
+    }));
+
+    // Créer un historique unifié et trié
+    const allHistory = [
+      ...orderHistory,
+      ...exchangeHistory,
+      ...callHistory
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Données du client transformées
+    const transformedCustomer = {
+      id: customer.id,
+      phone: customer.phone,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
+      status,
+      avgBasket: `${avgBasket.toFixed(2)}€`,
+      totalSpent: `${totalSpent.toFixed(2)}€`,
+      orderCount,
+      exchangeCount: customer._count.exchanges,
+      callCount: customer._count.calls,
+      firstSeen: customer.firstSeen.toISOString().split('T')[0],
+      lastSeen: customer.lastSeen.toISOString().split('T')[0],
+      
+      // Historique unifié
+      history: allHistory,
+      
+      // Historiques séparés pour les onglets
+      orderHistory,
+      exchangeHistory,
+      callHistory,
+      
+      // Conversations IA
+      aiConversations,
+      
+      // Métadonnées
+      business: {
+        id: customer.business.id,
+        name: customer.business.name,
+        type: customer.business.type
+      }
+    };
+
+    return NextResponse.json(transformedCustomer);
+
+  } catch (error) {
+    console.error('Error fetching customer details:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+
+// PUT - Mettre à jour un client
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const { firstName, lastName, email, phone } = await request.json();
+    
+    // Vérifier que le client appartient à l'utilisateur
+    const existingCustomer = await prisma.customer.findFirst({
+      where: { 
+        id: params.id,
+        business: { ownerId: decoded.userId }
+      }
+    });
+
+    if (!existingCustomer) {
+      return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 });
+    }
+
+    // Vérifier l'unicité du téléphone si modifié
+    if (phone && phone !== existingCustomer.phone) {
+      const phoneExists = await prisma.customer.findUnique({
+        where: {
+          phone_businessId: {
+            phone,
+            businessId: existingCustomer.businessId
+          }
+        }
+      });
+
+      if (phoneExists) {
+        return NextResponse.json({ error: 'Ce numéro est déjà utilisé par un autre client' }, { status: 400 });
+      }
+    }
+
+    // Mettre à jour le client
+    const updatedCustomer = await prisma.customer.update({
+      where: { id: params.id },
+      data: {
+        firstName,
+        lastName,
+        email,
+        phone,
+        updatedAt: new Date()
+      }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      customer: {
+        id: updatedCustomer.id,
+        phone: updatedCustomer.phone,
+        firstName: updatedCustomer.firstName,
+        lastName: updatedCustomer.lastName,
+        email: updatedCustomer.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
+  }
+}

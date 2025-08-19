@@ -1,0 +1,2 @@
+kill -9 22740
+PGPASSWORD='jdeihzcb458czbjHEVZVCg' npx prisma db push --accept-data-loss
