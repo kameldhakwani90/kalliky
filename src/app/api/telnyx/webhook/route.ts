@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { rateLimitMiddleware } from '@/lib/rate-limiter';
 
 // Types pour les webhooks Telnyx
 interface TelnyxWebhookEvent {
@@ -26,7 +27,44 @@ interface TelnyxWebhookEvent {
 // POST - Webhook Telnyx pour les événements d'appels
 export async function POST(request: NextRequest) {
   try {
-    const event: TelnyxWebhookEvent = await request.json();
+    // Rate limiting pour webhooks - 200 requêtes/minute
+    const rateLimitResult = await rateLimitMiddleware(request, 'WEBHOOK_TELNYX');
+    if (!rateLimitResult.success) {
+      console.warn('🚫 Rate limit dépassé pour webhook Telnyx:', rateLimitResult.headers['Retry-After']);
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers: rateLimitResult.headers }
+      );
+    }
+    
+    // Parse et validation du webhook
+    const body = await request.text();
+    if (!body) {
+      return NextResponse.json(
+        { error: 'Empty webhook body' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    let event: TelnyxWebhookEvent;
+    try {
+      event = JSON.parse(body);
+    } catch (parseError) {
+      console.error('❌ Erreur parsing webhook Telnyx:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    // Validation structure webhook
+    if (!event?.data?.event_type || !event?.data?.payload) {
+      console.error('❌ Structure webhook Telnyx invalide:', event);
+      return NextResponse.json(
+        { error: 'Invalid webhook structure' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
     
     console.log('📞 Webhook Telnyx reçu:', event.data.event_type);
     

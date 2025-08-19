@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
+import { withCSRFProtection } from '@/lib/csrf';
 
 // GET - Récupérer la liste des clients
 export async function GET(request: NextRequest) {
@@ -233,8 +234,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Créer un nouveau client
-export async function POST(request: NextRequest) {
+// POST - Créer un nouveau client (avec protection CSRF)
+export const POST = withCSRFProtection(async function(request: NextRequest) {
   try {
     const token = request.cookies.get('auth-token')?.value;
     if (!token) {
@@ -304,4 +305,4 @@ export async function POST(request: NextRequest) {
     console.error('Error creating customer:', error);
     return NextResponse.json({ error: 'Erreur lors de la création' }, { status: 500 });
   }
-}
+});

@@ -1,11 +1,49 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, UserRole, SubscriptionPlan } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { rateLimitMiddleware } from '@/lib/rate-limiter';
 
 const prisma = new PrismaClient();
 
-export async function POST(request: Request) {
+// Fonction de validation email
+function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+// Fonction de sanitization
+function sanitizeString(str: string): string {
+  if (typeof str !== 'string') return '';
+  return str.trim().slice(0, 100); // Limite à 100 caractères
+}
+
+export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 3 inscriptions par 5 minutes par IP
+    const rateLimitResult = await rateLimitMiddleware(request, 'REGISTER');
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Trop de tentatives d\'inscription. Réessayez dans quelques minutes.',
+          retryAfter: rateLimitResult.headers['Retry-After']
+        },
+        { 
+          status: 429,
+          headers: rateLimitResult.headers
+        }
+      );
+    }
+    
+    const body = await request.json();
+    
+    // Validation stricte du format
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Format de requête invalide' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
     const { 
       email, 
       password, 
@@ -15,25 +53,56 @@ export async function POST(request: Request) {
       businessName,
       businessType,
       plan = 'STARTER'
-    } = await request.json();
+    } = body;
 
-    // Validation
-    if (!email || !password) {
+    // Validation stricte des champs requis
+    if (!email || typeof email !== 'string' || !validateEmail(email)) {
       return NextResponse.json(
-        { error: 'Email et mot de passe requis' },
-        { status: 400 }
+        { error: 'Email valide requis' },
+        { status: 400, headers: rateLimitResult.headers }
       );
     }
+    
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json(
+        { error: 'Mot de passe requis (minimum 8 caractères)' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    if (!firstName || typeof firstName !== 'string') {
+      return NextResponse.json(
+        { error: 'Prénom requis' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    if (!lastName || typeof lastName !== 'string') {
+      return NextResponse.json(
+        { error: 'Nom de famille requis' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    // Sanitization des inputs
+    const sanitizedData = {
+      email: email.toLowerCase().trim(),
+      firstName: sanitizeString(firstName),
+      lastName: sanitizeString(lastName),
+      phone: phone ? sanitizeString(phone) : null,
+      businessName: businessName ? sanitizeString(businessName) : null,
+      businessType: businessType ? sanitizeString(businessType) : null
+    };
 
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email: sanitizedData.email }
     });
 
     if (existingUser) {
       return NextResponse.json(
         { error: 'Cet email est déjà utilisé' },
-        { status: 400 }
+        { status: 400, headers: rateLimitResult.headers }
       );
     }
 
@@ -45,21 +114,21 @@ export async function POST(request: Request) {
       // Créer l'utilisateur
       const user = await tx.user.create({
         data: {
-          email,
+          email: sanitizedData.email,
           password: hashedPassword,
-          firstName,
-          lastName,
-          phone,
+          firstName: sanitizedData.firstName,
+          lastName: sanitizedData.lastName,
+          phone: sanitizedData.phone,
           role: UserRole.CLIENT
         }
       });
 
       // Si un business est fourni, le créer
-      if (businessName) {
+      if (sanitizedData.businessName) {
         const business = await tx.business.create({
           data: {
-            name: businessName,
-            type: businessType || 'PRODUCTS',
+            name: sanitizedData.businessName,
+            type: sanitizedData.businessType || 'PRODUCTS',
             ownerId: user.id
           }
         });
@@ -85,7 +154,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: 'Inscription réussie',
       user: userWithoutPassword
-    }, { status: 201 });
+    }, { status: 201, headers: rateLimitResult.headers });
 
   } catch (error) {
     console.error('Erreur inscription:', error);

@@ -1,11 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
-  Zap, 
+  Bot, 
   Mail, 
   Phone, 
   MapPin, 
@@ -16,8 +15,6 @@ import {
 } from 'lucide-react';
 
 export function FooterSection() {
-  const { t } = useTranslation();
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -30,7 +27,7 @@ export function FooterSection() {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
       y: 0,
@@ -39,10 +36,10 @@ export function FooterSection() {
   };
 
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+    <footer id="contact" className="bg-black text-white">
       {/* CTA Section */}
-      <section className="py-20 border-b border-white/10">
-        <div className="container mx-auto px-4">
+      <section className="py-24 border-b border-white/10">
+        <div className="container mx-auto px-6">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -50,20 +47,31 @@ export function FooterSection() {
             variants={containerVariants}
             className="text-center max-w-4xl mx-auto"
           >
-            <motion.h2 variants={itemVariants} className="text-4xl md:text-6xl font-bold mb-6">
-              {t('footer.cta')}
+            <motion.h2 variants={itemVariants} className="text-5xl md:text-6xl font-bold mb-8">
+              Prêt à Révolutionner
+              <br />
+              <span className="bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
+                Votre Entreprise ?
+              </span>
             </motion.h2>
-            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-6 group">
-                {t('footer.ctaButton')}
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+            
+            <motion.p variants={itemVariants} className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+              Rejoignez les restaurateurs qui ont déjà boosté leurs ventes avec OrderSpot
+            </motion.p>
+            
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center">
+              <Link href="/signup">
+                <Button size="lg" className="bg-white text-black hover:bg-gray-100 text-lg px-12 py-6 group font-semibold rounded-full">
+                  Commencer Maintenant
+                  <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
               <Button 
                 size="lg" 
-                variant="outline" 
-                className="border-white/30 text-white hover:bg-white/10 backdrop-blur-sm text-lg px-8 py-6"
+                variant="ghost"
+                className="border border-white/20 text-white hover:bg-white/10 backdrop-blur-sm text-lg px-12 py-6 rounded-full"
               >
-                📞 Planifier un appel
+                Planifier une Démo
               </Button>
             </motion.div>
           </motion.div>
@@ -71,113 +79,125 @@ export function FooterSection() {
       </section>
 
       {/* Footer Content */}
-      <div className="py-16">
-        <div className="container mx-auto px-4">
+      <div className="py-20">
+        <div className="container mx-auto px-6">
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={containerVariants}
-            className="grid md:grid-cols-4 gap-8"
+            className="grid md:grid-cols-4 gap-12"
           >
             {/* Brand */}
-            <motion.div variants={itemVariants} className="space-y-4">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                  <Zap className="h-4 w-4 text-white" />
+            <motion.div variants={itemVariants} className="space-y-6">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                  <Bot className="h-6 w-6 text-black" />
                 </div>
-                <span className="text-xl font-bold">Kalliky.ai</span>
+                <span className="text-2xl font-bold">OrderSpot</span>
               </Link>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                L'IA conversationnelle qui transforme vos appels en revenus. 
-                Automatisez votre prise de commandes, réservations et consultations 24h/7j.
+              
+              <p className="text-gray-400 leading-relaxed">
+                L'assistant IA qui transforme chaque appel en vente. 
+                Automatisez vos commandes et boostez votre chiffre d'affaires.
               </p>
-              <div className="flex gap-3">
+              
+              <div className="flex gap-4">
                 <motion.a
                   whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   href="#"
-                  className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors"
                 >
-                  <Twitter className="h-4 w-4" />
+                  <Twitter className="h-5 w-5" />
                 </motion.a>
                 <motion.a
                   whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   href="#"
-                  className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors"
                 >
-                  <Linkedin className="h-4 w-4" />
+                  <Linkedin className="h-5 w-5" />
                 </motion.a>
                 <motion.a
                   whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   href="#"
-                  className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors"
                 >
-                  <Github className="h-4 w-4" />
+                  <Github className="h-5 w-5" />
                 </motion.a>
               </div>
             </motion.div>
 
+            {/* Produit */}
+            <motion.div variants={itemVariants}>
+              <h3 className="text-xl font-semibold mb-6">Produit</h3>
+              <ul className="space-y-4 text-gray-400">
+                <li><Link href="#features" className="hover:text-white transition-colors">Fonctionnalités</Link></li>
+                <li><Link href="#pricing" className="hover:text-white transition-colors">Tarifs</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Intégrations</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">API</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Sécurité</Link></li>
+              </ul>
+            </motion.div>
+
             {/* Solutions */}
             <motion.div variants={itemVariants}>
-              <h3 className="font-semibold mb-4">Solutions</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="#" className="hover:text-white transition-colors">🍕 Restaurants</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">🚗 Location</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">⚖️ Cabinets</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">💆 Services</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">🏥 Santé</Link></li>
+              <h3 className="text-xl font-semibold mb-6">Solutions</h3>
+              <ul className="space-y-4 text-gray-400">
+                <li><Link href="#" className="hover:text-white transition-colors">Restaurants</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">E-commerce</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Services</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Consultations</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Réservations</Link></li>
               </ul>
             </motion.div>
 
-            {/* Ressources */}
+            {/* Support */}
             <motion.div variants={itemVariants}>
-              <h3 className="font-semibold mb-4">Ressources</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="#" className="hover:text-white transition-colors">📚 Documentation</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">🎓 Guides</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">📊 Études de cas</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">🔧 API</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">💬 Support</Link></li>
-              </ul>
-            </motion.div>
-
-            {/* Contact */}
-            <motion.div variants={itemVariants}>
-              <h3 className="font-semibold mb-4">Contact</h3>
-              <ul className="space-y-3 text-sm text-gray-300">
-                <li className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <a href="mailto:contact@kalliky.ai" className="hover:text-white transition-colors">
-                    contact@kalliky.ai
+              <h3 className="text-xl font-semibold mb-6">Support</h3>
+              <ul className="space-y-4 text-gray-400">
+                <li>
+                  <a href="mailto:contact@kalliky.com" className="flex items-center gap-3 hover:text-white transition-colors">
+                    <Mail className="h-4 w-4" />
+                    contact@kalliky.com
                   </a>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <a href="tel:+33123456789" className="hover:text-white transition-colors">
+                <li>
+                  <a href="tel:+33123456789" className="flex items-center gap-3 hover:text-white transition-colors">
+                    <Phone className="h-4 w-4" />
                     +33 1 23 45 67 89
                   </a>
                 </li>
-                <li className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 mt-0.5" />
+                <li className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
                   <span>
-                    123 Avenue des Champs-Élysées<br />
-                    75008 Paris, France
+                    Paris, France<br />
+                    Disponible dans le monde entier
                   </span>
                 </li>
               </ul>
+              
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+                  Centre d'aide →
+                </Link>
+              </div>
             </motion.div>
           </motion.div>
         </div>
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-white/10 py-6">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400">
-            <div>
-              © 2024 Kalliky.ai. Tous droits réservés.
+      <div className="border-t border-white/10 py-8">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-gray-400">
+            <div className="flex items-center gap-2">
+              © 2024 OrderSpot.pro. Tous droits réservés.
             </div>
-            <div className="flex gap-6">
+            
+            <div className="flex flex-wrap justify-center gap-8">
               <Link href="#" className="hover:text-white transition-colors">
                 Politique de confidentialité
               </Link>
@@ -186,6 +206,9 @@ export function FooterSection() {
               </Link>
               <Link href="#" className="hover:text-white transition-colors">
                 Mentions légales
+              </Link>
+              <Link href="#" className="hover:text-white transition-colors">
+                RGPD
               </Link>
             </div>
           </div>

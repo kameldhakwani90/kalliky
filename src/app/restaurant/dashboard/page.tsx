@@ -1,731 +1,865 @@
-
-
 'use client';
 
-import { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { motion } from 'framer-motion';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
-} from "@/components/ui/card";
-import {
-    ArrowUp,
-    Calendar as CalendarIcon,
-    Eye,
-    Phone,
-    PlusCircle,
-    Receipt,
-    Store,
-    Star
+  TrendingUp,
+  TrendingDown,
+  Phone,
+  ShoppingCart,
+  Users,
+  DollarSign,
+  Activity,
+  Clock,
+  ArrowUpRight,
+  ArrowDownRight,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  PhoneCall,
+  PhoneOff,
+  PhoneForwarded,
+  Star,
+  Download,
+  RefreshCw,
+  BarChart3,
+  PieChart,
+  Target,
+  Zap,
+  Brain,
+  Sparkles,
+  Calendar,
+  Timer
 } from 'lucide-react';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-  } from "@/components/ui/table"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { useLanguage } from "@/contexts/language-context";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  RadialBarChart,
+  RadialBar
+} from 'recharts';
+import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { DashboardOnboardingFlow } from '@/components/onboarding/flows/dashboard-flow';
 
-
-const chartDataFr = [
-  { name: "Jan", revenue: 2800 },
-  { name: "Fev", revenue: 3200 },
-  { name: "Mar", revenue: 2500 },
-  { name: "Avr", revenue: 4100 },
-  { name: "Mai", revenue: 3800 },
-  { name: "Jui", revenue: 5200 },
-]
-
-const chartDataEn = [
-  { name: "Jan", revenue: 2800 },
-  { name: "Feb", revenue: 3200 },
-  { name: "Mar", revenue: 2500 },
-  { name: "Apr", revenue: 4100 },
-  { name: "May", revenue: 3800 },
-  { name: "Jun", revenue: 5200 },
-]
-
-type OrderItemCustomization = {
-    type: 'add' | 'remove';
-    name: string;
-    price?: number;
-};
-
-type DetailedOrderItem = {
+// Types
+interface DashboardStats {
+  metrics: {
+    revenue: { today: number; growth: number; yesterday: number };
+    orders: { today: number; growth: number; yesterday: number };
+    calls: { today: number; growth: number; yesterday: number };
+    customers: { total: number; new: number; returning: number };
+    avgOrderValue: { value: number; growth: number };
+    conversionRate: { value: number; growth: number };
+  };
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    title: string;
+    description: string;
+    amount?: number;
+    store: string;
+    createdAt: string;
+  }>;
+  topProducts: Array<{
     id: string;
     name: string;
+    category: string;
     quantity: number;
-    basePrice: number;
-    customizations: OrderItemCustomization[];
-    finalPrice: number; // basePrice + sum of customization prices
-};
+    revenue: number;
+  }>;
+  revenueChart: Array<{ date: string; revenue: number }>;
+  callsChart: Array<{ date: string; calls: number }>;
+  peakHours: Array<{ hour: string; orders: number }>;
+  customerSegments: { new: number; regular: number; vip: number };
+  aiPerformance: {
+    totalCalls: number;
+    resolvedByAI: number;
+    transferredToHuman: number;
+    avgResponseTime: number;
+    satisfactionScore: number;
+  };
+  subscription?: {
+    plan: string;
+    status: string;
+  };
+}
 
-type DetailedOrder = {
+interface LiveCall {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerStatus: string;
+  duration: number;
+  status: string;
+  aiHandling: boolean;
+  sentiment: string;
+}
+
+interface LiveCallsData {
+  activeCalls: LiveCall[];
+  queuedCalls: Array<{
     id: string;
-    date: string;
-    customerPhone: string;
-    items: DetailedOrderItem[];
-    subtotal: number;
-    tax: number;
-    taxRate: number;
-    total: number;
-    storeId: string;
-};
+    position: number;
+    estimatedWaitTime: number;
+    priority: number;
+  }>;
+  stats: {
+    activeCount: number;
+    queuedCount: number;
+    avgWaitTime: number;
+    avgCallDuration: number;
+  };
+}
 
+// Composant MetricCard moderne avec animation
+function MetricCard({
+  title,
+  value,
+  growth,
+  icon: Icon,
+  color = 'blue',
+  prefix = '',
+  suffix = '',
+  loading = false
+}: {
+  title: string;
+  value: number;
+  growth?: number;
+  icon: any;
+  color?: string;
+  prefix?: string;
+  suffix?: string;
+  loading?: boolean;
+}) {
+  const colorClasses = {
+    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
+    green: 'bg-green-50 text-green-600 dark:bg-green-950 dark:text-green-400',
+    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400',
+    orange: 'bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400'
+  };
 
-type Customer = {
-    id: string;
-    phone: string;
-    name?: string;
-    status: 'Nouveau' | 'Fidèle' | 'VIP';
-    avgBasket: string;
-    totalSpent: string;
-    firstSeen: string;
-    lastSeen: string;
-    orderHistory: DetailedOrder[];
-    callHistory: { date: string; duration: string; type: 'Commande' | 'Info' }[];
-};
+  if (loading) {
+    return (
+      <Card className="relative overflow-hidden backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20">
+        <CardContent className="p-6">
+          <Skeleton className="h-4 w-24 mb-2" />
+          <Skeleton className="h-8 w-32 mb-2" />
+          <Skeleton className="h-4 w-20" />
+        </CardContent>
+      </Card>
+    );
+  }
 
-const mockStores = [
-    { id: "store-1", name: "Le Gourmet Parisien", address: "12 Rue de la Paix, 75002 Paris", taxRate: 10 },
-    { id: "store-2", name: "Pizzeria Bella", address: "3 Rue de la Roquette, 75011 Paris", taxRate: 5.5 },
-];
-
-
-const customersData: Record<string, Customer> = {
-    "0612345678": {
-        id: "cust-1",
-        phone: "06 12 34 56 78",
-        name: "Alice Martin",
-        status: "Fidèle",
-        avgBasket: "72.50€",
-        totalSpent: "870.00€",
-        firstSeen: "12/01/2024",
-        lastSeen: "28/05/2024",
-        orderHistory: [],
-        callHistory: []
-    },
-     "0787654321": {
-        id: "cust-2",
-        phone: "07 87 65 43 21",
-        name: "Bob Dupont",
-        status: "Nouveau",
-        avgBasket: "57.90€",
-        totalSpent: "57.90€",
-        firstSeen: "27/05/2024",
-        lastSeen: "27/05/2024",
-        orderHistory: [],
-        callHistory: []
-    },
-    "0601020304": {
-        id: "cust-10",
-        phone: "06 01 02 03 04",
-        name: undefined,
-        status: 'Nouveau',
-        avgBasket: '24.75€',
-        totalSpent: '24.75€',
-        firstSeen: "27/05/2024",
-        lastSeen: "27/05/2024",
-        orderHistory: [],
-        callHistory: []
-    },
-     "0655443322": {
-        id: "cust-11",
-        phone: "06 55 44 33 22",
-        name: undefined,
-        status: 'Nouveau',
-        avgBasket: '93.90€',
-        totalSpent: '93.90€',
-        firstSeen: "26/05/2024",
-        lastSeen: "26/05/2024",
-        orderHistory: [],
-        callHistory: []
-    }
-};
-
-const recentOrders: DetailedOrder[] = [
-    {
-        id: "#1024",
-        date: "28/05/2024 - 19:30",
-        customerPhone: "0612345678",
-        storeId: "store-1",
-        items: [
-            { id: "item-1", name: 'Burger "Le Personnalisé"', quantity: 1, basePrice: 16.50, customizations: [
-                { type: 'add', name: 'Bacon grillé', price: 2.00 },
-                { type: 'add', name: 'Oeuf au plat', price: 1.00 },
-                { type: 'remove', name: 'Oignons' }
-            ], finalPrice: 19.50 },
-            { id: "item-2", name: 'Salade César', quantity: 1, basePrice: 12.50, customizations: [], finalPrice: 12.50 },
-            { id: "item-5", name: 'Coca-Cola', quantity: 1, basePrice: 3.50, customizations: [], finalPrice: 3.50 },
-        ],
-        subtotal: 35.50,
-        tax: 3.55,
-        taxRate: 10,
-        total: 39.05,
-    },
-    {
-        id: "#1023",
-        date: "27/05/2024 - 20:15",
-        customerPhone: "0787654321",
-        storeId: "store-2",
-        items: [
-            { id: "item-3", name: "Pizza Regina", quantity: 2, basePrice: 14.00, customizations: [
-                { type: 'add', name: 'Extra Mozzarella', price: 2.00 },
-            ], finalPrice: 16.00 }
-        ],
-        subtotal: 32.00,
-        tax: 1.76,
-        taxRate: 5.5,
-        total: 33.76,
-    },
-    { id: "#1022", date: "27/05/2024 - 12:10", customerPhone: "0601020304", storeId: "store-1", items: [], subtotal: 22.50, tax: 2.25, taxRate: 10, total: 24.75 },
-    { id: "#1021", date: "26/05/2024 - 19:50", customerPhone: "0655443322", storeId: "store-2", items: [], subtotal: 89.00, tax: 4.90, taxRate: 5.5, total: 93.90 },
-];
-
-
-const getStoreInfo = (storeId: string) => mockStores.find(s => s.id === storeId);
-
-// Default customer for phones not in customersData
-const defaultCustomer = (phone: string): Customer => ({
-    id: `cust-temp-${phone}`,
-    phone: phone.replace(/(\d{2})(?=\d)/g, '$1 '),
-    status: 'Nouveau',
-    avgBasket: 'N/A',
-    totalSpent: 'N/A',
-    firstSeen: new Date().toLocaleDateString('fr-FR'),
-    lastSeen: new Date().toLocaleDateString('fr-FR'),
-    orderHistory: [],
-    callHistory: []
-})
-
-
-export default function RestaurantDashboard() {
-  const router = useRouter();
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [isClientFileOpen, setClientFileOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<DetailedOrder | null>(null);
-  const [isOrderTicketOpen, setOrderTicketOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const { language, t } = useLanguage();
-  const [userStatus, setUserStatus] = useState<any>(null);
-
-  // Fonction pour vérifier le statut utilisateur
-  const checkUserStatus = async () => {
-    try {
-      const response = await fetch('/api/user/status');
-      if (response.ok) {
-        const status = await response.json();
-        setUserStatus(status);
+  return (
+    <Card className="relative overflow-hidden backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20 hover:shadow-lg transition-all duration-300 group">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <div className={cn("p-2 rounded-lg", colorClasses[color as keyof typeof colorClasses])}>
+            <Icon className="h-4 w-4" />
+          </div>
+        </div>
         
-        // Ne plus rediriger automatiquement - l'utilisateur sera déjà sur /restaurant/stores après le paiement
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">
+            {prefix}{typeof value === 'number' ? value.toLocaleString('fr-FR') : value}{suffix}
+          </h2>
+          
+          {growth !== undefined && (
+            <div className="flex items-center gap-1">
+              {growth > 0 ? (
+                <>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-green-500">+{growth.toFixed(1)}%</span>
+                </>
+              ) : growth < 0 ? (
+                <>
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                  <span className="text-sm font-medium text-red-500">{growth.toFixed(1)}%</span>
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">Pas de changement</span>
+              )}
+              <span className="text-xs text-muted-foreground">vs hier</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Effet de brillance au hover */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 transition-all duration-500 group-hover:translate-x-full" />
+      </CardContent>
+    </Card>
+  );
+}
+
+// Composant LiveCallCard
+function LiveCallCard({ call }: { call: LiveCall }) {
+  const sentimentColors = {
+    positive: 'text-green-500',
+    neutral: 'text-gray-500',
+    negative: 'text-red-500'
+  };
+
+  const statusColors = {
+    Nouveau: 'bg-blue-100 text-blue-700',
+    Fidèle: 'bg-green-100 text-green-700',
+    VIP: 'bg-purple-100 text-purple-700'
+  };
+
+  return (
+    <div className="flex items-center justify-between p-4 rounded-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 hover:shadow-md transition-all">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+            <PhoneCall className="h-5 w-5 text-white animate-pulse" />
+          </div>
+          <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-ping" />
+        </div>
+        
+        <div>
+          <p className="font-medium">{call.customerName}</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{call.customerPhone}</span>
+            <Badge variant="secondary" className={cn("text-xs", statusColors[call.customerStatus as keyof typeof statusColors])}>
+              {call.customerStatus}
+            </Badge>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-4">
+        {call.aiHandling && (
+          <Badge variant="outline" className="gap-1">
+            <Brain className="h-3 w-3" />
+            IA
+          </Badge>
+        )}
+        
+        <div className="text-right">
+          <p className="text-sm font-medium">
+            {Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}
+          </p>
+          <p className={cn("text-xs", sentimentColors[call.sentiment as keyof typeof sentimentColors])}>
+            {call.sentiment === 'positive' ? '😊' : call.sentiment === 'negative' ? '😟' : '😐'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Composant ActivityCard
+function ActivityCard({ activity }: { activity: DashboardStats['recentActivity'][0] }) {
+  const typeIcons = {
+    ORDER_CREATED: ShoppingCart,
+    CALL_RECEIVED: Phone,
+    CUSTOMER_REGISTERED: Users,
+    SERVICE_BOOKED: Calendar,
+    CONSULTATION_SCHEDULED: Clock
+  };
+
+  const Icon = typeIcons[activity.type as keyof typeof typeIcons] || Activity;
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+      <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{activity.title}</p>
+        <p className="text-xs text-muted-foreground truncate">{activity.description}</p>
+      </div>
+      
+      <div className="text-right">
+        {activity.amount && (
+          <p className="text-sm font-semibold text-green-600">{activity.amount.toFixed(2)}€</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {format(new Date(activity.createdAt), 'HH:mm', { locale: fr })}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function ModernDashboard() {
+  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [liveCalls, setLiveCalls] = useState<LiveCallsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('day');
+
+  // Fetch des données dashboard
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch('/api/restaurant/dashboard-stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.data);
       }
     } catch (error) {
-      console.error('Erreur lors de la vérification du statut:', error);
+      console.error('Erreur fetch dashboard:', error);
     }
   };
 
-  // Vérifier le statut utilisateur au chargement
-  useEffect(() => {
-    checkUserStatus();
-  }, [router]);
-
-  // Gérer le retour de Stripe
-  useEffect(() => {
-    const handleStripeSuccess = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const success = urlParams.get('success');
-      const sessionId = urlParams.get('session_id');
-      
-      if (success === 'true' && sessionId) {
-        try {
-          const response = await fetch('/api/stripe/success', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId })
-          });
-          
-          if (response.ok) {
-            // Nettoyer l'URL sans recharger la page
-            window.history.replaceState({}, '', '/restaurant/dashboard');
-            // Au lieu de recharger, vérifier directement le statut utilisateur
-            setTimeout(() => {
-              checkUserStatus();
-            }, 500);
-          }
-        } catch (error) {
-          console.error('Erreur lors de la connexion automatique:', error);
-        }
+  // Fetch des appels en temps réel
+  const fetchLiveCalls = async () => {
+    try {
+      const response = await fetch('/api/restaurant/live-calls');
+      if (response.ok) {
+        const data = await response.json();
+        setLiveCalls(data.data);
       }
-    };
+    } catch (error) {
+      console.error('Erreur fetch live calls:', error);
+    }
+  };
 
-    handleStripeSuccess();
+  // Initial load
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchDashboardStats(), fetchLiveCalls()]);
+      setLoading(false);
+    };
+    loadData();
+
+    // Refresh automatique toutes les 30 secondes
+    const interval = setInterval(() => {
+      fetchLiveCalls();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const handleViewClientFile = (phone: string) => {
-    const customerData = customersData[phone] || defaultCustomer(phone);
-    setSelectedCustomer(customerData);
-    setClientFileOpen(true);
+  // Refresh manuel
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchDashboardStats(), fetchLiveCalls()]);
+    setRefreshing(false);
   };
 
-  const handleViewOrderTicket = (order: DetailedOrder) => {
-    setSelectedOrder(order);
-    setOrderTicketOpen(true);
-  }
-  
-  const hasStores = mockStores.length > 0;
-  
-  const handleRecentOrderClick = (order: DetailedOrder) => {
-    const customer = customersData[order.customerPhone];
-    if (customer) {
-        const url = `/restaurant/clients/${customer.id}?historyId=${encodeURIComponent(order.id)}`;
-        router.push(url);
-    } else {
-        // Fallback or error handling if customer not found
-        console.warn(`Customer with phone ${order.customerPhone} not found.`);
-        // maybe just open the ticket without linking to a customer page
-        handleViewOrderTicket(order);
-    }
-  }
+  // Export des données
+  const handleExport = async () => {
+    try {
+      const response = await fetch('/api/exports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: 'current-business-id', // TODO: Get from context
+          type: 'analytics',
+          format: 'excel',
+          dateRange: {
+            from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            to: new Date()
+          }
+        })
+      });
 
-  const translations = {
-      dashboardTitle: { fr: "Tableau de Bord", en: "Dashboard" },
-      dashboardSubtitle: { fr: "Voici un aperçu de la performance de votre restaurant.", en: "Here is an overview of your restaurant's performance." },
-      export: { fr: "Exporter", en: "Export" },
-      totalRevenue: { fr: "Revenu Total", en: "Total Revenue" },
-      sinceLastMonth: { fr: "depuis le mois dernier", en: "since last month" },
-      orders: { fr: "Commandes", en: "Orders" },
-      avgBasket: { fr: "Panier Moyen", en: "Average Basket" },
-      uniqueCustomers: { fr: "Clients Uniques", en: "Unique Customers" },
-      salesPerformance: { fr: "Performance des Ventes", en: "Sales Performance" },
-      monthlyRevenue: { fr: "Revenus mensuels de votre restaurant.", en: "Monthly revenue of your restaurant." },
-      recentOrders: { fr: "Commandes Récentes", en: "Recent Orders" },
-      latestOrders: { fr: "Les dernières commandes passées par téléphone.", en: "The latest orders placed by phone." },
-      items: { fr: "article(s)", en: "item(s)" },
-      loyal: { fr: "Fidèle", en: "Loyal" },
-      new: { fr: "Nouveau", en: "New" },
-      customerFile: { fr: "Fiche Client", en: "Customer File" },
-      status: { fr: "Statut", en: "Status" },
-      totalSpent: { fr: "Total Dépensé", en: "Total Spent" },
-      lastVisit: { fr: "Dernière Visite", en: "Last Visit" },
-      orderHistory: { fr: "Historique des Commandes", en: "Order History" },
-      callHistory: { fr: "Historique des Appels", en: "Call History" },
-      chooseDate: { fr: "Choisir une date", en: "Choose a date" },
-      order: { fr: "Commande", en: "Order" },
-      dateLabel: { fr: "Date", en: "Date" },
-      amount: { fr: "Montant", en: "Amount" },
-      action: { fr: "Action", en: "Action" },
-      noOrders: { fr: "Aucune commande", en: "No orders" },
-      call: { fr: "Appel", en: "Call" },
-      duration: { fr: "Durée", en: "Duration" },
-      noCalls: { fr: "Aucun appel", en: "No calls" },
-      sendSMS: { fr: "Envoyer un SMS", en: "Send SMS" },
-      contactCustomer: { fr: "Contacter le client", en: "Contact Customer" },
-      orderTicket: { fr: "Ticket de Commande", en: "Order Ticket" },
-      print: { fr: "Imprimer", en: "Print" },
-      subtotal: { fr: "SOUS-TOTAL", en: "SUBTOTAL" },
-      tax: { fr: "TVA", en: "TAX" },
-      total: { fr: "TOTAL", en: "TOTAL" },
-      thankYou: { fr: "Merci de votre visite !", en: "Thank you for your visit!" },
-      
-      addFirstPOS: { fr: "Créez votre première activité", en: "Create your first business activity" },
-      addPOSDescription: { fr: "Commencez à configurer votre activité pour recevoir vos premières demandes avec Kalliky.ai.", en: "Start configuring your business to receive your first requests with Kalliky.ai." },
-      addPOSButton: { fr: "Ajouter une activité", en: "Add a business activity" },
-  }
-    
+      if (response.ok) {
+        const data = await response.json();
+        window.open(data.data.downloadUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Erreur export:', error);
+    }
+  };
+
+  // Couleurs pour les graphiques
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
   return (
     <>
-    <div className="flex-1 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">{t(translations.dashboardTitle)}</h2>
-              <p className="text-muted-foreground">{t(translations.dashboardSubtitle)}</p>
+      <DashboardOnboardingFlow />
+      <div className="min-h-screen bg-black text-white">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gray-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '3s' }} />
+        </div>
+        {/* Header avec actions */}
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="sticky top-0 z-50 backdrop-blur-xl bg-black/80 border-b border-white/10 relative"
+        >
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <motion.div variants={itemVariants}>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
+                  Tableau de bord
+                </h1>
+                <p className="text-gray-400">
+                  {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+                </p>
+              </motion.div>
+              
+              <motion.div variants={itemVariants} className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExport}
+                  className="gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 rounded-2xl"
+                >
+                  <Download className="h-4 w-4" data-icon="download" />
+                  Exporter
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 rounded-2xl"
+                >
+                  <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} data-icon="refresh" />
+                  Actualiser
+                </Button>
+                
+                <Badge 
+                  variant={stats?.subscription?.status === 'active' ? 'default' : 'secondary'}
+                  className="bg-white/20 text-white border-white/20 rounded-full px-4 py-2"
+                >
+                  {stats?.subscription?.plan || 'FREE'}
+                </Badge>
+              </motion.div>
             </div>
-            <div className="flex items-center space-x-2">
-                 {hasStores ? (
-                    <Button asChild>
-                       <Link href="/restaurant/stores?action=new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {t(translations.addPOSButton)}
-                        </Link>
-                    </Button>
-                 ) : (
-                    <Button className="h-9">
-                        {t(translations.export)}
-                    </Button>
-                 )}
-            </div>
+          </div>
+        </motion.div>
+
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Métriques principales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" data-onboarding="metrics-cards">
+          <MetricCard
+            title="Revenus aujourd'hui"
+            value={stats?.metrics.revenue.today || 0}
+            growth={stats?.metrics.revenue.growth}
+            icon={DollarSign}
+            color="green"
+            prefix="€"
+            loading={loading}
+          />
+          
+          <MetricCard
+            title="Commandes"
+            value={stats?.metrics.orders.today || 0}
+            growth={stats?.metrics.orders.growth}
+            icon={ShoppingCart}
+            color="blue"
+            loading={loading}
+          />
+          
+          <MetricCard
+            title="Appels"
+            value={stats?.metrics.calls.today || 0}
+            growth={stats?.metrics.calls.growth}
+            icon={Phone}
+            color="purple"
+            loading={loading}
+          />
+          
+          <MetricCard
+            title="Taux conversion"
+            value={stats?.metrics.conversionRate.value || 0}
+            growth={stats?.metrics.conversionRate.growth}
+            icon={Target}
+            color="orange"
+            suffix="%"
+            loading={loading}
+          />
         </div>
 
-        {!hasStores && (
-             <Card className="glass-effect shadow-apple rounded-2xl border-0 hover:shadow-apple-lg transition-smooth hover-lift">
-                <Link href="/restaurant/stores?action=new" className="block">
-                    <CardHeader className="flex flex-col md:flex-row md:items-center gap-4 space-y-0">
-                        <div className="p-4 bg-black/10 rounded-2xl w-fit">
-                            <Store className="h-8 w-8 text-black" />
-                        </div>
-                        <div className="flex-1">
-                            <CardTitle>{t(translations.addFirstPOS)}</CardTitle>
-                            <CardDescription>{t(translations.addPOSDescription)}</CardDescription>
-                        </div>
-                        <div className="ml-auto">
-                            <Button className="rounded-xl">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                {t(translations.addPOSButton)}
-                            </Button>
-                        </div>
-                    </CardHeader>
-                </Link>
-            </Card>
-        )}
-
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t(translations.totalRevenue)}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">21,495€</div>
-                <div className="flex items-center text-xs text-green-600">
-                    <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>12% {t(translations.sinceLastMonth)}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t(translations.orders)}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">780</div>
-                <div className="flex items-center text-xs text-green-600">
-                    <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>8.2% {t(translations.sinceLastMonth)}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t(translations.avgBasket)}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">27.55€</div>
-                <div className="flex items-center text-xs text-green-600">
-                    <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>2.1% {t(translations.sinceLastMonth)}</span>
-                </div>
-              </CardContent>
-            </Card>
-             <Card className="glass-effect shadow-apple rounded-2xl border-0 hover-lift">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t(translations.uniqueCustomers)}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">482</div>
-                 <div className="flex items-center text-xs text-green-600">
-                    <ArrowUp className="h-3 w-3 mr-1" />
-                    <span>15% {t(translations.sinceLastMonth)}</span>
-                </div>
-              </CardContent>
-            </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="glass-effect shadow-apple rounded-2xl border-0">
-              <CardHeader>
-                <CardTitle>{t(translations.salesPerformance)}</CardTitle>
-                <CardDescription>{t(translations.monthlyRevenue)}</CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                 <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={language === 'fr' ? chartDataFr : chartDataEn} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
-                        <XAxis
-                            dataKey="name"
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                        />
-                        <YAxis
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={(value) => `${value/1000}k€`}
-                        />
-                        <Tooltip
-                            cursor={{fill: 'hsl(var(--accent))', radius: 'var(--radius)'}}
-                            contentStyle={{
-                                background: "hsl(var(--background))",
-                                border: "1px solid hsl(var(--border))",
-                                borderRadius: "var(--radius)"
-                             }}
-                        />
-                        <Bar dataKey="revenue" name="Revenu" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                 </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-             <Card className="glass-effect shadow-apple rounded-2xl border-0">
-              <CardHeader>
-                <CardTitle>{t(translations.recentOrders)}</CardTitle>
+        {/* Section Appels en temps réel + Performance IA */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Appels actifs */}
+          <Card className="lg:col-span-2 backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="live-calls">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="relative">
+                    <Phone className="h-5 w-5" />
+                    {liveCalls && liveCalls.activeCalls.length > 0 && (
+                      <div className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                    )}
+                  </div>
+                  Appels en cours
+                </CardTitle>
                 <CardDescription>
-                  {t(translations.latestOrders)}
+                  {liveCalls?.stats.activeCount || 0} actifs • {liveCalls?.stats.queuedCount || 0} en attente
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentOrders.map(order => {
-                    const customer = customersData[order.customerPhone] || defaultCustomer(order.customerPhone);
-                    return (
-                        <div key={order.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 cursor-pointer" onClick={() => handleRecentOrderClick(order)}>
-                            <Avatar className="h-9 w-9">
-                                <AvatarFallback>{customer.name ? customer.name.slice(0,2) : customer.phone.slice(-2)}</AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-1">
-                                <p className="text-sm font-medium leading-none truncate">
-                                    {customer.phone}
-                                    {customer.name && <span className="text-xs text-muted-foreground"> ({customer.name})</span>}
-                                </p>
-                                <div className="text-xs text-muted-foreground flex items-center">
-                                  <span>{order.items.length} {t(translations.items)}</span>
-                                  {customer.status && 
-                                      <Badge variant="outline" className={`ml-2 ${customer.status === 'Fidèle' ? 'text-green-600 border-green-200' : ''}`}>
-                                      {customer.status === 'Fidèle' ? t(translations.loyal) : t(translations.new)}
-                                      </Badge>}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <p className="text-sm font-bold w-16 text-right">{order.total.toFixed(2)}€</p>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <Eye className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                        </div>
-                    )
-                   })}
-                </div>
-              </CardContent>
-            </Card>
-        </div>
-    </div>
-    {selectedCustomer && (
-        <Dialog open={isClientFileOpen} onOpenChange={setClientFileOpen}>
-            <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-4">
-                        <Avatar className="h-12 w-12">
-                           <AvatarFallback>{selectedCustomer.name ? selectedCustomer.name.charAt(0) : selectedCustomer.phone.slice(-2)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                         {selectedCustomer.name || "Client"}
-                         <p className="text-lg font-normal text-muted-foreground">{selectedCustomer.phone}</p>
-                        </div>
-                    </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-y-auto -mx-6 px-6 py-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.status)}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-lg font-semibold flex items-center gap-2"><Star className="text-yellow-500"/> {selectedCustomer.status === 'Fidèle' ? t(translations.loyal) : t(translations.new)}</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.avgBasket)}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-lg font-semibold">{selectedCustomer.avgBasket}</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.totalSpent)}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-lg font-semibold">{selectedCustomer.totalSpent}</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">{t(translations.lastVisit)}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-lg font-semibold">{selectedCustomer.lastSeen}</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="grid lg:grid-cols-2 gap-6">
-                        <div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
-                                <h3 className="text-lg font-semibold">{t(translations.orderHistory)}</h3>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                        variant={"outline"}
-                                        className="w-full sm:w-[240px] justify-start text-left font-normal"
-                                        >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {date ? format(date, "PPP") : <span>{t(translations.chooseDate)}</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                        mode="single"
-                                        selected={date}
-                                        onSelect={setDate}
-                                        initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                            <Card>
-                                <CardContent className="p-0">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{t(translations.order)}</TableHead>
-                                                <TableHead>{t(translations.dateLabel)}</TableHead>
-                                                <TableHead>{t(translations.amount)}</TableHead>
-                                                <TableHead className="text-right">{t(translations.action)}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {selectedCustomer.orderHistory.length > 0 ? selectedCustomer.orderHistory.map(order => (
-                                                <TableRow key={order.id}>
-                                                    <TableCell className="font-medium">{order.id} ({order.items.length} {t(translations.items)})</TableCell>
-                                                    <TableCell>{order.date}</TableCell>
-                                                    <TableCell>{order.total.toFixed(2)}€</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewOrderTicket(order)}>
-                                                            <Eye className="h-4 w-4"/>
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} className="text-center h-24">{t(translations.noOrders)}</TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold mb-3">{t(translations.callHistory)}</h3>
-                             <Card>
-                                <CardContent className="p-4 space-y-4">
-                                     {selectedCustomer.callHistory.length > 0 ? selectedCustomer.callHistory.map((call, index) => (
-                                        <div key={index} className="flex items-center justify-between text-sm">
-                                            <div className="flex items-center gap-3">
-                                                <Phone className="h-4 w-4 text-muted-foreground"/>
-                                                <div>
-                                                    <p className="font-medium">{call.date}</p>
-                                                    <p className="text-xs text-muted-foreground">{call.type} - {t(translations.duration)}: {call.duration}</p>
-                                                </div>
-                                            </div>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <Eye className="h-4 w-4"/>
-                                            </Button>
-                                        </div>
-                                     )) : (
-                                        <div className="text-center h-24 flex items-center justify-center text-sm text-muted-foreground">{t(translations.noCalls)}</div>
-                                     )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                </div>
-                 <DialogFooter className="pt-4 border-t flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" className="w-full sm:w-auto">{t(translations.sendSMS)}</Button>
-                    <Button className="w-full sm:w-auto">{t(translations.contactCustomer)}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )}
-    {selectedOrder && (
-        <Dialog open={isOrderTicketOpen} onOpenChange={setOrderTicketOpen}>
-            <DialogContent className="sm:max-w-sm font-mono">
-                <DialogHeader className="text-center space-y-2">
-                    <div className="mx-auto">
-                        <Receipt className="h-10 w-10"/>
-                    </div>
-                    <DialogTitle className="font-headline text-lg">{getStoreInfo(selectedOrder.storeId)?.name}</DialogTitle>
-                    <DialogDescription className="text-xs">
-                        {getStoreInfo(selectedOrder.storeId)?.address}<br />
-                        {t(translations.order)} {selectedOrder.id} - {selectedOrder.date}
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 my-4 text-xs">
-                    <Separator className="border-dashed" />
-                    {selectedOrder.items.map((item, index) => (
-                        <div key={item.id + index}>
-                            <div className="flex justify-between font-bold">
-                                <span>{item.quantity}x {item.name}</span>
-                                <span>{item.finalPrice.toFixed(2)}€</span>
-                            </div>
-                            {item.customizations.length > 0 && (
-                                <div className="pl-4 mt-1 space-y-1">
-                                    {item.customizations.map((cust, cIndex) => (
-                                        <div key={cIndex} className={`flex justify-between ${cust.type === 'remove' ? 'text-red-500' : ''}`}>
-                                            <span>{cust.type === 'add' ? '+' : '-'} {cust.name}</span>
-                                            {cust.price && <span>{cust.price.toFixed(2)}€</span>}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+              </div>
+              
+              <Badge variant="outline" className="gap-1">
+                <Timer className="h-3 w-3" />
+                Temps moyen: {liveCalls?.stats.avgCallDuration || 0}s
+              </Badge>
+            </CardHeader>
+            
+            <CardContent>
+              <ScrollArea className="h-[300px] pr-4">
+                {loading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-20 w-full" />
                     ))}
-                    <Separator className="border-dashed" />
-                    <div className="space-y-1">
-                        <div className="flex justify-between">
-                            <span>{t(translations.subtotal)}</span>
-                            <span>{selectedOrder.subtotal.toFixed(2)}€</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>{t(translations.tax)} ({selectedOrder.taxRate}%)</span>
-                            <span>{selectedOrder.tax.toFixed(2)}€</span>
-                        </div>
-                    </div>
-                    <Separator className="border-dashed" />
-                    <div className="flex justify-between font-bold text-base">
-                        <span>{t(translations.total)}</span>
-                        <span>{selectedOrder.total.toFixed(2)}€</span>
-                    </div>
-                     <Separator className="border-dashed" />
-                     <div className="text-center text-gray-500 pt-2">
-                        {t(translations.thankYou)}
-                     </div>
+                  </div>
+                ) : liveCalls?.activeCalls.length ? (
+                  <div className="space-y-3">
+                    {liveCalls.activeCalls.map(call => (
+                      <LiveCallCard key={call.id} call={call} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                    <PhoneOff className="h-12 w-12 text-gray-300 mb-3" />
+                    <p className="text-sm text-muted-foreground">Aucun appel en cours</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Performance IA */}
+          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="ai-performance">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Performance IA
+              </CardTitle>
+              <CardDescription>Derniers 30 jours</CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" className="w-full font-sans">{t(translations.print)}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )}
+              ) : (
+                <>
+                  {/* Taux de résolution IA */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Résolution IA</span>
+                      <span className="text-sm font-bold">
+                        {stats?.aiPerformance.totalCalls ? 
+                          Math.round((stats.aiPerformance.resolvedByAI / stats.aiPerformance.totalCalls) * 100) : 0}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={stats?.aiPerformance.totalCalls ? 
+                        (stats.aiPerformance.resolvedByAI / stats.aiPerformance.totalCalls) * 100 : 0} 
+                      className="h-2"
+                    />
+                  </div>
+
+                  {/* Temps de réponse */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm">Temps réponse</span>
+                    </div>
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                      {stats?.aiPerformance.avgResponseTime || 0}s
+                    </span>
+                  </div>
+
+                  {/* Satisfaction */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="text-sm">Satisfaction</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <Star
+                          key={i}
+                          className={cn(
+                            "h-3 w-3",
+                            i <= (stats?.aiPerformance.satisfactionScore || 0)
+                              ? "fill-yellow-500 text-yellow-500"
+                              : "text-gray-300"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Stats détaillées */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600">
+                        {stats?.aiPerformance.resolvedByAI || 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Résolus par IA</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-orange-600">
+                        {stats?.aiPerformance.transferredToHuman || 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Transférés</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Graphiques */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Graphique revenus */}
+          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="revenue-chart">
+            <CardHeader>
+              <CardTitle>Évolution des revenus</CardTitle>
+              <CardDescription>7 derniers jours</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={stats?.revenueChart || []}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                    <XAxis dataKey="date" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                      }}
+                      formatter={(value: any) => [`€${value}`, 'Revenus']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#3b82f6"
+                      fillOpacity={1}
+                      fill="url(#colorRevenue)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top produits */}
+          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="top-products">
+            <CardHeader>
+              <CardTitle>Top produits</CardTitle>
+              <CardDescription>Les plus vendus ce mois</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {stats?.topProducts.map((product, index) => (
+                    <div key={product.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        >
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">{product.category}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">€{product.revenue.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">{product.quantity} vendus</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Activité récente et segments clients */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Activité récente */}
+          <Card className="lg:col-span-2 backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="activity-feed">
+            <CardHeader>
+              <CardTitle>Activité récente</CardTitle>
+              <CardDescription>Derniers événements</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[300px] pr-4">
+                {loading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4].map(i => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : stats?.recentActivity.length ? (
+                  <div className="space-y-2">
+                    {stats.recentActivity.map(activity => (
+                      <ActivityCard key={activity.id} activity={activity} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                    <Activity className="h-12 w-12 text-gray-300 mb-3" />
+                    <p className="text-sm text-muted-foreground">Aucune activité récente</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Segments clients */}
+          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="customer-segments">
+            <CardHeader>
+              <CardTitle>Segments clients</CardTitle>
+              <CardDescription>Répartition de la base</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-[250px] w-full" />
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RePieChart>
+                      <Pie
+                        data={[
+                          { name: 'Nouveaux', value: stats?.customerSegments.new || 0 },
+                          { name: 'Réguliers', value: stats?.customerSegments.regular || 0 },
+                          { name: 'VIP', value: stats?.customerSegments.vip || 0 }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {[0, 1, 2].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                  
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    <div className="text-center">
+                      <div className="h-3 w-3 rounded-full mx-auto mb-1" style={{ backgroundColor: COLORS[0] }} />
+                      <p className="text-xs font-medium">Nouveaux</p>
+                      <p className="text-lg font-bold">{stats?.customerSegments.new || 0}</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="h-3 w-3 rounded-full mx-auto mb-1" style={{ backgroundColor: COLORS[1] }} />
+                      <p className="text-xs font-medium">Réguliers</p>
+                      <p className="text-lg font-bold">{stats?.customerSegments.regular || 0}</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="h-3 w-3 rounded-full mx-auto mb-1" style={{ backgroundColor: COLORS[2] }} />
+                      <p className="text-xs font-medium">VIP</p>
+                      <p className="text-lg font-bold">{stats?.customerSegments.vip || 0}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Heures de pointe */}
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20">
+          <CardHeader>
+            <CardTitle>Heures de pointe</CardTitle>
+            <CardDescription>Distribution des commandes sur 24h</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={stats?.peakHours || []}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                  <XAxis dataKey="hour" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar dataKey="orders" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
     </>
   );
 }

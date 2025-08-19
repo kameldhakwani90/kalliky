@@ -52,8 +52,17 @@ export interface AIContext {
 class RedisService {
   private client: RedisClientType;
   private isConnected = false;
+  private isEnabled = false;
 
   constructor() {
+    // Disable Redis in development if not configured
+    this.isEnabled = process.env.NODE_ENV === 'production' || !!process.env.REDIS_URL;
+    
+    if (!this.isEnabled) {
+      console.log('⚠️ Redis disabled in development (set REDIS_URL to enable)');
+      return;
+    }
+
     this.client = createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379',
       password: process.env.REDIS_PASSWORD || undefined,
@@ -61,7 +70,9 @@ class RedisService {
     });
 
     this.client.on('error', (err) => {
-      console.error('Redis Client Error:', err);
+      if (this.isEnabled) {
+        console.error('Redis Client Error:', err);
+      }
     });
 
     this.client.on('connect', () => {
@@ -76,12 +87,14 @@ class RedisService {
   }
 
   async connect(): Promise<void> {
+    if (!this.isEnabled) return;
     if (!this.isConnected) {
       await this.client.connect();
     }
   }
 
   async disconnect(): Promise<void> {
+    if (!this.isEnabled) return;
     if (this.isConnected) {
       await this.client.disconnect();
     }
@@ -92,6 +105,7 @@ class RedisService {
   // ============================================================================
 
   async createCallSession(session: CallSession): Promise<void> {
+    if (!this.isEnabled) return;
     await this.connect();
     const key = `call:session:${session.callId}`;
     await this.client.setEx(key, 3600 * 2, JSON.stringify(session)); // 2h TTL
@@ -99,13 +113,15 @@ class RedisService {
   }
 
   async getCallSession(callId: string): Promise<CallSession | null> {
+    if (!this.isEnabled) return null;
     await this.connect();
     const key = `call:session:${callId}`;
     const data = await this.client.get(key);
-    return data ? JSON.parse(data) : null;
+    return data ? JSON.parse(data as string) : null;
   }
 
   async updateCallSession(callId: string, updates: Partial<CallSession>): Promise<void> {
+    if (!this.isEnabled) return;
     await this.connect();
     const session = await this.getCallSession(callId);
     if (session) {
@@ -115,6 +131,7 @@ class RedisService {
   }
 
   async endCallSession(callId: string): Promise<void> {
+    if (!this.isEnabled) return;
     await this.connect();
     await this.updateCallSession(callId, {
       status: 'ended',
@@ -127,6 +144,7 @@ class RedisService {
   }
 
   async deleteCallSession(callId: string): Promise<void> {
+    if (!this.isEnabled) return;
     await this.connect();
     const key = `call:session:${callId}`;
     await this.client.del(key);
@@ -137,6 +155,7 @@ class RedisService {
   // ============================================================================
 
   async addAudioChunk(callId: string, audioUrl: string): Promise<void> {
+    if (!this.isEnabled) return;
     await this.connect();
     const key = `call:audio:${callId}`;
     await this.client.lPush(key, audioUrl);
@@ -144,12 +163,14 @@ class RedisService {
   }
 
   async getAudioChunks(callId: string): Promise<string[]> {
+    if (!this.isEnabled) return [];
     await this.connect();
     const key = `call:audio:${callId}`;
     return await this.client.lRange(key, 0, -1);
   }
 
   async clearAudioChunks(callId: string): Promise<void> {
+    if (!this.isEnabled) return;
     await this.connect();
     const key = `call:audio:${callId}`;
     await this.client.del(key);
@@ -169,15 +190,16 @@ class RedisService {
     await this.connect();
     const key = `ai:context:${businessId}`;
     const data = await this.client.get(key);
-    return data ? JSON.parse(data) : null;
+    return data ? JSON.parse(data as string) : null;
   }
 
-  async updateConversation(callId: string, message: { role: string; content: string }): Promise<void> {
+  async updateConversation(callId: string, message: { role: 'user' | 'assistant' | 'system'; content: string }): Promise<void> {
     await this.connect();
     const session = await this.getCallSession(callId);
     if (session) {
       session.aiContext.conversation.push({
-        ...message,
+        role: message.role,
+        content: message.content,
         timestamp: new Date().toISOString(),
       });
       await this.updateCallSession(callId, session);
@@ -312,7 +334,7 @@ class RedisService {
     await this.connect();
     const key = `store:cache:${storeId}`;
     const data = await this.client.get(key);
-    return data ? JSON.parse(data) : null;
+    return data ? JSON.parse(data as string) : null;
   }
 
   async invalidateStoreCache(storeId: string): Promise<void> {
@@ -339,7 +361,7 @@ class RedisService {
     await this.connect();
     const key = `store:ai_prompt:${storeId}`;
     const data = await this.client.get(key);
-    return data ? JSON.parse(data) : null;
+    return data ? JSON.parse(data as string) : null;
   }
 
   // ============================================================================
@@ -356,7 +378,7 @@ class RedisService {
     await this.connect();
     const key = `business:cache:${businessId}`;
     const data = await this.client.get(key);
-    return data ? JSON.parse(data) : null;
+    return data ? JSON.parse(data as string) : null;
   }
 
   // ============================================================================
@@ -386,12 +408,6 @@ class RedisService {
     await this.connect();
     const key = `business:active_calls:${businessId}`;
     return await this.client.sMembers(key);
-  }
-
-  async getActiveCallsCount(businessId: string): Promise<number> {
-    await this.connect();
-    const key = `business:active_calls:${businessId}`;
-    return await this.client.sCard(key);
   }
 
   // ============================================================================
@@ -432,7 +448,9 @@ class RedisService {
     const stats: Record<string, number> = {};
     
     dateRange.forEach((date, index) => {
-      stats[date] = parseInt(results?.[index] as string || '0') || 0;
+      const result = results?.[index];
+      const value = typeof result === 'string' ? result : '0';
+      stats[date] = parseInt(value || '0') || 0;
     });
     
     return stats;

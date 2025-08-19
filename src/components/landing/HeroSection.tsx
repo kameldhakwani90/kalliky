@@ -1,31 +1,26 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, ArrowRight, Phone, Globe, TrendingUp } from 'lucide-react';
+import { ArrowRight, Phone, Bot, Sparkles, CheckCircle2, Play } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useLanguage } from '@/contexts/language-context';
 
 export function HeroSection() {
-  const { t } = useTranslation();
+  const { t, language } = useLanguage();
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
-  const [particles, setParticles] = useState<Array<{
-    id: number;
-    left: number;
-    top: number;
-    duration: number;
-    delay: number;
-  }>>([]);
-
+  console.log('HeroSection language:', language);
+  
   useEffect(() => {
-    setParticles([...Array(20)].map((_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      top: Math.random() * 100,
-      duration: 3 + Math.random() * 2,
-      delay: Math.random() * 2,
-    })));
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   const containerVariants = {
@@ -33,14 +28,14 @@ export function HeroSection() {
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.6,
-        staggerChildren: 0.2
+        duration: 0.8,
+        staggerChildren: 0.1
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
       y: 0,
@@ -48,136 +43,96 @@ export function HeroSection() {
     }
   };
 
-  const floatingVariants = {
-    animate: {
-      y: [-10, 10, -10],
-      transition: {
-        duration: 6,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
-  };
-
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Background Video Placeholder */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-blue-900/30 to-purple-900/50 z-10" />
-        {/* Placeholder for video background */}
-        <div className="w-full h-full bg-gradient-to-br from-gray-800 via-blue-800 to-purple-800 opacity-50" />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
+      {/* Background with wave effect */}
+      <div className="absolute inset-0">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-950 to-black" />
         
-        {/* Animated particles */}
-        <div className="absolute inset-0 z-5">
-          {particles.length > 0 && particles.map((particle) => (
-            <motion.div
-              key={particle.id}
-              className="absolute w-2 h-2 bg-white/20 rounded-full"
-              style={{
-                left: `${particle.left}%`,
-                top: `${particle.top}%`,
-              }}
-              animate={{
-                y: [-20, 20, -20],
-                opacity: [0.2, 0.8, 0.2],
-              }}
-              transition={{
-                duration: particle.duration,
-                repeat: Infinity,
-                delay: particle.delay,
-              }}
-            />
-          ))}
+        {/* Interactive wave effect */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.06), transparent 40%)`
+          }}
+        />
+        
+        {/* Static wave patterns */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gray-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-white/3 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }} />
         </div>
       </div>
 
-      <div className="container mx-auto px-4 z-20 relative">
+      <div className="container mx-auto px-6 z-20 relative">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="text-center max-w-5xl mx-auto"
+          className="text-center max-w-6xl mx-auto"
         >
           {/* Badge */}
           <motion.div variants={itemVariants} className="mb-8">
-            <Badge className="bg-white/10 backdrop-blur-sm border-white/20 text-white px-6 py-2 text-sm">
-              <span className="mr-2">🚀</span>
-              IA conversationnelle nouvelle génération
+            <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 text-sm font-medium rounded-full">
+              <Sparkles className="mr-2 h-4 w-4" />
+              {language === 'fr' ? '15 Jours Gratuits • 10 Appels • 3min Max' : '15 Days Free • 10 Calls • 3min Max'}
             </Badge>
           </motion.div>
 
-          {/* Title */}
-          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight">
-            {t('hero.title')}{' '}
-            <motion.span 
-              className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-            >
-              {t('hero.titleHighlight')}
-            </motion.span>
-            <br />
-            {t('hero.titleEnd')}
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p variants={itemVariants} className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-            {t('hero.subtitle')}
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Button size="lg" className="text-lg px-8 py-6 bg-white text-gray-900 hover:bg-gray-100 group">
-              {t('hero.cta')}
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-lg px-8 py-6 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm group"
-            >
-              <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-              {t('hero.ctaSecondary')}
-            </Button>
+          {/* Main Title */}
+          <motion.div variants={itemVariants} className="mb-8">
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold text-white mb-6 leading-[0.9] tracking-tight">
+              <span className="block">OrderSpot</span>
+              <motion.span 
+                className="block bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+              >
+                IA Commande
+              </motion.span>
+            </h1>
           </motion.div>
 
-          {/* Stats */}
-          <motion.div 
-            variants={itemVariants}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
-          >
-            <motion.div 
-              variants={floatingVariants}
-              animate="animate"
-              className="backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20"
-            >
-              <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-4" />
-              <div className="text-2xl font-bold text-white mb-2">{t('hero.stats.conversion')}</div>
-              <div className="text-gray-300 text-sm">Taux de conversion</div>
-            </motion.div>
+          {/* Subtitle */}
+          <motion.p variants={itemVariants} className="text-2xl md:text-3xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
+            {t({ fr: 'Votre assistant IA qui prend les commandes par téléphone, augmente votre panier moyen et fonctionne 24h/24. Fini les appels ratés !', en: 'Your AI assistant that takes phone orders, increases your average basket and works 24/7. No more missed calls!' })}
+          </motion.p>
 
-            <motion.div 
-              variants={floatingVariants}
-              animate="animate"
-              className="backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20"
-              style={{ animationDelay: '2s' }}
-            >
-              <Phone className="h-8 w-8 text-blue-400 mx-auto mb-4" />
-              <div className="text-2xl font-bold text-white mb-2">{t('hero.stats.availability')}</div>
-              <div className="text-gray-300 text-sm">Sans interruption</div>
-            </motion.div>
+          {/* Key Benefits */}
+          <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-6 mb-16">
+            <div className="flex items-center gap-2 text-gray-300">
+              <CheckCircle2 className="h-5 w-5 text-purple-400" />
+              <span className="font-medium">{t({ fr: '24/7 Disponible', en: '24/7 Available' })}</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300">
+              <CheckCircle2 className="h-5 w-5 text-purple-400" />
+              <span className="font-medium">{t({ fr: 'Multilingue', en: 'Multilingual' })}</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300">
+              <CheckCircle2 className="h-5 w-5 text-purple-400" />
+              <span className="font-medium">{t({ fr: 'Prêt en 5 minutes', en: 'Ready in 5 minutes' })}</span>
+            </div>
+          </motion.div>
 
-            <motion.div 
-              variants={floatingVariants}
-              animate="animate"
-              className="backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20"
-              style={{ animationDelay: '4s' }}
+          {/* CTA Buttons */}
+          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-20">
+            <Link href="/signup">
+              <Button size="lg" className="text-lg px-12 py-6 bg-white text-black hover:bg-gray-100 group font-semibold rounded-full transition-all duration-300 shadow-2xl hover:shadow-white/25">
+                {t({ fr: 'Commencer Gratuitement', en: 'Start for Free' })}
+                <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+            <Button 
+              size="lg" 
+              variant="ghost"
+              className="text-lg px-12 py-6 text-white hover:bg-white/10 backdrop-blur-sm group font-semibold rounded-full border border-white/20 transition-all duration-300"
             >
-              <Globe className="h-8 w-8 text-purple-400 mx-auto mb-4" />
-              <div className="text-2xl font-bold text-white mb-2">{t('hero.stats.languages')}</div>
-              <div className="text-gray-300 text-sm">Support multilingue</div>
-            </motion.div>
+              <Play className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
+              {t({ fr: 'Voir la Démo', en: 'See Demo' })}
+            </Button>
           </motion.div>
         </motion.div>
 
@@ -185,18 +140,18 @@ export function HeroSection() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
+          transition={{ delay: 1.5 }}
           className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
         >
           <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center"
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center"
           >
             <motion.div
               animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-1 h-3 bg-white/50 rounded-full mt-2"
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-1 h-3 bg-white/40 rounded-full mt-2"
             />
           </motion.div>
         </motion.div>

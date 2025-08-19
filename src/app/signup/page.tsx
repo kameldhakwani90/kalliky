@@ -3,16 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowLeft, Star } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
+// IMPORTANT: NE PAS CHANGER LES PRIX OU FONCTIONNALITÉS - SEULEMENT LE DESIGN
 const plans = [
   {
     id: 'STARTER',
@@ -169,9 +170,6 @@ export default function SignupPage() {
         throw new Error('Veuillez remplir tous les champs obligatoires');
       }
 
-      // Tous les services sont inclus par défaut
-      // Pas besoin de validation car tous sont activés
-
       // Créer directement la session Stripe avec toutes les données
       const checkoutResponse = await fetch('/api/stripe/checkout-signup', {
         method: 'POST',
@@ -223,295 +221,393 @@ export default function SignupPage() {
 
   const selectedPlan = plans.find(p => p.id === formData.selectedPlan);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 py-12">
-      <div className="container max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
-            <ArrowLeft className="h-4 w-4" />
-            Retour
-          </Link>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">
-            {step === 1 ? 'Choisissez votre plan' : 'Créez votre compte'}
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            {step === 1 
-              ? 'Commencez votre essai gratuit de 14 jours'
-              : `Plan ${selectedPlan?.name} sélectionné`}
-          </p>
-        </div>
+    <div className="min-h-screen bg-black text-white">
+      {/* Background Effects */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gray-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '3s' }} />
+      </div>
 
-        {/* Step 1: Choose Plan */}
-        {step === 1 && (
-          <div className="grid md:grid-cols-3 gap-6">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.id}
-                className={cn(
-                  "relative cursor-pointer hover:shadow-lg transition-all",
-                  plan.recommended && "border-primary border-2 shadow-lg"
-                )}
-                onClick={() => handlePlanSelect(plan.id)}
-              >
-                {plan.recommended && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
-                      Recommandé
-                    </span>
-                  </div>
-                )}
-                <CardHeader className="text-center">
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  {plan.subtitle && (
-                    <p className="text-sm font-semibold text-primary">{plan.subtitle}</p>
-                  )}
-                  <p className="text-muted-foreground text-sm">{plan.target}</p>
-                  <div className="pt-4">
-                    <p className="text-3xl font-bold">{plan.price}</p>
-                    <p className="text-sm text-muted-foreground">{plan.description}</p>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-xs">{feature}</span>
-                      </li>
-                    ))}
-                    {plan.blockedFeatures && plan.blockedFeatures.length > 0 && (
-                      <>
-                        <Separator className="my-3" />
-                        {plan.blockedFeatures.map((feature, i) => (
-                          <li key={`blocked-${i}`} className="flex items-start gap-2 opacity-60">
-                            <span className="text-xs">{feature}</span>
-                          </li>
-                        ))}
-                      </>
-                    )}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    className="w-full" 
-                    variant={plan.recommended ? 'default' : 'outline'}
-                  >
-                    {plan.id === 'BUSINESS' ? 'Nous contacter' : 'Choisir ce plan'}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
+      <div className="container max-w-7xl mx-auto px-6 py-12 relative z-10">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+        >
+          {/* Header */}
+          <motion.div variants={itemVariants} className="text-center mb-12">
+            <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 group">
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+              Retour à l'accueil
+            </Link>
+            
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              {step === 1 ? (
+                <>
+                  Choisissez Votre
+                  <br />
+                  <span className="bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
+                    Plan Parfait
+                  </span>
+                </>
+              ) : (
+                <>
+                  Créez Votre
+                  <br />
+                  <span className="bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
+                    Compte
+                  </span>
+                </>
+              )}
+            </h1>
+            
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              {step === 1 
+                ? 'Commencez votre essai gratuit de 14 jours. Sans engagement.' 
+                : `Plan ${selectedPlan?.name} sélectionné - Finalisez votre inscription`}
+            </p>
+          </motion.div>
 
-        {/* Step 2: Create Account */}
-        {step === 2 && (
-          <div className="max-w-md mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations du compte</CardTitle>
-                <CardDescription>
-                  Créez votre compte pour continuer vers le paiement
-                </CardDescription>
-              </CardHeader>
-              <form onSubmit={handleSubmit}>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">Prénom</Label>
-                      <Input
-                        id="firstName"
-                        required
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Nom</Label>
-                      <Input
-                        id="lastName"
-                        required
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="businessName">Nom de la société</Label>
-                    <Input
-                      id="businessName"
-                      required
-                      placeholder="Ex: SARL Mario & Fils"
-                      value={formData.businessName}
-                      onChange={(e) => setFormData({...formData, businessName: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email professionnel</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      required
-                      placeholder="+33 6 12 34 56 78"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Mot de passe</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      minLength={6}
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Minimum 6 caractères
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="language">Langue préférée</Label>
-                    <Select 
-                      value={formData.language} 
-                      onValueChange={(value) => setFormData({...formData, language: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez votre langue" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fr">Français</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Separator />
-
-                  {/* Section Activité */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Configuration de votre activité</h3>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="storeName">Nom de la boutique</Label>
-                      <Input
-                        id="storeName"
-                        required
-                        placeholder="Ex: Pizzeria Mario"
-                        value={formData.storeName}
-                        onChange={(e) => setFormData({...formData, storeName: e.target.value})}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="storeAddress">Adresse complète</Label>
-                      <Input
-                        id="storeAddress"
-                        required
-                        placeholder="123 rue de la République, 75001 Paris"
-                        value={formData.storeAddress}
-                        onChange={(e) => setFormData({...formData, storeAddress: e.target.value})}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="storePhone">Téléphone boutique</Label>
-                      <Input
-                        id="storePhone"
-                        type="tel"
-                        required
-                        placeholder="+33 1 23 45 67 89"
-                        value={formData.storePhone}
-                        onChange={(e) => setFormData({...formData, storePhone: e.target.value})}
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      <Label>Services inclus</Label>
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p className="text-sm text-green-800 font-medium mb-3">
-                          ✅ Tous les services sont inclus dans votre abonnement
-                        </p>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-green-600">🍽️</span>
-                            <span className="text-sm">
-                              <strong>Vente de Produits</strong> - Restaurant, boulangerie, café, fast-food...
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-green-600">📅</span>
-                            <span className="text-sm">
-                              <strong>Réservations</strong> - Tables, chambres, créneaux, événements...
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-green-600">👨‍⚖️</span>
-                            <span className="text-sm">
-                              <strong>Consultations</strong> - Avocat, médecin, conseiller, coach...
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-green-700 mt-3">
-                          💡 Vous pourrez activer/désactiver chaque service selon vos besoins après inscription
-                        </p>
+          {/* Step 1: Choose Plan */}
+          {step === 1 && (
+            <motion.div variants={containerVariants} className="grid md:grid-cols-3 gap-8">
+              {plans.map((plan, index) => (
+                <motion.div
+                  key={plan.id}
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.02, y: -5 }}
+                  className="group relative"
+                >
+                  {plan.recommended && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                      <div className="bg-white text-black px-4 py-2 font-semibold rounded-full shadow-xl flex items-center gap-1">
+                        <Star className="h-4 w-4" />
+                        {plan.subtitle || 'Recommandé'}
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <Separator />
-
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-semibold mb-2">Plan sélectionné : {selectedPlan?.name}</p>
-                    <p className="text-2xl font-bold">{selectedPlan?.price}</p>
-                    <p className="text-sm text-muted-foreground">{selectedPlan?.description}</p>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep(1)}
-                    disabled={loading}
+                  <div 
+                    onClick={() => handlePlanSelect(plan.id)}
+                    className={`relative h-full backdrop-blur-md rounded-3xl border transition-all duration-500 overflow-hidden cursor-pointer ${
+                      plan.recommended 
+                        ? 'bg-gradient-to-br from-white/20 to-white/10 border-white/20 shadow-2xl' 
+                        : 'bg-gradient-to-br from-white/10 to-white/5 border-white/10 hover:border-white/20'
+                    }`}
                   >
-                    Retour
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    className="flex-1" 
-                    disabled={loading}
-                  >
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Continuer vers le paiement
-                  </Button>
-                </CardFooter>
-              </form>
-            </Card>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              En continuant, vous acceptez nos{' '}
-              <a href="#" className="underline">conditions d'utilisation</a>{' '}
-              et notre{' '}
-              <a href="#" className="underline">politique de confidentialité</a>.
-            </p>
-          </div>
-        )}
+                    {/* Header */}
+                    <div className="relative z-10 p-8 text-center">
+                      <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                      <p className="text-gray-400 mb-6">{plan.target}</p>
+                      
+                      <div className="mb-8">
+                        <div className="text-4xl font-bold">{plan.price}</div>
+                        <p className="text-gray-400 text-sm mt-1">{plan.description}</p>
+                      </div>
+
+                      <Button 
+                        className={`w-full mb-8 font-semibold transition-all duration-200 ${
+                          plan.recommended 
+                            ? 'bg-white text-black hover:bg-gray-100' 
+                            : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                        }`}
+                      >
+                        {plan.id === 'BUSINESS' ? 'Nous contacter' : 'Choisir ce plan'}
+                      </Button>
+                    </div>
+
+                    {/* Features */}
+                    <div className="relative z-10 px-8 pb-8">
+                      <div className="space-y-3">
+                        {plan.features.map((feature, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <span className="text-sm text-gray-300">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {plan.blockedFeatures && plan.blockedFeatures.length > 0 && (
+                        <div className="mt-6 pt-6 border-t border-white/10">
+                          <div className="space-y-2">
+                            {plan.blockedFeatures.map((feature, i) => (
+                              <div key={i} className="flex items-start gap-2 opacity-50">
+                                <span className="text-sm text-gray-500">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Step 2: Create Account */}
+          {step === 2 && (
+            <motion.div 
+              initial="hidden"
+              animate="visible"
+              variants={containerVariants}
+              className="max-w-2xl mx-auto"
+            >
+              <motion.div variants={itemVariants}>
+                <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/10 p-8">
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Personal Info */}
+                    <div className="space-y-6">
+                      <h3 className="text-2xl font-bold text-white">Informations personnelles</h3>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName" className="text-gray-300">Prénom</Label>
+                          <Input
+                            id="firstName"
+                            required
+                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName" className="text-gray-300">Nom</Label>
+                          <Input
+                            id="lastName"
+                            required
+                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="businessName" className="text-gray-300">Nom de la société</Label>
+                        <Input
+                          id="businessName"
+                          required
+                          placeholder="Ex: SARL Mario & Fils"
+                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                          value={formData.businessName}
+                          onChange={(e) => setFormData({...formData, businessName: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-gray-300">Email professionnel</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          required
+                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                          value={formData.email}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="phone" className="text-gray-300">Téléphone</Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            required
+                            placeholder="+33 6 12 34 56 78"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="password" className="text-gray-300">Mot de passe</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            required
+                            minLength={6}
+                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            value={formData.password}
+                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="language" className="text-gray-300">Langue préférée</Label>
+                        <Select 
+                          value={formData.language} 
+                          onValueChange={(value) => setFormData({...formData, language: value})}
+                        >
+                          <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                            <SelectValue placeholder="Sélectionnez votre langue" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fr">Français</SelectItem>
+                            <SelectItem value="en">English</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-white/20" />
+
+                    {/* Business Info */}
+                    <div className="space-y-6">
+                      <h3 className="text-2xl font-bold text-white">Configuration de votre activité</h3>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="storeName" className="text-gray-300">Nom de la boutique</Label>
+                          <Input
+                            id="storeName"
+                            required
+                            placeholder="Ex: Pizzeria Mario"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            value={formData.storeName}
+                            onChange={(e) => setFormData({...formData, storeName: e.target.value})}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="storeAddress" className="text-gray-300">Adresse complète</Label>
+                          <Input
+                            id="storeAddress"
+                            required
+                            placeholder="123 rue de la République, 75001 Paris"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            value={formData.storeAddress}
+                            onChange={(e) => setFormData({...formData, storeAddress: e.target.value})}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="storePhone" className="text-gray-300">Téléphone boutique</Label>
+                          <Input
+                            id="storePhone"
+                            type="tel"
+                            required
+                            placeholder="+33 1 23 45 67 89"
+                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            value={formData.storePhone}
+                            onChange={(e) => setFormData({...formData, storePhone: e.target.value})}
+                          />
+                        </div>
+
+                        <div className="space-y-4">
+                          <Label className="text-gray-300">Services inclus</Label>
+                          <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-6">
+                            <p className="text-green-400 font-medium mb-4 flex items-center gap-2">
+                              <CheckCircle2 className="h-5 w-5" />
+                              Tous les services sont inclus dans votre abonnement
+                            </p>
+                            <div className="grid grid-cols-1 gap-4">
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">🍽️</span>
+                                <div>
+                                  <span className="text-white font-medium">Vente de Produits</span>
+                                  <p className="text-green-300 text-sm">Restaurant, boulangerie, café, fast-food...</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">📅</span>
+                                <div>
+                                  <span className="text-white font-medium">Réservations</span>
+                                  <p className="text-green-300 text-sm">Tables, chambres, créneaux, événements...</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">👨‍⚖️</span>
+                                <div>
+                                  <span className="text-white font-medium">Consultations</span>
+                                  <p className="text-green-300 text-sm">Avocat, médecin, conseiller, coach...</p>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-green-300 text-sm mt-4">
+                              💡 Vous pourrez activer/désactiver chaque service selon vos besoins après inscription
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-white/20" />
+
+                    {/* Plan Summary */}
+                    <div className="bg-white/5 backdrop-blur rounded-2xl p-6">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                          <Star className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold text-lg">Plan {selectedPlan?.name}</p>
+                          <p className="text-2xl font-bold text-white">{selectedPlan?.price}</p>
+                          <p className="text-gray-400">{selectedPlan?.description}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-400">
+                        ✅ 14 jours d'essai gratuit • Résiliation à tout moment
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-4 pt-6">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setStep(1)}
+                        disabled={loading}
+                        className="text-gray-400 hover:text-white hover:bg-white/10"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Retour
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="flex-1 bg-white text-black hover:bg-gray-100 font-semibold" 
+                        disabled={loading}
+                      >
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Continuer vers le paiement
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+
+                <p className="text-center text-sm text-gray-400 mt-6">
+                  En continuant, vous acceptez nos{' '}
+                  <a href="#" className="text-white underline hover:no-underline">conditions d'utilisation</a>{' '}
+                  et notre{' '}
+                  <a href="#" className="text-white underline hover:no-underline">politique de confidentialité</a>.
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </motion.div>
       </div>
     </div>
   );

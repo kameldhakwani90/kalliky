@@ -1,22 +1,59 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
+import { rateLimitMiddleware } from '@/lib/rate-limiter';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
+    // Rate limiting - 5 tentatives par minute par IP
+    const rateLimitResult = await rateLimitMiddleware(request, 'LOGIN');
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { error: 'Email et mot de passe requis' },
+        { 
+          error: 'Trop de tentatives de connexion. Réessayez dans quelques minutes.',
+          retryAfter: rateLimitResult.headers['Retry-After']
+        },
+        { 
+          status: 429,
+          headers: rateLimitResult.headers
+        }
+      );
+    }
+    
+    const body = await request.json();
+    
+    // Validation stricte des inputs
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Format de requête invalide' },
         { status: 400 }
       );
     }
+    
+    const { email, password } = body;
+    
+    // Validation des types et formats
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return NextResponse.json(
+        { error: 'Email invalide' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return NextResponse.json(
+        { error: 'Mot de passe requis (minimum 6 caractères)' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    // Sanitization email
+    const sanitizedEmail = email.toLowerCase().trim();
 
-    // Chercher l'utilisateur
+    // Chercher l'utilisateur avec email sanitized
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: sanitizedEmail },
       include: {
         businesses: {
           include: {
@@ -34,7 +71,7 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json(
         { error: 'Aucun compte trouvé avec cet email. Vérifiez votre adresse email ou créez un compte.' },
-        { status: 401 }
+        { status: 401, headers: rateLimitResult.headers }
       );
     }
 
@@ -43,7 +80,7 @@ export async function POST(request: Request) {
     if (!validPassword) {
       return NextResponse.json(
         { error: 'Mot de passe incorrect. Vérifiez votre mot de passe et réessayez.' },
-        { status: 401 }
+        { status: 401, headers: rateLimitResult.headers }
       );
     }
 
@@ -64,7 +101,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       token,
       user: userWithoutPassword
-    });
+    }, { headers: rateLimitResult.headers });
 
     // Définir le cookie auth-token
     response.cookies.set('auth-token', token, {
@@ -78,8 +115,17 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Erreur login:', error);
+    
+    // Gestion d'erreurs spécifiques
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { error: 'Format JSON invalide' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Erreur serveur' },
+      { error: 'Erreur serveur interne' },
       { status: 500 }
     );
   }
