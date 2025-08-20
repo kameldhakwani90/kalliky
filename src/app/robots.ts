@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/api/', '/restaurant/dashboard/', '/admin/dashboard/'],
+      disallow: ['/admin/', '/api/', '/app/dashboard/', '/admin/dashboard/'],
     },
     sitemap: 'https://orderspot.pro/sitemap.xml',
   }

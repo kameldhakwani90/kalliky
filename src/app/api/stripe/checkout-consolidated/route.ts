@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment', // Paiement unique pour facture mensuelle
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/billing?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/billing?canceled=true`,
       metadata: {
         userId: user.id,
         type: 'consolidated_billing'

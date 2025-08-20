@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { analyzeCallRecording, CallAnalysisResult } from '@/lib/ai-call-analyzer';
+import { TrialLimitsMiddleware } from '@/lib/middleware/trial-limits';
 
 interface SavedEntity {
   type: 'order' | 'consultation' | 'signalement' | 'conversation';
@@ -43,6 +44,22 @@ export async function POST(
       return NextResponse.json(
         { error: 'Appel non trouvé' },
         { status: 404 }
+      );
+    }
+
+    // 2. VÉRIFIER LIMITES TRIAL AVANT TRAITEMENT IA
+    console.log(`🔍 Vérification limites trial pour business: ${call.businessId}`);
+    const trialCheck = await TrialLimitsMiddleware.checkBeforeTelnyxCall(call.businessId);
+    
+    if (!trialCheck.canProceed) {
+      console.log('❌ Traitement bloqué par limites trial:', trialCheck.error);
+      return NextResponse.json(
+        { 
+          error: 'Trial limits exceeded', 
+          details: trialCheck.error,
+          shouldUpgrade: true
+        },
+        { status: 402 } // Payment Required
       );
     }
 
@@ -252,6 +269,16 @@ export async function POST(
 
     console.log(`✅ Traitement terminé: ${savedEntities.length} entités créées`);
 
+    // 8. ENREGISTRER L'UTILISATION TRIAL APRÈS SUCCÈS
+    try {
+      const recordResult = await TrialLimitsMiddleware.recordSuccessfulCall(call.businessId);
+      if (recordResult) {
+        console.log('📊 Usage trial enregistré avec succès');
+      }
+    } catch (error) {
+      console.error('⚠️ Erreur enregistrement usage trial (non-bloquant):', error);
+    }
+
     return NextResponse.json({
       success: true,
       callId: call.id,
@@ -288,9 +315,8 @@ async function createActivityLogs(entities: SavedEntity[], call: any): Promise<v
       await prisma.activityLog.create({
         data: {
           storeId: call.business.stores[0]?.id,
-          entityType: entity.type.toUpperCase(),
+          type: entity.type.toUpperCase(),
           entityId: entity.id,
-          action: 'CREATED',
           title: `${entity.type} créé automatiquement`,
           description: `${entity.type} généré par analyse IA d'appel`,
           metadata: {

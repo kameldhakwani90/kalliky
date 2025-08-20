@@ -152,7 +152,7 @@ async function sendEmailNotification(store: any, customer: any, type: string, te
   }
 
   const mailOptions = {
-    from: process.env.SMTP_FROM || 'noreply@kalliky.com',
+    from: process.env.SMTP_FROM || 'no-reply@pixigrad.com',
     to: toEmail,
     subject: emailContent.subject,
     html: emailContent.html,

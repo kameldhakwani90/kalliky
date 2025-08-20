@@ -34,31 +34,25 @@ interface ConfigurationWizardProps {
 const serviceTypes = [
   {
     id: 'products',
-    title: 'Vente de Produits',
-    description: 'Restaurants, cafés, boulangeries, fast-foods...',
-    icon: Utensils,
-    color: 'bg-orange-100 text-orange-600 border-orange-200',
-    iconColor: 'text-orange-600',
+    title: 'IA Avancée',
+    description: 'Réception intelligente des appels',
+    emoji: '🤖',
     examples: ['Prise de commandes', 'Catalogue produits', 'Gestion stock', 'Livraison'],
     key: 'hasProducts' as keyof ServiceConfig
   },
   {
     id: 'reservations',
-    title: 'Gestion de Réservations',
-    description: 'Restaurants, hôtels, salons, événements...',
-    icon: Calendar,
-    color: 'bg-blue-100 text-blue-600 border-blue-200',
-    iconColor: 'text-blue-600',
+    title: 'Configuration Rapide',
+    description: 'Prêt en quelques minutes',
+    emoji: '⚡',
     examples: ['Réservation tables', 'Planning horaires', 'Confirmation automatique', 'Rappels'],
     key: 'hasReservations' as keyof ServiceConfig
   },
   {
     id: 'consultations',
-    title: 'Prise de RDV & Consultations',
-    description: 'Avocats, médecins, conseillers, coaches...',
-    icon: UserCheck,
-    color: 'bg-purple-100 text-purple-600 border-purple-200',
-    iconColor: 'text-purple-600',
+    title: 'Service Premium',
+    description: 'Expérience client exceptionnelle',
+    emoji: '🛎️',
     examples: ['Prise de RDV', 'Consultations privées', 'Suivi dossiers', 'Facturation'],
     key: 'hasConsultations' as keyof ServiceConfig
   }
@@ -90,117 +84,138 @@ export default function ConfigurationWizard({
   const hasSelection = selectedCount > 0;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Settings2 className="h-8 w-8 text-primary" />
-          <h2 className="text-2xl font-bold">Assistant de configuration</h2>
+    <div className="w-full max-w-5xl mx-auto space-y-8">
+      {/* Header Apple Style */}
+      <div className="text-center space-y-6">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-white/10 backdrop-blur-xl mx-auto mb-6">
+          <span className="text-4xl">✨</span>
         </div>
-        <h3 className="text-xl font-semibold text-gray-900">
-          Quels services propose votre établissement ?
-        </h3>
-        <p className="text-gray-600">
-          Vous pouvez activer plusieurs services. Cette configuration détermine les outils disponibles.
-        </p>
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold text-white">
+            Bienvenue chez Kalliky.ai !
+          </h1>
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            Prêt à transformer la gestion de votre activité ? Cet assistant va vous guider pour configurer votre espace de travail en quelques minutes.
+          </p>
+        </div>
         {hasSelection && (
-          <Badge variant="secondary" className="mt-2">
-            {selectedCount} service{selectedCount > 1 ? 's' : ''} sélectionné{selectedCount > 1 ? 's' : ''}
-          </Badge>
+          <div className="inline-flex items-center gap-2 bg-green-500/20 border border-green-500/30 px-4 py-2 rounded-full">
+            <span className="text-lg">✅</span>
+            <span className="text-green-300 font-medium text-sm">
+              {selectedCount} service{selectedCount > 1 ? 's' : ''} sélectionné{selectedCount > 1 ? 's' : ''}
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Service Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
+      {/* Service Cards - Style Apple */}
+      <div className="grid md:grid-cols-3 gap-8">
         {serviceTypes.map((service) => {
           const isSelected = config[service.key];
-          const Icon = service.icon;
           
           return (
-            <Card 
+            <div
               key={service.id}
               className={cn(
-                "relative cursor-pointer transition-all duration-200 hover:shadow-lg",
-                isSelected 
-                  ? "ring-2 ring-primary shadow-lg bg-primary/5" 
-                  : "hover:shadow-md border-gray-200"
+                "relative cursor-pointer group transition-all duration-300 ease-out",
+                "hover:scale-105 hover:shadow-2xl hover:shadow-black/20"
               )}
               onClick={() => handleServiceToggle(service.key)}
             >
-              {/* Selection indicator */}
+              {/* Selection glow effect */}
               {isSelected && (
-                <div className="absolute -top-2 -right-2 z-10">
-                  <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center">
-                    <Check className="h-4 w-4" />
-                  </div>
-                </div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl opacity-20 blur-lg"></div>
               )}
-
-              <CardHeader className="text-center pb-3">
-                {/* Icon */}
-                <div className="mx-auto mb-3">
-                  <div className={cn(
-                    "w-16 h-16 rounded-lg flex items-center justify-center",
-                    isSelected ? "bg-primary/10" : service.color
-                  )}>
-                    <Icon className={cn(
-                      "h-8 w-8",
-                      isSelected ? "text-primary" : service.iconColor
-                    )} />
+              
+              <Card 
+                className={cn(
+                  "relative backdrop-blur-2xl border rounded-3xl overflow-hidden h-72 transition-all duration-300",
+                  isSelected 
+                    ? "bg-white/15 border-white/30 shadow-xl" 
+                    : "bg-white/10 border-white/20 hover:bg-white/15 hover:border-white/30"
+                )}
+              >
+                {/* Selection badge */}
+                {isSelected && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
+                      <span className="text-sm">✓</span>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <CardTitle className="text-lg">{service.title}</CardTitle>
-                <CardDescription className="text-sm">
-                  {service.description}
-                </CardDescription>
-              </CardHeader>
+                <CardContent className="p-6 h-full flex flex-col">
+                  {/* Emoji avec animation */}
+                  <div className="text-center mb-4">
+                    <div className={cn(
+                      "inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 transition-all duration-300",
+                      "group-hover:scale-110 group-hover:rotate-3",
+                      isSelected 
+                        ? "bg-gradient-to-br from-white/20 to-white/10 shadow-lg" 
+                        : "bg-white/10"
+                    )}>
+                      <span className="text-3xl">{service.emoji}</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-100 transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      {service.description}
+                    </p>
+                  </div>
 
-              <CardContent className="pt-0">
-                {/* Examples */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    Fonctionnalités incluses
-                  </Label>
-                  <ul className="space-y-1">
-                    {service.examples.map((example, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                        <div className="w-1 h-1 bg-gray-400 rounded-full flex-shrink-0" />
-                        {example}
-                      </li>
+                  {/* Features avec emojis */}
+                  <div className="flex-1 space-y-2">
+                    {service.examples.slice(0, 3).map((example, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-gray-300">
+                        <span className="text-sm">
+                          {i === 0 ? '🎯' : i === 1 ? '⚡' : '🔥'}
+                        </span>
+                        <span>{example}</span>
+                      </div>
                     ))}
-                  </ul>
-                </div>
+                  </div>
 
-                {/* Toggle */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                  <Label htmlFor={service.id} className="text-sm font-medium">
-                    Activer ce service
-                  </Label>
-                  <Switch
-                    id={service.id}
-                    checked={isSelected}
-                    onCheckedChange={() => handleServiceToggle(service.key)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Toggle animé */}
+                  <div className="mt-4 pt-4 border-t border-white/20">
+                    <div className={cn(
+                      "flex items-center justify-center gap-2 py-2 px-4 rounded-full transition-all duration-200",
+                      isSelected 
+                        ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30" 
+                        : "bg-white/10 border border-white/20"
+                    )}>
+                      <span className="text-lg">
+                        {isSelected ? '✅' : '⭕'}
+                      </span>
+                      <span className={cn(
+                        "text-sm font-medium transition-colors",
+                        isSelected ? "text-green-300" : "text-gray-400"
+                      )}>
+                        {isSelected ? 'Activé' : 'Cliquer pour activer'}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           );
         })}
       </div>
 
-      {/* Configuration Summary */}
+      {/* Configuration Summary - Apple Style */}
       {hasSelection && (
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <Check className="h-5 w-5 text-green-600 mt-0.5" />
-              <div>
-                <p className="font-medium text-green-900">
-                  Configuration validée
-                </p>
-                <p className="text-sm text-green-700 mt-1">
-                  Votre établissement aura accès aux fonctionnalités : {' '}
+        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl border border-green-500/20 rounded-3xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl">
+              <span className="text-2xl">🎉</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-green-200 text-lg mb-2">
+                Configuration validée !
+              </h3>
+              <p className="text-green-300 text-sm leading-relaxed">
+                Votre établissement aura accès aux services : {' '}
+                <span className="font-medium">
                   {Object.entries(config)
                     .filter(([_, enabled]) => enabled)
                     .map(([key, _]) => {
@@ -208,41 +223,49 @@ export default function ConfigurationWizard({
                       return service?.title;
                     })
                     .join(', ')}
-                </p>
-              </div>
+                </span>
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
-      {/* Navigation */}
+      {/* Navigation Apple Style */}
       {showNavigation && (
-        <div className="flex justify-between items-center pt-6">
+        <div className="flex justify-between items-center pt-8">
           <Button 
             variant="outline" 
             onClick={onPrevious}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-white/20 text-white hover:bg-white/10 rounded-2xl px-6 py-3 backdrop-blur-sm"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Précédent
+            <span className="text-lg">←</span>
+            <span>Précédent</span>
           </Button>
           
           <Button 
             onClick={onNext}
             disabled={!hasSelection}
-            className="flex items-center gap-2"
+            className={cn(
+              "flex items-center gap-2 rounded-2xl px-8 py-3 font-medium transition-all duration-200",
+              hasSelection 
+                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-105" 
+                : "bg-white/20 text-gray-400 cursor-not-allowed"
+            )}
           >
-            Suivant
-            <ArrowRight className="h-4 w-4" />
+            <span>Continuer</span>
+            <span className="text-lg">→</span>
           </Button>
         </div>
       )}
 
-      {/* Helper Text */}
+      {/* Helper Text avec emoji */}
       {!hasSelection && (
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Sélectionnez au moins un service pour continuer
-        </p>
+        <div className="text-center pt-4">
+          <p className="text-gray-400 text-sm flex items-center justify-center gap-2">
+            <span className="text-lg">👆</span>
+            <span>Sélectionnez au moins un service pour continuer</span>
+          </p>
+        </div>
       )}
     </div>
   );

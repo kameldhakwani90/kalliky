@@ -5,6 +5,7 @@
 import { openai } from './openai';
 import { redisService } from './redis';
 import { loadCompleteStoreData, buildAIContext, CompleteStoreData } from './store-data-loader';
+import { openaiTracking } from './openai-tracking';
 
 export interface CallAnalysisResult {
   // COMMANDES DÉTECTÉES
@@ -135,6 +136,7 @@ export async function analyzeCallRecording(
     const analysisPrompt = buildAnalysisPrompt(storeData, transcript, recordingUrl);
 
     // 4. APPEL OPENAI POUR ANALYSE
+    const startTime = Date.now();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -151,6 +153,33 @@ export async function analyzeCallRecording(
       temperature: 0.2,
       response_format: { type: "json_object" }
     });
+    const duration = (Date.now() - startTime) / 1000;
+
+    // TRACKING OPENAI - Enregistrer l'utilisation
+    if (completion.usage) {
+      try {
+        await openaiTracking.trackUsage({
+          storeId: callSession.storeId,
+          businessId: callSession.businessId,
+          customerId: callSession.customerId,
+          callId: callId,
+          operation: 'call_analysis',
+          model: 'gpt-4o-mini',
+          tokensInput: completion.usage.prompt_tokens || 0,
+          tokensOutput: completion.usage.completion_tokens || 0,
+          duration,
+          success: true,
+          metadata: {
+            transcript_length: transcript.length,
+            confidence: 0.8, // sera mis à jour plus tard
+            max_tokens: 1500,
+            temperature: 0.2
+          }
+        });
+      } catch (trackingError) {
+        console.error('❌ Erreur tracking OpenAI:', trackingError);
+      }
+    }
 
     const analysisResult = completion.choices[0]?.message?.content;
     if (!analysisResult) {
@@ -248,8 +277,32 @@ export async function analyzeCallRecording(
   } catch (error) {
     console.error(`❌ Erreur analyse IA appel ${callId}:`, error);
     
-    // Retourner résultat minimal en cas d'erreur
+    // TRACKING OPENAI - Enregistrer l'erreur
     const callSession = await redisService.getCallSession(callId);
+    if (callSession) {
+      try {
+        await openaiTracking.trackUsage({
+          storeId: callSession.storeId,
+          businessId: callSession.businessId,
+          customerId: callSession.customerId,
+          callId: callId,
+          operation: 'call_analysis',
+          model: 'gpt-4o-mini',
+          tokensInput: 0,
+          tokensOutput: 0,
+          success: false,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          metadata: {
+            transcript_length: transcript?.length || 0,
+            error_type: 'analysis_failed'
+          }
+        });
+      } catch (trackingError) {
+        console.error('❌ Erreur tracking OpenAI error:', trackingError);
+      }
+    }
+    
+    // Retourner résultat minimal en cas d'erreur
     return {
       orders: [],
       services: [],

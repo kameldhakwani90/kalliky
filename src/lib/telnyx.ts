@@ -240,7 +240,89 @@ export class TelnyxAutoPurchaseService {
         },
       });
 
+      // Déclencher le remboursement automatique Stripe si applicable
+      await this.handleTelnyxFailureRefund(businessId, storeId, countryCode, error instanceof Error ? error.message : 'Erreur inconnue');
+
       throw error;
+    }
+  }
+
+  // Gérer le remboursement automatique en cas d'échec Telnyx
+  private async handleTelnyxFailureRefund(
+    businessId: string, 
+    storeId: string, 
+    countryCode: string, 
+    errorMessage: string
+  ): Promise<void> {
+    try {
+      console.log(`🔄 Vérification remboursement automatique pour échec Telnyx - Store: ${storeId}`);
+      
+      // 1. Récupérer l'abonnement associé au store
+      const subscription = await prisma.subscription.findFirst({
+        where: { 
+          storeId,
+          status: 'active',
+          stripeSubscriptionId: { not: null }
+        },
+        include: {
+          store: {
+            include: {
+              business: true
+            }
+          }
+        }
+      });
+
+      if (!subscription || !subscription.stripeSubscriptionId) {
+        console.log('Aucun abonnement Stripe actif trouvé pour ce store');
+        return;
+      }
+
+      // 2. Importer le service de remboursement
+      const { StripeRefundService } = await import('@/lib/stripe-refund-service');
+      
+      // 3. Vérifier si un remboursement est justifié
+      const shouldRefund = await StripeRefundService.shouldRefundForTelnyxFailure(subscription.stripeSubscriptionId);
+      
+      if (shouldRefund) {
+        console.log('🔄 Déclenchement du remboursement automatique...');
+        
+        const refundResult = await StripeRefundService.refundForTelnyxFailure({
+          stripeSubscriptionId: subscription.stripeSubscriptionId,
+          businessId,
+          storeId,
+          countryCode,
+          reason: errorMessage,
+          userId: subscription.store.business.ownerId
+        });
+
+        if (refundResult.success) {
+          console.log(`✅ Remboursement automatique réussi: ${refundResult.refundId}`);
+        } else {
+          console.error(`❌ Échec remboursement automatique: ${refundResult.error}`);
+        }
+      } else {
+        console.log('Remboursement automatique non applicable (abonnement trop ancien ou utilisé)');
+      }
+
+    } catch (refundError) {
+      console.error('❌ Erreur lors de la gestion du remboursement:', refundError);
+      
+      // Log l'erreur de remboursement pour intervention manuelle
+      await prisma.activityLog.create({
+        data: {
+          storeId,
+          type: 'ERROR',
+          title: 'Erreur remboursement automatique',
+          description: `Échec du système de remboursement automatique suite à l'erreur Telnyx: ${errorMessage}`,
+          metadata: JSON.stringify({
+            telnyxError: errorMessage,
+            refundError: refundError instanceof Error ? refundError.message : 'Erreur inconnue',
+            requiresManualIntervention: true,
+            countryCode
+          })
+        }
+      });
     }
   }
 

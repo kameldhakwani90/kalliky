@@ -44,6 +44,10 @@ model Business {
   reports             Report[]
   stores              Store[]
   subscriptions       Subscription[]
+  openaiUsages        OpenAIUsage[]
+  telnyxUsages        TelnyxUsage[]
+  consumptionSummaries ConsumptionSummary[]
+  trialUsages         TrialUsage[]
 }
 
 model Store {
@@ -90,6 +94,9 @@ model Store {
   universalServices     UniversalService[]
   usageTracking         UsageTracking[]
   weatherRecommendation WeatherRecommendation?
+  openaiUsages          OpenAIUsage[]
+  telnyxUsages          TelnyxUsage[]
+  consumptionSummaries  ConsumptionSummary[]
 }
 
 model Customer {
@@ -119,6 +126,7 @@ model Customer {
   productBehavior ProductBehaviorData[]
   reservations    Reservation[]
   serviceBookings ServiceBooking[]
+  openaiUsages    OpenAIUsage[]
 
   @@unique([phone, businessId])
 }
@@ -167,6 +175,7 @@ model PhoneNumber {
   updatedAt    DateTime          @updatedAt
   calls        Call[]
   business     Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  telnyxUsages TelnyxUsage[]
 
   @@index([businessId, status])
   @@index([country, status])
@@ -201,6 +210,8 @@ model Call {
   business      Business               @relation(fields: [businessId], references: [id])
   customer      Customer?              @relation(fields: [customerId], references: [id])
   phoneNumber   PhoneNumber?           @relation(fields: [phoneNumberId], references: [id])
+  openaiUsages  OpenAIUsage[]
+  telnyxUsages  TelnyxUsage[]
 
   @@index([businessId, status])
   @@index([phoneNumberId, createdAt])
@@ -285,13 +296,53 @@ model UsageTracking {
 }
 
 model TrialUsage {
-  id             String   @id @default(uuid())
-  identifier     String   @unique
-  identifierType String
-  userId         String?
-  usedAt         DateTime @default(now())
-
+  id               String     @id @default(uuid())
+  businessId       String?
+  identifier       String     @unique
+  identifierType   String
+  userId           String?
+  
+  // Compteurs précis
+  callsUsed        Int        @default(0)
+  callsRemaining   Int        @default(10)
+  callsLimit       Int        @default(10)
+  
+  // Durée et status
+  trialStartDate   DateTime   @default(now())
+  trialEndDate     DateTime?
+  daysUsed         Int        @default(0)
+  daysRemaining    Int        @default(15)
+  daysLimit        Int        @default(15)
+  
+  // Status et blocage
+  status           String     @default("active") // active, warned, blocked, pending_deletion, deleted
+  isBlocked        Boolean    @default(false)
+  blockReason      String?
+  
+  // Emails envoyés
+  warningEmailSent Boolean    @default(false)
+  warningEmailDate DateTime?
+  blockedEmailSent Boolean    @default(false)
+  blockedEmailDate DateTime?
+  deletionWarningEmailSent Boolean @default(false)
+  deletionWarningEmailDate DateTime?
+  deletionEmailSent Boolean   @default(false)
+  deletionEmailDate DateTime?
+  
+  // Dates importantes
+  lastCallDate     DateTime?
+  lastActivityDate DateTime?
+  scheduledDeletionDate DateTime?
+  
+  usedAt           DateTime   @default(now())
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  
+  business         Business?  @relation(fields: [businessId], references: [id])
+  
   @@index([identifier, identifierType])
+  @@index([businessId, status])
+  @@index([status, scheduledDeletionDate])
 }
 
 model Report {
@@ -1166,6 +1217,20 @@ model VariantResourceAssignment {
   @@index([resourceId])
 }
 
+model BusinessCategoryConfig {
+  id                String           @id @default(uuid())
+  category          BusinessCategory @unique
+  displayName       String
+  systemPrompt      String           @db.Text
+  defaultParams     Json             @default("{}")
+  availableOptions  Json             @default("[]")
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  createdBy         String?
+  lastModifiedBy    String?
+}
+
 enum UserRole {
   SUPER_ADMIN
   CLIENT
@@ -1188,6 +1253,12 @@ enum BusinessCategory {
   HEALTH
   RETAIL
   SERVICES
+  MEDICAL
+  LEGAL
+  FITNESS
+  EDUCATION
+  TRANSPORT
+  IMMOBILIER
 }
 
 enum OrderStatus {
@@ -1309,6 +1380,13 @@ enum ActivityType {
   VISIT
   COMPLAINT
   PAYMENT
+  AUTOMATED_EMAIL_BATCH
+  TRIAL_WARNING_EMAIL
+  TRIAL_BLOCKED_EMAIL
+  TRIAL_DELETION_WARNING_EMAIL
+  ACCOUNT_DELETED_EMAIL
+  REFUND
+  ERROR
 }
 
 enum RelationType {
@@ -1460,4 +1538,107 @@ enum AssignmentType {
   OPTIONAL
   PREFERRED
   EXCLUSIVE
+}
+
+// ============================================================================
+// TRACKING CONSOMMATION - COÛTS OPENAI & TELNYX
+// ============================================================================
+
+model OpenAIUsage {
+  id                String   @id @default(uuid())
+  storeId           String
+  businessId        String
+  customerId        String?
+  callId            String?
+  operation         String   // "call_analysis", "conversation", "menu_processing", etc.
+  model             String   // "gpt-4o-mini", "gpt-4", etc.
+  tokensInput       Int      @default(0)
+  tokensOutput      Int      @default(0)
+  totalTokens       Int      @default(0)
+  costInput         Float    @default(0.0)
+  costOutput        Float    @default(0.0)
+  totalCost         Float    @default(0.0)
+  duration          Float?   // durée en secondes
+  success           Boolean  @default(true)
+  errorMessage      String?
+  metadata          Json?    // prompt, response, confidence, etc.
+  createdAt         DateTime @default(now())
+  
+  business          Business @relation(fields: [businessId], references: [id])
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  call              Call?    @relation(fields: [callId], references: [id])
+  
+  @@index([storeId, createdAt])
+  @@index([businessId, createdAt])
+  @@index([operation, createdAt])
+}
+
+model TelnyxUsage {
+  id                String         @id @default(uuid())
+  storeId           String
+  businessId        String
+  phoneNumberId     String
+  usageType         TelnyxUsageType
+  callId            String?
+  duration          Int?           // durée appel en secondes
+  direction         String?        // "inbound", "outbound"
+  fromNumber        String?
+  toNumber          String?
+  cost              Float          @default(0.0)
+  currency          String         @default("EUR")
+  billingDate       DateTime       // date de facturation
+  success           Boolean        @default(true)
+  errorMessage      String?
+  metadata          Json?          // détails techniques
+  createdAt         DateTime       @default(now())
+  
+  business          Business       @relation(fields: [businessId], references: [id])
+  store             Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  phoneNumber       PhoneNumber    @relation(fields: [phoneNumberId], references: [id])
+  call              Call?          @relation(fields: [callId], references: [id])
+  
+  @@index([storeId, billingDate])
+  @@index([businessId, billingDate])
+  @@index([usageType, billingDate])
+}
+
+model ConsumptionSummary {
+  id                    String   @id @default(uuid())
+  storeId               String
+  businessId            String
+  period                String   // "2025-01", "2025-02", etc. (YYYY-MM)
+  
+  // OpenAI Metrics
+  openaiTotalCalls      Int      @default(0)
+  openaiTotalTokens     Int      @default(0)
+  openaiTotalCost       Float    @default(0.0)
+  openaiAvgCostPerCall  Float    @default(0.0)
+  
+  // Telnyx Metrics
+  telnyxTotalCalls      Int      @default(0)
+  telnyxTotalDuration   Int      @default(0) // en secondes
+  telnyxTotalCost       Float    @default(0.0)
+  telnyxNumbersCost     Float    @default(0.0) // coût mensuel numéros
+  telnyxAvgCostPerCall  Float    @default(0.0)
+  
+  // Combined Metrics
+  totalCost             Float    @default(0.0)
+  lastUpdated           DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  
+  business              Business @relation(fields: [businessId], references: [id])
+  store                 Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  @@unique([storeId, period])
+  @@index([businessId, period])
+  @@index([period])
+}
+
+enum TelnyxUsageType {
+  NUMBER_MONTHLY    // coût mensuel du numéro
+  INBOUND_CALL     // appel entrant
+  OUTBOUND_CALL    // appel sortant
+  SMS_INBOUND      // SMS reçu
+  SMS_OUTBOUND     // SMS envoyé
 }

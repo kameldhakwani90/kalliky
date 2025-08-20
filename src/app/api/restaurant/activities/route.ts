@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
+import { telnyxAutoPurchase } from '@/lib/telnyx';
 
 // GET - Récupérer toutes les activités de l'utilisateur
 export async function GET(request: NextRequest) {
@@ -117,6 +118,8 @@ export async function POST(request: NextRequest) {
       name,
       address,
       phone,
+      country,
+      businessCategory,
       serviceType,
       currency,
       taxRates,
@@ -169,7 +172,9 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         address,
+        country: country || 'FR',
         businessId: business.id,
+        businessCategory: businessCategory || 'RESTAURANT',
         isActive: true,
         settings: JSON.stringify({
           currency: currency || 'EUR',
@@ -253,7 +258,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Ajouter le numéro de téléphone
+    // Ajouter le numéro de téléphone boutique (pas Telnyx)
     await prisma.phoneNumber.create({
       data: {
         number: phone,
@@ -262,6 +267,36 @@ export async function POST(request: NextRequest) {
         isPrimary: true
       }
     });
+
+    // ATTRIBUTION AUTOMATIQUE NUMÉRO TELNYX pour plans payés
+    if (((isFirstActivity && userPaidPlan) || paidPlan) && country) {
+      try {
+        console.log(`🔄 Attribution automatique numéro Telnyx pour ${store.name} (${country})`);
+        const telnyxNumber = await telnyxAutoPurchase.purchaseNumberForStore(
+          business.id, 
+          store.id, 
+          country
+        );
+        console.log(`✅ Numéro Telnyx attribué: ${telnyxNumber}`);
+        
+        // Mettre à jour le store avec le numéro Telnyx
+        await prisma.store.update({
+          where: { id: store.id },
+          data: {
+            settings: JSON.stringify({
+              ...JSON.parse(store.settings as string),
+              telnyxConfigured: true,
+              telnyxNumber: telnyxNumber
+            })
+          }
+        });
+        
+      } catch (telnyxError) {
+        console.error('❌ Erreur attribution numéro Telnyx:', telnyxError);
+        // Ne pas faire échouer toute la création pour ça
+        // L'erreur est déjà loggée dans la DB par le service Telnyx
+      }
+    }
 
     // Retourner le business créé avec ses relations
     const createdBusiness = await prisma.business.findUnique({

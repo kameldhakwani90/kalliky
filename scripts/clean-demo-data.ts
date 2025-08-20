@@ -121,8 +121,8 @@ async function cleanDemoData() {
     console.log('');
     console.log('📝 Pour créer de vraies activités, utilisez :');
     console.log('- Les appels téléphoniques Telnyx (créent automatiquement des activités)');
-    console.log('- Les commandes via l\'API /api/restaurant/orders');
-    console.log('- Les consultations via l\'API /api/restaurant/consultations');
+    console.log('- Les commandes via l\'API /api/app/orders');
+    console.log('- Les consultations via l\'API /api/app/consultations');
 
   } catch (error) {
     console.error('❌ Erreur lors du nettoyage:', error);

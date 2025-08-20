@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { redisService, CallSessionManager } from '@/lib/redis';
 import { openaiService, startAIConversation } from '@/lib/openai';
+import { RealtimeManager } from '@/lib/openai-realtime';
 import { StoreCacheService } from '@/lib/services/storeCacheService';
 import { CallLimitsService } from '@/lib/services/callLimitsService';
 
@@ -58,6 +59,9 @@ export async function POST(request: NextRequest) {
       case 'call.audio':
         return handleCallAudio(event.data);
       
+      case 'call.stream':
+        return handleCallStream(event.data);
+      
       case 'call.dtmf.received':
         return handleDTMF(event.data);
       
@@ -69,6 +73,92 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Erreur webhook Telnyx:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// ============================================================================
+// GESTIONNAIRE OPENAI REALTIME
+// ============================================================================
+
+// Nouveau gestionnaire pour streaming audio vers OpenAI
+async function handleCallStream(data: any) {
+  try {
+    const { call_control_id, stream_id, audio_data } = data;
+    console.log(`🔊 Stream audio reçu: ${call_control_id}`);
+
+    // Transférer l'audio vers OpenAI Realtime
+    await RealtimeManager.handleAudioInput(call_control_id, audio_data);
+
+    return NextResponse.json({ status: 'streamed' });
+  } catch (error) {
+    console.error('❌ Erreur handleCallStream:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// Démarrer session OpenAI Realtime
+async function startOpenAIRealtimeSession(callControlId: string, callId: string, businessId: string) {
+  try {
+    console.log(`🚀 Démarrage session OpenAI Realtime: ${callId}`);
+
+    // Récupérer le contexte de la boutique
+    const callSession = await redisService.getCallSession(callId);
+    let storeContext = null;
+    
+    if (callSession?.storeId) {
+      storeContext = await StoreCacheService.getCachedStoreData(callSession.storeId);
+    }
+
+    // Récupérer la config IA de la boutique
+    const aiConfig = storeContext?.aiAgent || {
+      voice: 'nova',
+      personality: 'friendly',
+      language: 'fr'
+    };
+
+    // Démarrer la session Realtime
+    const session = await RealtimeManager.startSession({
+      callControlId,
+      callId,
+      businessId,
+      storeId: callSession?.storeId || '',
+      voice: aiConfig.voice || 'nova',
+      language: aiConfig.language || 'fr',
+      personality: aiConfig.personality || 'friendly',
+      storeContext
+    });
+
+    // Connecter l'audio Telnyx avec OpenAI
+    await connectTelnyxToOpenAI(callControlId, session.sessionId);
+
+    console.log(`✅ Session OpenAI Realtime démarrée: ${session.sessionId}`);
+    return session;
+
+  } catch (error) {
+    console.error('❌ Erreur démarrage OpenAI Realtime:', error);
+    
+    // Fallback vers ancien système Telnyx TTS
+    console.log('📞 Fallback vers Telnyx TTS');
+    const welcomeMessage = await startAIConversation(callId, businessId, 'fr');
+    await playAudio(callControlId, welcomeMessage);
+    await startSpeechRecognition(callControlId);
+  }
+}
+
+// Connecter le flux audio Telnyx → OpenAI Realtime
+async function connectTelnyxToOpenAI(callControlId: string, realtimeSessionId: string) {
+  try {
+    // Démarrer le streaming audio bidirectionnel
+    await makeTelnyxRequest(`/calls/${callControlId}/actions/stream_start`, {
+      stream_url: `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview`,
+      stream_track: 'both', // Envoyer et recevoir audio
+      enable_bidirectional_streaming: true
+    });
+
+    console.log(`🔗 Audio connecté: Telnyx ${callControlId} ↔ OpenAI ${realtimeSessionId}`);
+  } catch (error) {
+    console.error('❌ Erreur connexion audio:', error);
+    throw error;
   }
 }
 
@@ -204,7 +294,7 @@ async function handleCallInitiated(data: any) {
       });
 
       // Déclencher les notifications automatiques via l'API
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/restaurant/notifications/trigger`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/app/notifications/trigger`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -301,14 +391,8 @@ async function handleCallAnswered(data: any) {
     });
 
     if (call) {
-      // Démarrer la conversation IA
-      const welcomeMessage = await startAIConversation(call.id, call.businessId, 'fr');
-      
-      // Jouer le message de bienvenue
-      await playAudio(call_control_id, welcomeMessage);
-      
-      // Activer la détection vocale
-      await startSpeechRecognition(call_control_id);
+      // NOUVEAU: Démarrer OpenAI Realtime au lieu de Telnyx TTS
+      await startOpenAIRealtimeSession(call_control_id, call.id, call.businessId);
     }
 
     return NextResponse.json({ status: 'answered' });

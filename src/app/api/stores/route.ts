@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       address,
       phone,
       businessId,
+      businessCategory = 'RESTAURANT', // Type métier par défaut
       currency = 'EUR',
       taxRate = 0,
       openingHours,
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
         name,
         address,
         businessId,
+        businessCategory: businessCategory as any,
         isActive: true,
         // Services multi-métiers
         hasProducts,
@@ -128,6 +130,45 @@ export async function POST(request: Request) {
         })
       }
     });
+
+    // ============================================================================
+    // APPLIQUER CONFIGURATION MÉTIER PAR DÉFAUT
+    // ============================================================================
+    
+    try {
+      // Récupérer la configuration du type métier
+      const businessConfig = await prisma.businessCategoryConfig.findUnique({
+        where: { 
+          category: businessCategory as any,
+        }
+      });
+
+      if (businessConfig && businessConfig.isActive) {
+        // Mettre à jour les settings avec les paramètres métier
+        const currentSettings = JSON.parse(store.settings as string);
+        const updatedSettings = {
+          ...currentSettings,
+          businessConfig: {
+            category: businessConfig.category,
+            displayName: businessConfig.displayName,
+            defaultParams: businessConfig.defaultParams,
+            availableOptions: businessConfig.availableOptions
+          }
+        };
+
+        await prisma.store.update({
+          where: { id: store.id },
+          data: {
+            settings: JSON.stringify(updatedSettings)
+          }
+        });
+
+        console.log(`✅ Configuration métier ${businessConfig.displayName} appliquée à la boutique ${store.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur application config métier:', error);
+      // Ne pas faire échouer la création pour ça
+    }
 
     // ============================================================================
     // AUTO-PURCHASE NUMÉRO TELNYX APRÈS CRÉATION BOUTIQUE

@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
         }
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/stores?success=true&session_id={CHECKOUT_SESSION_ID}&activity=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/stores?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/stores?success=true&session_id={CHECKOUT_SESSION_ID}&activity=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/stores?canceled=true`,
       metadata: {
         userId: user.id,
         type: 'new_activity',

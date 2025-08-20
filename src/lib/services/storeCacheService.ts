@@ -106,21 +106,35 @@ export class StoreCacheService {
     };
   }
 
-  // Génération des prompts IA optimisés
+  // Génération des prompts IA optimisés avec configuration métier
   private static generateAIPrompts(storeData: any): {
     systemPrompt: string;
     businessContext: string;
     productsContext: string;
     servicesContext: string;
     consultationsContext: string;
+    businessRules: string;
   } {
     const { storeInfo, businessInfo, catalog, services, consultations, settings, aiConfig } = storeData;
     
-    // Prompt système principal
-    const systemPrompt = `Tu es l'assistant IA de ${businessInfo.name} (${storeInfo.name}).
+    // Configuration métier et paramètres
+    const businessConfig = settings.businessConfig || {};
+    const businessParams = settings.businessParams || {};
+    const businessOptions = settings.businessOptions || {};
+    const customSpecs = settings.customSpecifications || [];
+
+    // Prompt système principal avec limite 3min stricte
+    const systemPrompt = `⏰ LIMITE STRICTE: MAX 3 MINUTES PAR APPEL
+Tu es l'assistant IA de ${businessInfo.name} (${storeInfo.name}).
 Type d'entreprise: ${businessInfo.businessCategory}
 Adresse: ${storeInfo.address}
 Personnalité: ${aiConfig.personality || 'professionnel et serviable'}
+
+⚡ IMPÉRATIF TEMPOREL:
+- 0-30s: Accueil + identification besoin
+- 30s-2min: Traitement demande (commande/RDV/info)
+- 2-3min: Confirmation + clôture rapide
+- Si >3min: "Je vous transfère à un collègue"
 
 Instructions spécifiques: ${aiConfig.instructions || 'Sois poli, efficace et représente bien notre entreprise.'}
 
@@ -135,7 +149,8 @@ IMPORTANT:
 - Toujours confirmer les détails importants
 - Être précis sur les prix et disponibilités
 - Transférer vers un humain si demandé ou si nécessaire
-- Respecter les horaires d'ouverture`;
+- Respecter les horaires d'ouverture
+- NEVER dépassé 3 minutes`;
 
     // Contexte entreprise
     const businessContext = `Entreprise: ${businessInfo.name}
@@ -167,12 +182,52 @@ Fuseau horaire: ${settings.timezone || 'Europe/Paris'}`;
       ).join('\n')}` :
       'Aucune consultation configurée.';
 
+    // Génération des règles métier spécifiques
+    let businessRules = '';
+    
+    if (businessConfig.category) {
+      businessRules += `\nRÈGLES MÉTIER (${businessConfig.displayName}):\n`;
+      
+      // Paramètres configurés
+      if (Object.keys(businessParams).length > 0) {
+        businessRules += 'PARAMÈTRES ACTIVÉS:\n';
+        Object.entries(businessParams).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            businessRules += `- ${key}: ${value}\n`;
+          }
+        });
+      }
+      
+      // Options activées
+      const activeOptions = Object.entries(businessOptions).filter(([_, enabled]) => enabled);
+      if (activeOptions.length > 0) {
+        businessRules += 'OPTIONS ACTIVÉES:\n';
+        activeOptions.forEach(([optionKey, _]) => {
+          const option = businessConfig.availableOptions?.find((opt: any) => opt.key === optionKey);
+          if (option) {
+            businessRules += `- ${option.label}\n`;
+          }
+        });
+      }
+      
+      // Spécifications personnalisées
+      if (customSpecs.length > 0) {
+        businessRules += 'SPÉCIFICATIONS PERSONNALISÉES:\n';
+        customSpecs.forEach((spec: any) => {
+          if (spec.title && spec.content) {
+            businessRules += `- ${spec.title}: ${spec.content}\n`;
+          }
+        });
+      }
+    }
+
     return {
       systemPrompt,
       businessContext,
       productsContext,
       servicesContext,
-      consultationsContext
+      consultationsContext,
+      businessRules
     };
   }
 

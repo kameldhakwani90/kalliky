@@ -155,8 +155,10 @@ async function main() {
       const invoiceDate = new Date(currentYear, currentMonth - i - 1, 1);
       const invoiceNumber = `INV-${currentYear}-${String(currentMonth - i).padStart(3, '0')}-${user.id.slice(-4)}`;
       
-      await prisma.invoice.create({
-        data: {
+      await prisma.invoice.upsert({
+        where: { invoiceNumber },
+        update: {},
+        create: {
           invoiceNumber,
           businessId: business.id,
           amount: basePrice,

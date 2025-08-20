@@ -81,7 +81,7 @@ export const authService = {
       case 'SUPER_ADMIN':
         return '/admin/dashboard';
       case 'CLIENT':
-        return '/restaurant/home';
+        return '/app/home';
       default:
         return '/';
     }

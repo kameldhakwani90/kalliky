@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         }
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/stores?success=true&session_id={CHECKOUT_SESSION_ID}&signup=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/stores?success=true&session_id={CHECKOUT_SESSION_ID}&signup=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/signup?canceled=true`,
       customer_email: userData.email,
       metadata: {

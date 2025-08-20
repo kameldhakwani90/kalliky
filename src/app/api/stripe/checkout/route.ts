@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: mode,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/stores?success=true&session_id={CHECKOUT_SESSION_ID}&firstPayment=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/stores?success=true&session_id={CHECKOUT_SESSION_ID}&firstPayment=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/signup?canceled=true`,
       metadata: {
         userId: user.id,

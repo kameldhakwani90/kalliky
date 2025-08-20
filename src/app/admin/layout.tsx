@@ -11,6 +11,11 @@ import {
   LogOut,
   Settings,
   Users,
+  BarChart3,
+  CreditCard,
+  Activity,
+  Phone,
+  Briefcase
 } from "lucide-react"
 
 import {
@@ -62,11 +67,11 @@ export default function AdminLayout({
               <SidebarMenuButton
                 asChild
                 isActive={pathname === '/admin/dashboard'}
-                tooltip="Tableau de bord"
+                tooltip="Métriques & Consommation"
               >
                 <Link href="/admin/dashboard">
-                  <LayoutDashboard />
-                  <span>Tableau de bord</span>
+                  <BarChart3 />
+                  <span>Métriques</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -74,7 +79,7 @@ export default function AdminLayout({
               <SidebarMenuButton 
                 asChild 
                 isActive={pathname === '/admin/clients'}
-                tooltip="Clients"
+                tooltip="Gestion des clients"
               >
                 <Link href="/admin/clients">
                   <Users />
@@ -85,24 +90,36 @@ export default function AdminLayout({
             <SidebarMenuItem>
               <SidebarMenuButton 
                 asChild 
-                isActive={pathname === '/admin/billing'}
-                tooltip="Facturation"
+                isActive={pathname === '/admin/telnyx-monitoring'}
+                tooltip="Monitoring Telnyx & Remboursements"
               >
-                <Link href="#">
-                  <DollarSign />
-                  <span>Facturation</span>
+                <Link href="/admin/telnyx-monitoring">
+                  <Phone />
+                  <span>Telnyx & Refunds</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton 
                 asChild 
-                isActive={pathname === '/admin/settings'}
-                tooltip="Paramètres"
+                isActive={pathname === '/admin/subscriptions'}
+                tooltip="Gestion des Abonnements"
               >
-                <Link href="/admin/settings">
-                  <Settings />
-                  <span>Paramètres</span>
+                <Link href="/admin/subscriptions">
+                  <CreditCard />
+                  <span>Abonnements</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                asChild 
+                isActive={pathname === '/admin/business-types'}
+                tooltip="Configuration Types Métiers"
+              >
+                <Link href="/admin/business-types">
+                  <Briefcase />
+                  <span>Types Métiers</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

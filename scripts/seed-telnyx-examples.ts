@@ -294,9 +294,9 @@ async function seedTelnyxExamples() {
     console.log('👥 2 clients exemple créés');
     console.log('');
     console.log('🔗 Vous pouvez maintenant tester:');
-    console.log('   - Page activité: http://localhost:9002/restaurant/activity');
-    console.log('   - Fiche client: http://localhost:9002/restaurant/clients/demo-customer-1');
-    console.log('   - Configuration: http://localhost:9002/restaurant/manage/demo-store-1');
+    console.log('   - Page activité: http://localhost:9002/app/activity');
+    console.log('   - Fiche client: http://localhost:9002/app/clients/demo-customer-1');
+    console.log('   - Configuration: http://localhost:9002/app/manage/demo-store-1');
     console.log('   - Monitoring: http://localhost:9002/api/admin/telnyx/monitoring');
 
   } catch (error) {

@@ -54,6 +54,326 @@ export interface RealtimeSession {
   lastActivity: Date;
 }
 
+export class RealtimeManager {
+  private static sessions = new Map<string, RealtimeSession>();
+  private static websockets = new Map<string, WebSocket>();
+
+  // Démarrer une nouvelle session Realtime
+  static async startSession(config: {
+    callControlId: string;
+    callId: string;
+    businessId: string;
+    storeId: string;
+    voice: string;
+    language: string;
+    personality: string;
+    storeContext: any;
+  }): Promise<RealtimeSession> {
+    const sessionId = `realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const session: RealtimeSession = {
+      sessionId,
+      callId: config.callId,
+      businessId: config.businessId,
+      storeId: config.storeId,
+      config: {
+        model: 'gpt-4o-realtime-preview',
+        voice: config.voice as any,
+        instructions: this.buildInstructions(config.storeContext, config.personality, config.language),
+        modalities: ['text', 'audio'],
+        temperature: 0.7,
+        max_response_output_tokens: 1000,
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500
+        }
+      },
+      status: 'connecting',
+      startedAt: new Date(),
+      conversationItems: []
+    };
+
+    // Créer connexion WebSocket vers OpenAI
+    const ws = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview', {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'OpenAI-Beta': 'realtime=v1'
+      }
+    });
+
+    // Gérer les événements WebSocket
+    ws.on('open', () => {
+      console.log(`🔗 Connexion OpenAI Realtime établie: ${sessionId}`);
+      session.status = 'connected';
+      
+      // Envoyer configuration initiale
+      ws.send(JSON.stringify({
+        type: 'session.update',
+        session: session.config
+      }));
+    });
+
+    ws.on('message', (data) => {
+      this.handleOpenAIEvent(sessionId, JSON.parse(data.toString()));
+    });
+
+    ws.on('error', (error) => {
+      console.error(`❌ Erreur WebSocket OpenAI: ${sessionId}`, error);
+      session.status = 'error';
+    });
+
+    ws.on('close', () => {
+      console.log(`🔌 Connexion fermée: ${sessionId}`);
+      session.status = 'ended';
+      session.endedAt = new Date();
+      this.sessions.delete(sessionId);
+      this.websockets.delete(sessionId);
+    });
+
+    this.sessions.set(sessionId, session);
+    this.websockets.set(sessionId, ws);
+    session.websocket = ws;
+
+    return session;
+  }
+
+  // Gérer l'audio entrant depuis Telnyx
+  static async handleAudioInput(callControlId: string, audioData: string) {
+    // Trouver la session correspondante
+    const session = Array.from(this.sessions.values()).find(s => 
+      s.callId.includes(callControlId) // Match approximatif
+    );
+
+    if (!session || !session.websocket) {
+      console.warn(`⚠️ Session non trouvée pour: ${callControlId}`);
+      return;
+    }
+
+    // Envoyer l'audio à OpenAI
+    session.websocket.send(JSON.stringify({
+      type: 'input_audio_buffer.append',
+      audio: audioData
+    }));
+  }
+
+  // Construire les instructions système personnalisées avec prompts métier
+  private static buildInstructions(storeContext: any, personality: string, language: string): string {
+    if (!storeContext) {
+      return language === 'fr' 
+        ? "⏰ MAX 3 MINUTES. Tu es un assistant vocal amical. Aide les clients rapidement."
+        : "⏰ MAX 3 MINUTES. You are a friendly voice assistant. Help customers quickly.";
+    }
+
+    // Utiliser les prompts générés par StoreCacheService si disponibles
+    if (storeContext.aiPrompts) {
+      let instructions = storeContext.aiPrompts.systemPrompt;
+      
+      // Ajouter les contextes
+      if (storeContext.aiPrompts.businessContext) {
+        instructions += '\n\n' + storeContext.aiPrompts.businessContext;
+      }
+      
+      if (storeContext.aiPrompts.productsContext) {
+        instructions += '\n\n' + storeContext.aiPrompts.productsContext;
+      }
+      
+      if (storeContext.aiPrompts.servicesContext) {
+        instructions += '\n\n' + storeContext.aiPrompts.servicesContext;
+      }
+      
+      if (storeContext.aiPrompts.consultationsContext) {
+        instructions += '\n\n' + storeContext.aiPrompts.consultationsContext;
+      }
+      
+      if (storeContext.aiPrompts.businessRules) {
+        instructions += '\n\n' + storeContext.aiPrompts.businessRules;
+      }
+      
+      return instructions;
+    }
+
+    const personalityPrompts = {
+      friendly: {
+        fr: "Tu es chaleureux(se) et accueillant(e). Utilise un ton amical et convivial.",
+        en: "You are warm and welcoming. Use a friendly and convivial tone."
+      },
+      professional: {
+        fr: "Tu es professionnel(le) et courtois(e). Maintiens un ton formel mais aimable.",
+        en: "You are professional and courteous. Maintain a formal but friendly tone."
+      },
+      casual: {
+        fr: "Tu es décontracté(e) et moderne. Parle naturellement comme un ami.",
+        en: "You are casual and modern. Speak naturally like a friend."
+      },
+      enthusiastic: {
+        fr: "Tu es enthousiaste et dynamique. Montre de l'énergie positive.",
+        en: "You are enthusiastic and dynamic. Show positive energy."
+      }
+    };
+
+    const personalityText = personalityPrompts[personality as keyof typeof personalityPrompts]?.[language as keyof typeof personalityPrompts.friendly] || 
+                           personalityPrompts.friendly[language as keyof typeof personalityPrompts.friendly];
+
+    // Fallback si pas de prompts générés
+    if (language === 'fr') {
+      return `⏰ LIMITE STRICTE: MAX 3 MINUTES PAR APPEL
+Tu es l'assistant vocal de ${storeContext.businessName} - ${storeContext.storeName}.
+
+${personalityText}
+
+⚡ IMPÉRATIF TEMPOREL:
+- 0-30s: Accueil + identification besoin
+- 30s-2min: Traitement demande rapidement
+- 2-3min: Confirmation + clôture
+- Si >3min: "Je vous transfère à un collègue"
+
+INFORMATIONS BOUTIQUE:
+- Nom: ${storeContext.businessName}
+- Boutique: ${storeContext.storeName}
+- Type: ${storeContext.businessCategory}
+
+PRODUITS DISPONIBLES:
+${storeContext.products?.map((p: any) => `- ${p.name} (${p.price}€${p.description ? ` - ${p.description}` : ''})`).join('\n') || 'Aucun produit'}
+
+SERVICES DISPONIBLES:
+${storeContext.services?.map((s: any) => `- ${s.name} (${s.price}€, ${s.duration}min${s.description ? ` - ${s.description}` : ''})`).join('\n') || 'Aucun service'}
+
+CONSULTATIONS DISPONIBLES:
+${storeContext.consultations?.map((c: any) => `- ${c.name} (${c.price}€, ${c.duration}min${c.description ? ` - ${c.description}` : ''})`).join('\n') || 'Aucune consultation'}
+
+INSTRUCTIONS IMPORTANTES:
+- Sois naturel(le) et conversationnel(le) comme au téléphone
+- Concentre-toi sur: commandes, réservations, informations produits
+- Évite les sujets hors contexte (météo sauf pour suggestions)
+- Demande toujours nom et téléphone pour confirmation
+- Si tu ne peux pas aider, propose de transférer vers un humain
+- Maximum 2-3 phrases par réponse pour rester naturel
+- Confirme tous les détails importants
+- NEVER dépasser 3 minutes`;
+    } else {
+      return `⏰ STRICT LIMIT: MAX 3 MINUTES PER CALL
+You are the voice assistant for ${storeContext.businessName} - ${storeContext.storeName}.
+
+${personalityText}
+
+⚡ TIME IMPERATIVE:
+- 0-30s: Greeting + identify need
+- 30s-2min: Process request quickly
+- 2-3min: Confirmation + close
+- If >3min: "I'll transfer you to a colleague"
+
+STORE INFORMATION:
+- Name: ${storeContext.businessName}
+- Store: ${storeContext.storeName}
+- Type: ${storeContext.businessCategory}
+
+AVAILABLE PRODUCTS:
+${storeContext.products?.map((p: any) => `- ${p.name} (€${p.price}${p.description ? ` - ${p.description}` : ''})`).join('\n') || 'No products'}
+
+AVAILABLE SERVICES:
+${storeContext.services?.map((s: any) => `- ${s.name} (€${s.price}, ${s.duration}min${s.description ? ` - ${s.description}` : ''})`).join('\n') || 'No services'}
+
+AVAILABLE CONSULTATIONS:
+${storeContext.consultations?.map((c: any) => `- ${c.name} (€${c.price}, ${c.duration}min${c.description ? ` - ${c.description}` : ''})`).join('\n') || 'No consultations'}
+
+IMPORTANT INSTRUCTIONS:
+- Be natural and conversational like on the phone
+- Focus on: orders, reservations, product information
+- Avoid off-topic subjects (weather except for suggestions)
+- Always ask for name and phone for confirmation
+- If you can't help, offer to transfer to a human
+- Maximum 2-3 sentences per response to stay natural
+- Confirm all important details
+- NEVER exceed 3 minutes`;
+    }
+  }
+
+  // Gérer les événements depuis OpenAI
+  private static handleOpenAIEvent(sessionId: string, event: any) {
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
+
+    console.log(`🤖 Événement OpenAI: ${event.type}`);
+
+    switch (event.type) {
+      case 'session.created':
+        session.status = 'active';
+        console.log(`✅ Session OpenAI active: ${sessionId}`);
+        break;
+
+      case 'conversation.item.created':
+        session.conversationItems.push({
+          id: event.item.id,
+          type: event.item.type,
+          role: event.item.role,
+          content: event.item.content,
+          status: event.item.status,
+          createdAt: new Date()
+        });
+        break;
+
+      case 'response.audio.delta':
+        // Transférer l'audio vers Telnyx
+        this.sendAudioToTelnyx(session, event.delta);
+        break;
+
+      case 'response.done':
+        console.log(`✅ Réponse complétée: ${sessionId}`);
+        break;
+
+      case 'error':
+        console.error(`❌ Erreur OpenAI Realtime: ${sessionId}`, event.error);
+        break;
+    }
+  }
+
+  // Envoyer l'audio généré vers Telnyx
+  private static async sendAudioToTelnyx(session: RealtimeSession, audioData: string) {
+    try {
+      // TODO: Implémenter l'envoi vers Telnyx
+      // Pour l'instant, log que l'audio est reçu
+      console.log(`🔊 Audio généré pour envoi vers Telnyx: ${session.callId}`);
+    } catch (error) {
+      console.error('❌ Erreur envoi audio vers Telnyx:', error);
+    }
+  }
+
+  // Terminer une session
+  static async endSession(sessionId: string) {
+    const session = this.sessions.get(sessionId);
+    const ws = this.websockets.get(sessionId);
+
+    if (ws) {
+      ws.close();
+    }
+
+    if (session) {
+      session.status = 'ended';
+      session.endedAt = new Date();
+      
+      // Sauvegarder en base si nécessaire
+      await this.saveSessionToDatabase(session);
+    }
+
+    this.sessions.delete(sessionId);
+    this.websockets.delete(sessionId);
+
+    console.log(`🔚 Session terminée: ${sessionId}`);
+  }
+
+  // Sauvegarder la session en base
+  private static async saveSessionToDatabase(session: RealtimeSession) {
+    try {
+      // TODO: Implémenter sauvegarde en base
+      console.log(`💾 Sauvegarde session: ${session.sessionId}`);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde session:', error);
+    }
+  }
+}
+
 export class OpenAIRealtimeService {
   private static sessions = new Map<string, RealtimeSession>();
   private static readonly OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime';

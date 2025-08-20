@@ -29,8 +29,11 @@ export async function GET(request: Request) {
       include: {
         businesses: {
           include: {
-            subscription: true,
-            stores: true,
+            stores: {
+              include: {
+                subscription: true
+              }
+            },
             orders: true,
             _count: {
               select: { stores: true, orders: true }

@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
       customer: stripeCustomerId,
       payment_method_types: ['card'],
       mode: 'setup',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/billing?setup=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/restaurant/billing?setup=canceled`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/billing?setup=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/billing?setup=canceled`,
       locale: 'fr'
     });
 

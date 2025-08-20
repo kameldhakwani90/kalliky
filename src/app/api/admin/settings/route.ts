@@ -4,14 +4,13 @@ import { settingsService, initializeDefaultSettings } from '@/lib/email';
 // GET - Récupérer tous les settings
 export async function GET() {
   try {
-    // Initialiser les settings par défaut si nécessaire
-    await initializeDefaultSettings();
+    // NOTE: initializeDefaultSettings() ne doit être appelé qu'au démarrage
+    // pas à chaque requête GET car cela écrase les valeurs personnalisées
 
-    // Récupérer les settings
+    // Récupérer seulement les paramètres applicatifs (pas les secrets .env)
     const [
       companyName, logoUrl, footerText, emailFrom, smtpHost, smtpPort, smtpUser, smtpPass,
-      stripePublishableKey, stripeSecretKey, stripeWebhookSecret,
-      telnyxApiKey, telnyxPhoneNumberPoolId, telnyxWebhookUrl
+      defaultCurrency, defaultLanguage, maintenanceMode, maxStoresPerClient
     ] = await Promise.all([
       settingsService.get('company_name'),
       settingsService.get('email_logo_url'),
@@ -21,29 +20,25 @@ export async function GET() {
       settingsService.get('smtp_port'),
       settingsService.get('smtp_user'),
       settingsService.get('smtp_pass'),
-      settingsService.get('stripe_publishable_key'),
-      settingsService.get('stripe_secret_key'),
-      settingsService.get('stripe_webhook_secret'),
-      settingsService.get('telnyx_api_key'),
-      settingsService.get('telnyx_phone_number_pool_id'),
-      settingsService.get('telnyx_webhook_url')
+      settingsService.get('default_currency'),
+      settingsService.get('default_language'),
+      settingsService.get('maintenance_mode'),
+      settingsService.get('max_stores_per_client')
     ]);
 
     const settings = {
       company_name: companyName || 'Kalliky',
       email_logo_url: logoUrl || '',
       email_footer_text: footerText || 'Kalliky - Solution IA pour restaurants',
-      email_from: emailFrom || 'noreply@kalliky.com',
+      email_from: emailFrom || 'no-reply@pixigrad.com',
       smtp_host: smtpHost || 'smtp.gmail.com',
       smtp_port: smtpPort || '587',
       smtp_user: smtpUser || '',
       smtp_pass: smtpPass || '',
-      stripe_publishable_key: stripePublishableKey || '',
-      stripe_secret_key: stripeSecretKey || '',
-      stripe_webhook_secret: stripeWebhookSecret || '',
-      telnyx_api_key: telnyxApiKey || '',
-      telnyx_phone_number_pool_id: telnyxPhoneNumberPoolId || '',
-      telnyx_webhook_url: telnyxWebhookUrl || ''
+      default_currency: defaultCurrency || 'EUR',
+      default_language: defaultLanguage || 'fr',
+      maintenance_mode: maintenanceMode || 'false',
+      max_stores_per_client: maxStoresPerClient || '10'
     };
 
     return NextResponse.json(settings);
@@ -58,6 +53,16 @@ export async function GET() {
 
 // POST - Sauvegarder les settings
 export async function POST(request: Request) {
+  return await saveSettings(request);
+}
+
+// PUT - Sauvegarder les settings (alias pour POST)
+export async function PUT(request: Request) {
+  return await saveSettings(request);
+}
+
+// Fonction commune pour sauvegarder les settings
+async function saveSettings(request: Request) {
   try {
     const { 
       company_name, 
@@ -76,23 +81,29 @@ export async function POST(request: Request) {
       telnyx_webhook_url
     } = await request.json();
 
-    // Sauvegarder chaque setting
-    await Promise.all([
-      settingsService.set('company_name', company_name, 'Nom de la société affiché dans les emails'),
-      settingsService.set('email_logo_url', email_logo_url, 'URL du logo affiché dans les emails'),
-      settingsService.set('email_footer_text', email_footer_text, 'Texte du footer des emails'),
-      settingsService.set('email_from', email_from, 'Adresse email d\'expéditeur'),
-      settingsService.set('smtp_host', smtp_host, 'Serveur SMTP'),
-      settingsService.set('smtp_port', smtp_port, 'Port SMTP'),
-      settingsService.set('smtp_user', smtp_user, 'Nom d\'utilisateur SMTP'),
-      settingsService.set('smtp_pass', smtp_pass, 'Mot de passe SMTP'),
-      settingsService.set('stripe_publishable_key', stripe_publishable_key, 'Clé publique Stripe'),
-      settingsService.set('stripe_secret_key', stripe_secret_key, 'Clé secrète Stripe'),
-      settingsService.set('stripe_webhook_secret', stripe_webhook_secret, 'Secret webhook Stripe'),
-      settingsService.set('telnyx_api_key', telnyx_api_key, 'Clé API Telnyx'),
-      settingsService.set('telnyx_phone_number_pool_id', telnyx_phone_number_pool_id, 'ID du pool de numéros Telnyx'),
-      settingsService.set('telnyx_webhook_url', telnyx_webhook_url, 'URL webhook Telnyx')
-    ]);
+    // Sauvegarder chaque setting (seulement si la valeur n'est pas undefined)
+    const settingsToSave = [
+      { key: 'company_name', value: company_name, description: 'Nom de la société affiché dans les emails' },
+      { key: 'email_logo_url', value: email_logo_url, description: 'URL du logo affiché dans les emails' },
+      { key: 'email_footer_text', value: email_footer_text, description: 'Texte du footer des emails' },
+      { key: 'email_from', value: email_from, description: 'Adresse email d\'expéditeur' },
+      { key: 'smtp_host', value: smtp_host, description: 'Serveur SMTP' },
+      { key: 'smtp_port', value: smtp_port, description: 'Port SMTP' },
+      { key: 'smtp_user', value: smtp_user, description: 'Nom d\'utilisateur SMTP' },
+      { key: 'smtp_pass', value: smtp_pass, description: 'Mot de passe SMTP' },
+      { key: 'stripe_publishable_key', value: stripe_publishable_key, description: 'Clé publique Stripe' },
+      { key: 'stripe_secret_key', value: stripe_secret_key, description: 'Clé secrète Stripe' },
+      { key: 'stripe_webhook_secret', value: stripe_webhook_secret, description: 'Secret webhook Stripe' },
+      { key: 'telnyx_api_key', value: telnyx_api_key, description: 'Clé API Telnyx' },
+      { key: 'telnyx_phone_number_pool_id', value: telnyx_phone_number_pool_id, description: 'ID du pool de numéros Telnyx' },
+      { key: 'telnyx_webhook_url', value: telnyx_webhook_url, description: 'URL webhook Telnyx' }
+    ];
+
+    await Promise.all(
+      settingsToSave
+        .filter(setting => setting.value !== undefined && setting.value !== null)
+        .map(setting => settingsService.set(setting.key, String(setting.value), setting.description))
+    );
 
     return NextResponse.json({
       message: 'Paramètres sauvegardés avec succès',

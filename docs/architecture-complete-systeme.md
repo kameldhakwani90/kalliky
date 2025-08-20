@@ -444,10 +444,10 @@ GET /api/stripe/payment-methods     // Moyens paiement
 
 #### ✅ **Notifications**
 ```typescript
-GET /api/restaurant/notifications/configs    // Config notifications
-POST /api/restaurant/notifications/trigger  // Déclencher notification
-GET /api/restaurant/notifications/templates // Templates
-GET /api/restaurant/notifications/queue     // File notifications
+GET /api/app/notifications/configs    // Config notifications
+POST /api/app/notifications/trigger  // Déclencher notification
+GET /api/app/notifications/templates // Templates
+GET /api/app/notifications/queue     // File notifications
 ```
 
 ### 🔧 Services Backend
@@ -931,7 +931,7 @@ const stats = await redisService.getCallStats(businessId, dateRange);
 
 #### ✅ **Pages & Fonctionnalités**
 
-**Dashboard Principal** (`/restaurant/dashboard`)
+**Dashboard Principal** (`/app/dashboard`)
 ```typescript
 // Metrics temps réel
 - Revenus total avec évolution %
@@ -945,7 +945,7 @@ const stats = await redisService.getCallStats(businessId, dateRange);
 - Profils clients enrichis
 ```
 
-**Gestion Multi-Stores** (`/restaurant/stores`)
+**Gestion Multi-Stores** (`/app/stores`)
 ```typescript
 // Boutiques multiples
 - Liste stores avec statuts
@@ -954,7 +954,7 @@ const stats = await redisService.getCallStats(businessId, dateRange);
 - Templates par type activité
 ```
 
-**Configuration IA** (`/restaurant/ai-config`)  
+**Configuration IA** (`/app/ai-config`)  
 ```typescript
 // Personnalisation IA par boutique
 - Choix personnalité (professionnel, amical, cool)

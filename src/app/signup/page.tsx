@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Loader2, ArrowLeft, Star } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowLeft, Star, Phone, Info } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { TELNYX_COUNTRIES, POPULAR_COUNTRIES, OTHER_COUNTRIES, getTelnyxCountry, formatCountryPrice } from '@/lib/constants/countries';
 
 // IMPORTANT: NE PAS CHANGER LES PRIX OU FONCTIONNALITÉS - SEULEMENT LE DESIGN
 const plans = [
@@ -120,6 +121,7 @@ interface FormData {
   storeName: string;
   storeAddress: string;
   storePhone: string;
+  storeCountry: string; // NOUVEAU: Pays pour numéro Telnyx
   // Services multi-métiers
   hasProducts: boolean;
   hasReservations: boolean;
@@ -143,6 +145,7 @@ export default function SignupPage() {
     storeName: '',
     storeAddress: '',
     storePhone: '',
+    storeCountry: 'FR', // France par défaut
     // Services multi-métiers (tous activés par défaut)
     hasProducts: true,
     hasReservations: true,
@@ -166,7 +169,7 @@ export default function SignupPage() {
     try {
       // Validation des champs obligatoires
       if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || 
-          !formData.businessName || !formData.storeName || !formData.storeAddress || !formData.storePhone) {
+          !formData.businessName || !formData.storeName || !formData.storeAddress || !formData.storePhone || !formData.storeCountry) {
         throw new Error('Veuillez remplir tous les champs obligatoires');
       }
 
@@ -194,6 +197,7 @@ export default function SignupPage() {
             name: formData.storeName,
             address: formData.storeAddress,
             phone: formData.storePhone,
+            country: formData.storeCountry,
             hasProducts: formData.hasProducts,
             hasReservations: formData.hasReservations,
             hasConsultations: formData.hasConsultations
@@ -504,18 +508,77 @@ export default function SignupPage() {
                           />
                         </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="storePhone" className="text-gray-300">Téléphone boutique</Label>
-                          <Input
-                            id="storePhone"
-                            type="tel"
-                            required
-                            placeholder="+33 1 23 45 67 89"
-                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
-                            value={formData.storePhone}
-                            onChange={(e) => setFormData({...formData, storePhone: e.target.value})}
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="storeCountry" className="text-gray-300 flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              Pays pour numéro virtuel
+                            </Label>
+                            <Select 
+                              value={formData.storeCountry} 
+                              onValueChange={(value) => setFormData({...formData, storeCountry: value})}
+                            >
+                              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                <SelectValue placeholder="Choisir un pays" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {/* Pays populaires */}
+                                {POPULAR_COUNTRIES.map((country) => (
+                                  <SelectItem key={country.code} value={country.code}>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">{country.flag}</span>
+                                      <span>{country.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                                <div className="border-t my-1"></div>
+                                {/* Autres pays */}
+                                {OTHER_COUNTRIES.map((country) => (
+                                  <SelectItem key={country.code} value={country.code}>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">{country.flag}</span>
+                                      <span>{country.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="storePhone" className="text-gray-300">Votre numéro de téléphone</Label>
+                            <Input
+                              id="storePhone"
+                              type="tel"
+                              required
+                              placeholder="+33 1 23 45 67 89"
+                              className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                              value={formData.storePhone}
+                              onChange={(e) => setFormData({...formData, storePhone: e.target.value})}
+                            />
+                          </div>
                         </div>
+
+                        {/* Info sur le numéro virtuel */}
+                        {formData.storeCountry && (
+                          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4">
+                            <div className="flex items-start gap-3">
+                              <Phone className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-green-100 font-medium mb-2">
+                                  📞 Numéro virtuel {getTelnyxCountry(formData.storeCountry)?.name} {getTelnyxCountry(formData.storeCountry)?.flag}
+                                </p>
+                                <p className="text-green-200 text-sm mb-2">
+                                  Un numéro de téléphone virtuel sera automatiquement attribué. <strong>Les appels ne sont généralement pas facturés</strong> car inclus dans la plupart des abonnements.
+                                </p>
+                                <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
+                                  <p className="text-green-100 text-xs leading-relaxed">
+                                    ⚠️ <strong>Important :</strong> Vérifiez que votre pays/opérateur choisi correspond bien à celui de vos clients. En cas d'erreur, des frais pourraient s'appliquer. La plupart des opérateurs incluent les appels vers les numéros locaux, sauf certaines lignes prépayées.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="space-y-4">
                           <Label className="text-gray-300">Services inclus</Label>

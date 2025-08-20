@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { render } from '@react-email/render';
 import WelcomeEmail from '../../emails/welcome-email';
 import PasswordResetEmail from '../../emails/password-reset-email';
+import TrialWarningEmail from '../../emails/trial-warning-email';
 import { prisma } from './prisma';
 
 // Types pour les emails
@@ -18,6 +19,40 @@ export interface PasswordResetEmailData {
   firstName: string;
   email: string;
   resetToken: string;
+}
+
+export interface TrialWarningEmailData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  restaurantName: string;
+  callsUsed: number;
+  callsRemaining: number;
+  daysRemaining: number;
+}
+
+export interface TrialBlockedEmailData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  restaurantName: string;
+  totalCallsUsed: number;
+}
+
+export interface TrialDeletionWarningEmailData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  restaurantName: string;
+  daysUntilDeletion: number;
+}
+
+export interface AccountDeletedEmailData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  restaurantName: string;
+  deletionDate: string;
 }
 
 // Service de gestion des settings
@@ -90,7 +125,7 @@ export const emailService = {
       const transporter = await createTransporter();
       
       const result = await transporter.sendMail({
-        from: emailFrom || process.env.EMAIL_FROM || 'noreply@kalliky.com',
+        from: emailFrom || process.env.EMAIL_FROM || 'no-reply@pixigrad.com',
         to: data.email,
         subject: `Bienvenue dans ${companyName || 'Kalliky'} !`,
         html: emailHtml
@@ -124,7 +159,7 @@ export const emailService = {
       const transporter = await createTransporter();
       
       const result = await transporter.sendMail({
-        from: emailFrom || process.env.EMAIL_FROM || 'noreply@kalliky.com',
+        from: emailFrom || process.env.EMAIL_FROM || 'no-reply@pixigrad.com',
         to: data.email,
         subject: 'Réinitialisation de votre mot de passe',
         html: emailHtml
@@ -134,6 +169,141 @@ export const emailService = {
       return true;
     } catch (error) {
       console.error('❌ Erreur envoi email reset:', error);
+      return false;
+    }
+  },
+
+  async sendTrialWarningEmail(data: TrialWarningEmailData): Promise<boolean> {
+    try {
+      const [logoUrl, companyName, footerText, emailFrom] = await Promise.all([
+        settingsService.get('email_logo_url'),
+        settingsService.get('company_name'),
+        settingsService.get('email_footer_text'),
+        settingsService.get('email_from')
+      ]);
+
+      const emailHtml = render(TrialWarningEmail({
+        ...data,
+        logoUrl: logoUrl || undefined,
+        companyName: companyName || 'Kalliky',
+        footerText: footerText || 'Kalliky - Solution IA pour restaurants'
+      }));
+
+      const transporter = await createTransporter();
+      
+      const result = await transporter.sendMail({
+        from: emailFrom || process.env.EMAIL_FROM || 'no-reply@pixigrad.com',
+        to: data.email,
+        subject: `⚠️ Période d'essai bientôt terminée - ${data.restaurantName}`,
+        html: emailHtml
+      });
+
+      console.log('✅ Email d\'avertissement trial envoyé:', result.messageId);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur envoi email avertissement trial:', error);
+      return false;
+    }
+  },
+
+  async sendTrialBlockedEmail(data: TrialBlockedEmailData): Promise<boolean> {
+    try {
+      const [logoUrl, companyName, footerText, emailFrom] = await Promise.all([
+        settingsService.get('email_logo_url'),
+        settingsService.get('company_name'),
+        settingsService.get('email_footer_text'),
+        settingsService.get('email_from')
+      ]);
+
+      // const emailHtml = render(TrialBlockedEmail({
+      //   ...data,
+      //   logoUrl: logoUrl || undefined,
+      //   companyName: companyName || 'Kalliky',
+      //   footerText: footerText || 'Kalliky - Solution IA pour restaurants'
+      // }));
+      const emailHtml = '<p>Email temporairement désactivé</p>';
+
+      const transporter = await createTransporter();
+      
+      const result = await transporter.sendMail({
+        from: emailFrom || process.env.EMAIL_FROM || 'no-reply@pixigrad.com',
+        to: data.email,
+        subject: `🔒 Service suspendu - ${data.restaurantName}`,
+        html: emailHtml
+      });
+
+      console.log('✅ Email de blocage trial envoyé:', result.messageId);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur envoi email blocage trial:', error);
+      return false;
+    }
+  },
+
+  async sendTrialDeletionWarningEmail(data: TrialDeletionWarningEmailData): Promise<boolean> {
+    try {
+      const [logoUrl, companyName, footerText, emailFrom] = await Promise.all([
+        settingsService.get('email_logo_url'),
+        settingsService.get('company_name'),
+        settingsService.get('email_footer_text'),
+        settingsService.get('email_from')
+      ]);
+
+      // const emailHtml = render(TrialDeletionWarningEmail({
+      //   ...data,
+      //   logoUrl: logoUrl || undefined,
+      //   companyName: companyName || 'Kalliky',
+      //   footerText: footerText || 'Kalliky - Solution IA pour restaurants'
+      // }));
+      const emailHtml = '<p>Email temporairement désactivé</p>';
+
+      const transporter = await createTransporter();
+      
+      const result = await transporter.sendMail({
+        from: emailFrom || process.env.EMAIL_FROM || 'no-reply@pixigrad.com',
+        to: data.email,
+        subject: `🚨 URGENT - Compte supprimé dans ${data.daysUntilDeletion} jours`,
+        html: emailHtml
+      });
+
+      console.log('✅ Email d\'avertissement suppression envoyé:', result.messageId);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur envoi email avertissement suppression:', error);
+      return false;
+    }
+  },
+
+  async sendAccountDeletedEmail(data: AccountDeletedEmailData): Promise<boolean> {
+    try {
+      const [logoUrl, companyName, footerText, emailFrom] = await Promise.all([
+        settingsService.get('email_logo_url'),
+        settingsService.get('company_name'),
+        settingsService.get('email_footer_text'),
+        settingsService.get('email_from')
+      ]);
+
+      // const emailHtml = render(AccountDeletedEmail({
+      //   ...data,
+      //   logoUrl: logoUrl || undefined,
+      //   companyName: companyName || 'Kalliky',
+      //   footerText: footerText || 'Kalliky - Solution IA pour restaurants'
+      // }));
+      const emailHtml = '<p>Email temporairement désactivé</p>';
+
+      const transporter = await createTransporter();
+      
+      const result = await transporter.sendMail({
+        from: emailFrom || process.env.EMAIL_FROM || 'no-reply@pixigrad.com',
+        to: data.email,
+        subject: `Compte supprimé - ${data.restaurantName}`,
+        html: emailHtml
+      });
+
+      console.log('✅ Email de confirmation suppression envoyé:', result.messageId);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur envoi email confirmation suppression:', error);
       return false;
     }
   },
@@ -181,7 +351,7 @@ export async function initializeDefaultSettings() {
       },
       {
         key: 'email_from',
-        value: 'noreply@kalliky.com',
+        value: 'no-reply@pixigrad.com',
         description: 'Adresse email d\'expéditeur'
       },
       {

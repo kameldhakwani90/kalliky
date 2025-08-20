@@ -63,7 +63,7 @@ try {
 **📁 APIs à corriger :**
 - `src/app/api/auth/login/route.ts`
 - `src/app/api/auth/register/route.ts`
-- `src/app/api/restaurant/profile/route.ts`
+- `src/app/api/app/profile/route.ts`
 - `src/app/api/stores/route.ts`
 
 ---
@@ -271,7 +271,7 @@ const orders = await prisma.order.findMany({
 
 **📁 APIs à optimiser :**
 - `src/app/api/orders/route.ts`
-- `src/app/api/restaurant/customers/route.ts`
+- `src/app/api/app/customers/route.ts`
 - `src/app/api/tickets/[ticketId]/route.ts`
 
 ---

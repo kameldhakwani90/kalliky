@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Créer l'activité directement
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/restaurant/activities`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/app/activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

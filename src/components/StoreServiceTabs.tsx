@@ -868,7 +868,7 @@ function NotificationsContent({ storeId }: { storeId: string }) {
                         <div className="pt-4 border-t">
                           <Button 
                             variant="outline" 
-                            onClick={() => window.open(`/restaurant/settings/notifications`, '_blank')}
+                            onClick={() => window.open(`/app/settings/notifications`, '_blank')}
                             className="flex items-center gap-2"
                           >
                             <Settings className="h-4 w-4" />
