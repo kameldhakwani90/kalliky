@@ -155,15 +155,15 @@ function MetricCard({
   loading?: boolean;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
-    green: 'bg-green-50 text-green-600 dark:bg-green-950 dark:text-green-400',
-    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400',
-    orange: 'bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400'
+    blue: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    green: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    purple: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    orange: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
   };
 
   if (loading) {
     return (
-      <Card className="relative overflow-hidden backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20">
+      <Card className="relative overflow-hidden border bg-card text-card-foreground shadow-sm rounded-xl">
         <CardContent className="p-6">
           <Skeleton className="h-4 w-24 mb-2" />
           <Skeleton className="h-8 w-32 mb-2" />
@@ -174,17 +174,20 @@ function MetricCard({
   }
 
   return (
-    <Card className="relative overflow-hidden backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20 hover:shadow-lg transition-all duration-300 group">
+    <Card className="relative overflow-hidden border bg-card text-card-foreground shadow-sm rounded-xl hover:shadow-lg transition-all duration-300 group rounded-xl">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <div className={cn("p-2 rounded-lg", colorClasses[color as keyof typeof colorClasses])}>
-            <Icon className="h-4 w-4" />
+          <div className="text-2xl">
+            {title === "Revenus aujourd'hui" ? "💰" :
+             title === "Commandes" ? "🛒" :
+             title === "Appels" ? "📞" :
+             title === "Taux conversion" ? "🎯" : "📊"}
           </div>
         </div>
         
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             {prefix}{typeof value === 'number' ? value.toLocaleString('fr-FR') : value}{suffix}
           </h2>
           
@@ -192,13 +195,13 @@ function MetricCard({
             <div className="flex items-center gap-1">
               {growth > 0 ? (
                 <>
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-medium text-green-500">+{growth.toFixed(1)}%</span>
+                  <TrendingUp className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">+{growth.toFixed(1)}%</span>
                 </>
               ) : growth < 0 ? (
                 <>
-                  <TrendingDown className="h-4 w-4 text-red-500" />
-                  <span className="text-sm font-medium text-red-500">{growth.toFixed(1)}%</span>
+                  <TrendingDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{growth.toFixed(1)}%</span>
                 </>
               ) : (
                 <span className="text-sm text-muted-foreground">Pas de changement</span>
@@ -218,25 +221,25 @@ function MetricCard({
 // Composant LiveCallCard
 function LiveCallCard({ call }: { call: LiveCall }) {
   const sentimentColors = {
-    positive: 'text-green-500',
-    neutral: 'text-gray-500',
-    negative: 'text-red-500'
+    positive: 'text-gray-600 dark:text-gray-400',
+    neutral: 'text-gray-500 dark:text-gray-500',
+    negative: 'text-gray-600 dark:text-gray-400'
   };
 
   const statusColors = {
-    Nouveau: 'bg-blue-100 text-blue-700',
-    Fidèle: 'bg-green-100 text-green-700',
-    VIP: 'bg-purple-100 text-purple-700'
+    Nouveau: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    Fidèle: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    VIP: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
   };
 
   return (
     <div className="flex items-center justify-between p-4 rounded-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 hover:shadow-md transition-all">
       <div className="flex items-center gap-3">
         <div className="relative">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-            <PhoneCall className="h-5 w-5 text-white animate-pulse" />
+          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <span className="text-xl animate-pulse">📞</span>
           </div>
-          <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-ping" />
+          <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-gray-500 rounded-full animate-ping" />
         </div>
         
         <div>
@@ -286,7 +289,13 @@ function ActivityCard({ activity }: { activity: DashboardStats['recentActivity']
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
       <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-        <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <span className="text-xl">
+          {activity.type === 'ORDER_CREATED' ? "🛒" :
+           activity.type === 'CALL_RECEIVED' ? "📞" :
+           activity.type === 'CUSTOMER_REGISTERED' ? "👥" :
+           activity.type === 'SERVICE_BOOKED' ? "📅" :
+           activity.type === 'CONSULTATION_SCHEDULED' ? "⏰" : "📊"}
+        </span>
       </div>
       
       <div className="flex-1 min-w-0">
@@ -296,7 +305,7 @@ function ActivityCard({ activity }: { activity: DashboardStats['recentActivity']
       
       <div className="text-right">
         {activity.amount && (
-          <p className="text-sm font-semibold text-green-600">{activity.amount.toFixed(2)}€</p>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{activity.amount.toFixed(2)}€</p>
         )}
         <p className="text-xs text-muted-foreground">
           {format(new Date(activity.createdAt), 'HH:mm', { locale: fr })}
@@ -390,8 +399,8 @@ export default function ModernDashboard() {
     }
   };
 
-  // Couleurs pour les graphiques
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  // Couleurs pour les graphiques - tons de gris professionnels
+  const COLORS = ['#6b7280', '#9ca3af', '#4b5563', '#374151', '#111827'];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -416,7 +425,7 @@ export default function ModernDashboard() {
   return (
     <>
       <DashboardOnboardingFlow />
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-background text-foreground dark">
         {/* Background Effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
@@ -427,15 +436,15 @@ export default function ModernDashboard() {
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="sticky top-0 z-50 backdrop-blur-xl bg-black/80 border-b border-white/10 relative"
+          className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border relative"
         >
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <motion.div variants={itemVariants}>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-foreground">
                   Tableau de bord
                 </h1>
-                <p className="text-gray-400">
+                <p className="text-muted-foreground">
                   {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
                 </p>
               </motion.div>
@@ -445,7 +454,7 @@ export default function ModernDashboard() {
                   variant="ghost"
                   size="sm"
                   onClick={handleExport}
-                  className="gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 rounded-2xl"
+                  className="gap-2 bg-white/10 text-foreground hover:bg-white/20 border border-white/20 rounded-2xl"
                 >
                   <Download className="h-4 w-4" data-icon="download" />
                   Exporter
@@ -456,7 +465,7 @@ export default function ModernDashboard() {
                   size="sm"
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 rounded-2xl"
+                  className="gap-2 bg-white/10 text-foreground hover:bg-white/20 border border-white/20 rounded-2xl"
                 >
                   <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} data-icon="refresh" />
                   Actualiser
@@ -464,7 +473,7 @@ export default function ModernDashboard() {
                 
                 <Badge 
                   variant={stats?.subscription?.status === 'active' ? 'default' : 'secondary'}
-                  className="bg-white/20 text-white border-white/20 rounded-full px-4 py-2"
+                  className="bg-white/20 text-foreground border-white/20 rounded-full px-4 py-2"
                 >
                   {stats?.subscription?.plan || 'FREE'}
                 </Badge>
@@ -518,16 +527,11 @@ export default function ModernDashboard() {
         {/* Section Appels en temps réel + Performance IA */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Appels actifs */}
-          <Card className="lg:col-span-2 backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="live-calls">
+          <Card className="lg:col-span-2 border bg-card text-card-foreground shadow-sm rounded-xl" data-onboarding="live-calls">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="relative">
-                    <Phone className="h-5 w-5" />
-                    {liveCalls && liveCalls.activeCalls.length > 0 && (
-                      <div className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                    )}
-                  </div>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <span className="text-xl">📞</span>
                   Appels en cours
                 </CardTitle>
                 <CardDescription>
@@ -536,7 +540,7 @@ export default function ModernDashboard() {
               </div>
               
               <Badge variant="outline" className="gap-1">
-                <Timer className="h-3 w-3" />
+                <span className="text-sm">⏱️</span>
                 Temps moyen: {liveCalls?.stats.avgCallDuration || 0}s
               </Badge>
             </CardHeader>
@@ -557,7 +561,7 @@ export default function ModernDashboard() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                    <PhoneOff className="h-12 w-12 text-gray-300 mb-3" />
+                    <span className="text-4xl mb-3">📵</span>
                     <p className="text-sm text-muted-foreground">Aucun appel en cours</p>
                   </div>
                 )}
@@ -566,10 +570,10 @@ export default function ModernDashboard() {
           </Card>
 
           {/* Performance IA */}
-          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="ai-performance">
+          <Card className="border bg-card text-card-foreground shadow-sm rounded-xl" data-onboarding="ai-performance">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <span className="text-xl">🤖</span>
                 Performance IA
               </CardTitle>
               <CardDescription>Derniers 30 jours</CardDescription>
@@ -601,20 +605,20 @@ export default function ModernDashboard() {
                   </div>
 
                   {/* Temps de réponse */}
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
                     <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-lg">⚡</span>
                       <span className="text-sm">Temps réponse</span>
                     </div>
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
                       {stats?.aiPerformance.avgResponseTime || 0}s
                     </span>
                   </div>
 
                   {/* Satisfaction */}
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
                     <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="text-lg">⭐</span>
                       <span className="text-sm">Satisfaction</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -624,8 +628,8 @@ export default function ModernDashboard() {
                           className={cn(
                             "h-3 w-3",
                             i <= (stats?.aiPerformance.satisfactionScore || 0)
-                              ? "fill-yellow-500 text-yellow-500"
-                              : "text-gray-300"
+                              ? "fill-gray-600 text-gray-600 dark:fill-gray-400 dark:text-gray-400"
+                              : "text-gray-300 dark:text-gray-600"
                           )}
                         />
                       ))}
@@ -635,13 +639,13 @@ export default function ModernDashboard() {
                   {/* Stats détaillées */}
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
                         {stats?.aiPerformance.resolvedByAI || 0}
                       </p>
                       <p className="text-xs text-muted-foreground">Résolus par IA</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-orange-600">
+                      <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
                         {stats?.aiPerformance.transferredToHuman || 0}
                       </p>
                       <p className="text-xs text-muted-foreground">Transférés</p>
@@ -656,9 +660,9 @@ export default function ModernDashboard() {
         {/* Graphiques */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Graphique revenus */}
-          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="revenue-chart">
+          <Card className="border bg-card text-card-foreground shadow-sm rounded-xl" data-onboarding="revenue-chart">
             <CardHeader>
-              <CardTitle>Évolution des revenus</CardTitle>
+              <CardTitle className="text-foreground">Évolution des revenus</CardTitle>
               <CardDescription>7 derniers jours</CardDescription>
             </CardHeader>
             <CardContent>
@@ -669,8 +673,8 @@ export default function ModernDashboard() {
                   <AreaChart data={stats?.revenueChart || []}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#6b7280" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#6b7280" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
@@ -688,7 +692,7 @@ export default function ModernDashboard() {
                     <Area
                       type="monotone"
                       dataKey="revenue"
-                      stroke="#3b82f6"
+                      stroke="#6b7280"
                       fillOpacity={1}
                       fill="url(#colorRevenue)"
                       strokeWidth={2}
@@ -700,9 +704,9 @@ export default function ModernDashboard() {
           </Card>
 
           {/* Top produits */}
-          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="top-products">
+          <Card className="border bg-card text-card-foreground shadow-sm rounded-xl" data-onboarding="top-products">
             <CardHeader>
-              <CardTitle>Top produits</CardTitle>
+              <CardTitle className="text-foreground">Top produits</CardTitle>
               <CardDescription>Les plus vendus ce mois</CardDescription>
             </CardHeader>
             <CardContent>
@@ -718,7 +722,7 @@ export default function ModernDashboard() {
                     <div key={product.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <div className="flex items-center gap-3">
                         <div 
-                          className="h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                          className="h-8 w-8 rounded-full flex items-center justify-center text-foreground font-bold text-sm"
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         >
                           {index + 1}
@@ -743,7 +747,7 @@ export default function ModernDashboard() {
         {/* Activité récente et segments clients */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Activité récente */}
-          <Card className="lg:col-span-2 backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="activity-feed">
+          <Card className="lg:col-span-2 border bg-card text-card-foreground shadow-sm rounded-xl" data-onboarding="activity-feed">
             <CardHeader>
               <CardTitle>Activité récente</CardTitle>
               <CardDescription>Derniers événements</CardDescription>
@@ -764,7 +768,7 @@ export default function ModernDashboard() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                    <Activity className="h-12 w-12 text-gray-300 mb-3" />
+                    <span className="text-4xl mb-3">📊</span>
                     <p className="text-sm text-muted-foreground">Aucune activité récente</p>
                   </div>
                 )}
@@ -773,7 +777,7 @@ export default function ModernDashboard() {
           </Card>
 
           {/* Segments clients */}
-          <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20" data-onboarding="customer-segments">
+          <Card className="border bg-card text-card-foreground shadow-sm rounded-xl" data-onboarding="customer-segments">
             <CardHeader>
               <CardTitle>Segments clients</CardTitle>
               <CardDescription>Répartition de la base</CardDescription>
@@ -830,7 +834,7 @@ export default function ModernDashboard() {
         </div>
 
         {/* Heures de pointe */}
-        <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-white/20">
+        <Card className="border bg-card text-card-foreground shadow-sm rounded-xl">
           <CardHeader>
             <CardTitle>Heures de pointe</CardTitle>
             <CardDescription>Distribution des commandes sur 24h</CardDescription>
@@ -852,7 +856,7 @@ export default function ModernDashboard() {
                       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
                   />
-                  <Bar dataKey="orders" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="orders" fill="#6b7280" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

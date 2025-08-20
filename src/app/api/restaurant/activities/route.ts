@@ -56,19 +56,25 @@ export async function GET(request: NextRequest) {
     });
 
     // Transformer les données pour correspondre au format attendu par l'interface
-    const transformedActivities = activities.map(activity => ({
-      id: activity.id,
-      type: activity.type,
-      entityId: activity.entityId, // Ajout de entityId pour la redirection
-      status: 'COMPLETED', // Par défaut
-      title: activity.title,
-      description: activity.description || '',
-      urgencyLevel: 'NORMAL' as const,
-      createdAt: activity.createdAt.toISOString(),
-      amount: activity.amount,
-      metadata: activity.metadata,
-      store: activity.store
-    }));
+    const transformedActivities = activities.map(activity => {
+      // Récupérer le statut depuis les métadonnées ou utiliser un défaut
+      const metadata = activity.metadata ? (typeof activity.metadata === 'string' ? JSON.parse(activity.metadata) : activity.metadata) : {};
+      const status = metadata.status || 'PENDING';
+      
+      return {
+        id: activity.id,
+        type: activity.type,
+        entityId: activity.entityId, // Ajout de entityId pour la redirection
+        status: status,
+        title: activity.title,
+        description: activity.description || '',
+        urgencyLevel: 'NORMAL' as const,
+        createdAt: activity.createdAt.toISOString(),
+        amount: activity.amount,
+        metadata: metadata,
+        store: activity.store
+      };
+    });
 
     return NextResponse.json({
       stores: stores.map(store => ({
