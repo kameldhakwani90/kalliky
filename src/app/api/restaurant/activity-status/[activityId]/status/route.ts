@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 // PATCH - Mettre à jour le statut d'une activité
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { activityId: string } }
 ) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -25,7 +25,7 @@ export async function PATCH(
     // Récupérer l'activité et vérifier qu'elle appartient à l'utilisateur
     const activity = await prisma.activityLog.findFirst({
       where: {
-        id: params.id,
+        id: params.activityId,
         store: {
           business: {
             ownerId: decoded.userId
@@ -59,7 +59,7 @@ export async function PATCH(
 
     // Mettre à jour l'activité
     const updatedActivity = await prisma.activityLog.update({
-      where: { id: params.id },
+      where: { id: params.activityId },
       data: {
         metadata: updatedMetadata
       },

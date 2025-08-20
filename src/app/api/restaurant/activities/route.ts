@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
         id: activity.id,
         type: activity.type,
         entityId: activity.entityId, // Ajout de entityId pour la redirection
+        customerId: activity.customerId, // Ajout du customerId pour les liens
         status: status,
         title: activity.title,
         description: activity.description || '',
@@ -72,7 +73,8 @@ export async function GET(request: NextRequest) {
         createdAt: activity.createdAt.toISOString(),
         amount: activity.amount,
         metadata: metadata,
-        store: activity.store
+        store: activity.store,
+        customer: activity.customer // Ajout des infos customer
       };
     });
 

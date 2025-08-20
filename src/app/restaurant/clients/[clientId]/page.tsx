@@ -504,7 +504,7 @@ export default function ClientProfilePage() {
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
-    const customerId = params.id as string;
+    const customerId = params.clientId as string;
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -1300,7 +1300,7 @@ export default function ClientProfilePage() {
                                         className="glass-effect shadow-apple rounded-2xl border-0 hover:shadow-apple-lg transition-smooth cursor-pointer hover-lift"
                                         onClick={() => {
                                             // Rediriger vers la page dédiée du ticket
-                                            router.push(`/restaurant/ticket/${ticket.id}?from=clients&customerId=${customer.id}`);
+                                            router.push(`/restaurant/tickets/${ticket.id}?from=clients&customerId=${customer.id}`);
                                         }}
                                     >
                                         <CardContent className="p-4">

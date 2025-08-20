@@ -26,8 +26,9 @@ type Store = {
 
 type ActivityItem = {
     id: string;
-    type: 'ORDER' | 'SERVICE' | 'CONSULTATION' | 'SIGNALEMENT';
+    type: 'ORDER' | 'RESERVATION' | 'CONSULTATION' | 'CALL' | 'VISIT' | 'COMPLAINT' | 'PAYMENT';
     entityId: string;
+    customerId?: string;
     status: string;
     title: string;
     description: string;
@@ -37,6 +38,11 @@ type ActivityItem = {
     store?: {
         id: string;
         name: string;
+    };
+    customer?: {
+        id: string;
+        firstName?: string;
+        lastName?: string;
     };
 };
 
@@ -81,9 +87,12 @@ export default function ActivityPage() {
         filterAllStores: { fr: "Toutes les boutiques", en: "All stores" },
         filterAllTypes: { fr: "Tous les types", en: "All types" },
         typeOrder: { fr: "Commande", en: "Order" },
-        typeService: { fr: "Service", en: "Service" },
+        typeReservation: { fr: "Réservation", en: "Reservation" },
         typeConsultation: { fr: "Consultation", en: "Consultation" },
-        typeSignalement: { fr: "Signalement", en: "Report" },
+        typeCall: { fr: "Appel", en: "Call" },
+        typeVisit: { fr: "Visite", en: "Visit" },
+        typeComplaint: { fr: "Réclamation", en: "Complaint" },
+        typePayment: { fr: "Paiement", en: "Payment" },
         store: { fr: "Boutique", en: "Store" },
         type: { fr: "Type", en: "Type" },
         status: { fr: "Statut", en: "Status" },
@@ -105,6 +114,8 @@ export default function ActivityPage() {
         customer: { fr: "Client", en: "Customer" },
         amount: { fr: "Montant", en: "Amount" },
         description: { fr: "Description", en: "Description" },
+        noStores: { fr: "Aucune boutique configurée", en: "No stores configured" },
+        createFirstStore: { fr: "Créer ma première boutique", en: "Create my first store" },
     };
 
     // Charger les activités de toutes les boutiques
@@ -165,9 +176,12 @@ export default function ActivityPage() {
     const getActivityTypeLabel = (type: string) => {
         switch (type) {
             case 'ORDER': return t(translations.typeOrder);
-            case 'SERVICE': return t(translations.typeService);
+            case 'RESERVATION': return t(translations.typeReservation);
             case 'CONSULTATION': return t(translations.typeConsultation);
-            case 'SIGNALEMENT': return t(translations.typeSignalement);
+            case 'CALL': return t(translations.typeCall);
+            case 'VISIT': return t(translations.typeVisit);
+            case 'COMPLAINT': return t(translations.typeComplaint);
+            case 'PAYMENT': return t(translations.typePayment);
             default: return type;
         }
     };
@@ -186,9 +200,9 @@ export default function ActivityPage() {
         const activity = filteredActivities.find(a => a.id === activityId);
         if (activity) {
             // Rediriger vers la page ticket avec les bons paramètres
-            // On utilise l'entityId comme ticketId et on récupère le customerId depuis metadata
-            const customerId = activity.metadata?.customerId || activity.entityId;
-            router.push(`/restaurant/ticket/${activity.entityId}?customerId=${customerId}&from=activity`);
+            // On utilise l'entityId comme ticketId et le customerId réel de l'activity
+            const customerId = activity.metadata?.customerId || activity.customerId || activity.entityId;
+            router.push(`/restaurant/tickets/${activity.entityId}?customerId=${customerId}&from=activity`);
         }
     };
 
@@ -202,7 +216,7 @@ export default function ActivityPage() {
         
         setUpdatingStatus(true);
         try {
-            const response = await fetch(`/api/restaurant/activities/${selectedActivity.id}/status`, {
+            const response = await fetch(`/api/restaurant/activity-status/${selectedActivity.id}/status`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
@@ -380,9 +394,12 @@ export default function ActivityPage() {
                                 <SelectContent className="bg-black/95 backdrop-blur-xl border-white/20">
                                     <SelectItem value="all" className="text-white hover:bg-white/10">{t(translations.filterAllTypes)}</SelectItem>
                                     <SelectItem value="ORDER" className="text-white hover:bg-white/10">{t(translations.typeOrder)}</SelectItem>
-                                    <SelectItem value="SERVICE" className="text-white hover:bg-white/10">{t(translations.typeService)}</SelectItem>
+                                    <SelectItem value="RESERVATION" className="text-white hover:bg-white/10">{t(translations.typeReservation)}</SelectItem>
                                     <SelectItem value="CONSULTATION" className="text-white hover:bg-white/10">{t(translations.typeConsultation)}</SelectItem>
-                                    <SelectItem value="SIGNALEMENT" className="text-white hover:bg-white/10">{t(translations.typeSignalement)}</SelectItem>
+                                    <SelectItem value="CALL" className="text-white hover:bg-white/10">{t(translations.typeCall)}</SelectItem>
+                                    <SelectItem value="VISIT" className="text-white hover:bg-white/10">{t(translations.typeVisit)}</SelectItem>
+                                    <SelectItem value="COMPLAINT" className="text-white hover:bg-white/10">{t(translations.typeComplaint)}</SelectItem>
+                                    <SelectItem value="PAYMENT" className="text-white hover:bg-white/10">{t(translations.typePayment)}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -413,7 +430,6 @@ export default function ActivityPage() {
                                         <TableHead className="text-gray-300">{t(translations.type)}</TableHead>
                                         <TableHead className="text-gray-300">{t(translations.status)}</TableHead>
                                         <TableHead className="text-gray-300">{t(translations.title)}</TableHead>
-                                        <TableHead className="text-gray-300">{t(translations.urgency)}</TableHead>
                                         <TableHead className="text-gray-300">{t(translations.date)}</TableHead>
                                         <TableHead className="text-gray-300">{t(translations.actions)}</TableHead>
                                     </TableRow>
@@ -429,10 +445,13 @@ export default function ActivityPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className="bg-white/10 border-white/20 text-white">
-                                                    {activity.type === 'ORDER' && <Phone className="mr-1 h-3 w-3" />}
-                                                    {activity.type === 'SERVICE' && <ConciergeBell className="mr-1 h-3 w-3" />}
+                                                    {activity.type === 'ORDER' && <Utensils className="mr-1 h-3 w-3" />}
+                                                    {activity.type === 'RESERVATION' && <ConciergeBell className="mr-1 h-3 w-3" />}
                                                     {activity.type === 'CONSULTATION' && <BrainCircuit className="mr-1 h-3 w-3" />}
-                                                    {activity.type === 'SIGNALEMENT' && <MessageSquare className="mr-1 h-3 w-3" />}
+                                                    {activity.type === 'CALL' && <Phone className="mr-1 h-3 w-3" />}
+                                                    {activity.type === 'VISIT' && <Eye className="mr-1 h-3 w-3" />}
+                                                    {activity.type === 'COMPLAINT' && <MessageSquare className="mr-1 h-3 w-3" />}
+                                                    {activity.type === 'PAYMENT' && <BookOpen className="mr-1 h-3 w-3" />}
                                                     {getActivityTypeLabel(activity.type)}
                                                 </Badge>
                                             </TableCell>
@@ -450,11 +469,6 @@ export default function ActivityPage() {
                                                         </p>
                                                     )}
                                                 </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge className={`${getUrgencyColor(activity.urgencyLevel)} border-0`}>
-                                                    {activity.urgencyLevel}
-                                                </Badge>
                                             </TableCell>
                                             <TableCell>
                                                 <span className="text-sm text-gray-400">

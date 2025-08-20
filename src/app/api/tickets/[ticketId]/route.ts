@@ -148,7 +148,7 @@ export async function GET(
 
     // 2. RÉCUPÉRER TOUTES LES ENTITÉS LIÉES AU CLIENT DANS UNE PÉRIODE
     const timeframe = new Date();
-    timeframe.setHours(timeframe.getHours() - 24); // 24h de tolérance
+    timeframe.setFullYear(timeframe.getFullYear() - 5); // 5 ans de tolérance pour données demo anciennes
 
     const [orders, consultations, signalements, calls, conversationSession] = await Promise.all([
       // COMMANDES
@@ -210,7 +210,7 @@ export async function GET(
         title: `Commande ${order.orderNumber}`,
         description: `${(order.items as any[])?.length || 0} article(s) - ${order.status}`,
         status: order.status,
-        amount: order.totalAmount,
+        amount: order.total || order.totalAmount, // Utiliser order.total en priorité
         urgency: (order.metadata as any)?.urgency || 'normal',
         data: order
       });
