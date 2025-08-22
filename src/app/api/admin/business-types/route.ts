@@ -1,13 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { authService } from '@/services/auth.service';
+import jwt from 'jsonwebtoken';
+
+// Fonction d'authentification simple
+async function authenticateUser(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string; email: string; role: string };
+    return { user: { id: decoded.userId, email: decoded.email, role: decoded.role } };
+  } catch {
+    return null;
+  }
+}
 
 // GET - Récupérer toutes les configurations métiers
 export async function GET(request: NextRequest) {
   try {
     // Vérifier les droits super admin
-    const user = await authService.getCurrentUser();
-    if (!user || user.role !== 'SUPER_ADMIN') {
+    const session = await authenticateUser(request);
+    if (!session?.user || session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
     }
 
@@ -27,8 +42,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Vérifier les droits super admin
-    const user = await authService.getCurrentUser();
-    if (!user || user.role !== 'SUPER_ADMIN') {
+    const session = await authenticateUser(request);
+    if (!session?.user || session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
     }
 
@@ -57,10 +72,11 @@ export async function POST(request: NextRequest) {
         category: data.category,
         displayName: data.displayName,
         systemPrompt: data.systemPrompt,
+        menuExtractionPrompt: data.menuExtractionPrompt || null,
         defaultParams: data.defaultParams || {},
         availableOptions: data.availableOptions || [],
-        createdBy: user.id,
-        lastModifiedBy: user.id
+        createdBy: session.user.id,
+        lastModifiedBy: session.user.id
       }
     });
 

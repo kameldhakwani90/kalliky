@@ -45,41 +45,42 @@ export default function TrialWarningEmail({
       <Head />
       <Body style={main}>
         <Container style={container}>
-          {/* Logo */}
-          {logoUrl && (
-            <Section style={logoContainer}>
-              <Img src={logoUrl} width="120" alt={companyName} style={logo} />
-            </Section>
-          )}
-
           {/* Header */}
           <Section style={header}>
-            <Text style={title}>⚠️ Attention - Période d'essai bientôt terminée</Text>
+            {logoUrl ? (
+              <Img src={logoUrl} width="120" height="40" alt={companyName} />
+            ) : (
+              <Text style={logo}>{companyName}</Text>
+            )}
           </Section>
 
-          {/* Content */}
+          {/* Main Content */}
           <Section style={content}>
-            <Text style={greeting}>
+            <Text style={title}>Période d'essai bientôt terminée</Text>
+            
+            <Text style={paragraph}>
               Bonjour {firstName} {lastName},
             </Text>
-
+            
             <Text style={paragraph}>
               Votre période d'essai gratuite pour <strong>{restaurantName}</strong> arrive bientôt à son terme.
             </Text>
 
-            <Section style={statsBox}>
-              <Text style={statsTitle}>📊 Votre utilisation actuelle :</Text>
+            {/* Account Details */}
+            <Section style={accountBox}>
+              <Text style={accountTitle}>Votre utilisation actuelle</Text>
               <Row>
                 <Column>
-                  <Text style={statLabel}>Appels utilisés :</Text>
-                  <Text style={statValue}>{callsUsed} / 10</Text>
+                  <Text style={accountLabel}>Appels utilisés :</Text>
+                  <Text style={accountLabel}>Appels restants :</Text>
+                  <Text style={accountLabel}>Temps restant :</Text>
                 </Column>
                 <Column>
-                  <Text style={statLabel}>Appels restants :</Text>
-                  <Text style={statValue}>{callsRemaining}</Text>
+                  <Text style={accountValue}>{callsUsed} / 10</Text>
+                  <Text style={accountValue}>{callsRemaining}</Text>
+                  <Text style={accountValue}>{daysRemaining} jours</Text>
                 </Column>
               </Row>
-              <Text style={statLabel}>Temps restant : <strong>{daysRemaining} jours</strong></Text>
             </Section>
 
             <Text style={paragraph}>
@@ -87,41 +88,38 @@ export default function TrialWarningEmail({
               passez à un plan payant dès maintenant.
             </Text>
 
-            <Section style={ctaSection}>
-              <Button 
-                href={`${baseUrl}/app/billing?upgrade=true`}
-                style={ctaButton}
-              >
-                🚀 Choisir mon plan
+            {/* CTA Button */}
+            <Section style={buttonContainer}>
+              <Button style={button} href={`${baseUrl}/app/billing?upgrade=true`}>
+                Choisir mon plan
               </Button>
             </Section>
 
-            <Text style={benefits}>
+            <Text style={paragraph}>
               <strong>Pourquoi passer au plan payant ?</strong><br/>
-              ✅ Appels illimités<br/>
-              ✅ IA plus performante<br/>
-              ✅ Support prioritaire<br/>
-              ✅ Analytics avancés<br/>
-              ✅ Plus de fonctionnalités
+              • Appels illimités<br/>
+              • IA plus performante<br/>
+              • Support prioritaire<br/>
+              • Analytics avancés
             </Text>
 
-            <Text style={urgency}>
-              ⏰ <strong>Important :</strong> Après {callsRemaining} appels ou {daysRemaining} jours, 
+            <Hr style={hr} />
+
+            <Text style={helpText}>
+              <strong>Important :</strong> Après {callsRemaining} appels ou {daysRemaining} jours, 
               votre numéro sera temporairement suspendu jusqu'à votre passage à un plan payant.
             </Text>
           </Section>
 
           {/* Footer */}
-          <Hr style={hr} />
           <Section style={footer}>
-            <Text style={footerText}>{footerText}</Text>
-            <Text style={footerLinks}>
-              <Link href={`${baseUrl}/app/dashboard`} style={link}>Tableau de bord</Link> • 
-              <Link href={`${baseUrl}/app/billing`} style={link}>Facturation</Link> • 
-              <Link href={`${baseUrl}/support`} style={link}>Support</Link>
+            <Text style={footerText}>
+              {footerText}
             </Text>
-            <Text style={footerCopy}>
-              Cet email a été envoyé automatiquement pour {email}
+            <Text style={footerLinks}>
+              <Link href={`${baseUrl}/app/dashboard`} style={footerLink}>Tableau de bord</Link> •{' '}
+              <Link href={`${baseUrl}/app/billing`} style={footerLink}>Facturation</Link> •{' '}
+              <Link href={`${baseUrl}/support`} style={footerLink}>Support</Link>
             </Text>
           </Section>
         </Container>
@@ -130,96 +128,88 @@ export default function TrialWarningEmail({
   );
 }
 
-// Styles
+// Styles Stripe-like
 const main = {
   backgroundColor: '#f6f9fc',
-  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 };
 
 const container = {
-  margin: '0 auto',
-  padding: '20px 0 48px',
-  maxWidth: '560px',
-};
-
-const logoContainer = {
-  textAlign: 'center' as const,
-  margin: '20px 0',
-};
-
-const logo = {
-  margin: '0 auto',
+  backgroundColor: '#ffffff',
+  margin: '40px auto',
+  padding: '0',
+  maxWidth: '600px',
+  borderRadius: '8px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
 };
 
 const header = {
-  textAlign: 'center' as const,
-  margin: '20px 0',
+  padding: '32px 40px 24px',
+  borderBottom: '1px solid #e6ebf1',
+};
+
+const logo = {
+  fontSize: '24px',
+  fontWeight: 'bold',
+  color: '#32325d',
+  margin: '0',
+};
+
+const content = {
+  padding: '32px 40px',
 };
 
 const title = {
   fontSize: '24px',
   fontWeight: 'bold',
-  color: '#e67e22',
-  textAlign: 'center' as const,
-  margin: '0 0 20px',
-};
-
-const content = {
-  backgroundColor: '#ffffff',
-  border: '1px solid #f0f0f0',
-  borderRadius: '8px',
-  padding: '32px',
-};
-
-const greeting = {
-  fontSize: '16px',
-  fontWeight: '600',
-  color: '#333333',
-  margin: '0 0 16px',
+  color: '#32325d',
+  marginBottom: '24px',
+  lineHeight: '1.4',
 };
 
 const paragraph = {
   fontSize: '16px',
   lineHeight: '1.6',
-  color: '#555555',
-  margin: '0 0 16px',
+  color: '#525f7f',
+  marginBottom: '16px',
 };
 
-const statsBox = {
-  backgroundColor: '#fef9e7',
-  border: '1px solid #f39c12',
+const accountBox = {
+  backgroundColor: '#f6f9fc',
+  border: '1px solid #e6ebf1',
   borderRadius: '6px',
-  padding: '16px',
-  margin: '20px 0',
+  padding: '24px',
+  margin: '24px 0',
 };
 
-const statsTitle = {
-  fontSize: '16px',
-  fontWeight: '600',
-  color: '#d68910',
-  margin: '0 0 12px',
-};
-
-const statLabel = {
-  fontSize: '14px',
-  color: '#666666',
-  margin: '4px 0',
-};
-
-const statValue = {
+const accountTitle = {
   fontSize: '18px',
   fontWeight: 'bold',
-  color: '#e67e22',
-  margin: '0 0 8px',
+  color: '#32325d',
+  marginBottom: '16px',
 };
 
-const ctaSection = {
+const accountLabel = {
+  fontSize: '14px',
+  color: '#6b7c93',
+  marginBottom: '8px',
+  fontWeight: '500',
+};
+
+const accountValue = {
+  fontSize: '14px',
+  color: '#32325d',
+  marginBottom: '8px',
+  fontWeight: '500',
+};
+
+const buttonContainer = {
   textAlign: 'center' as const,
   margin: '32px 0',
 };
 
-const ctaButton = {
-  backgroundColor: '#e67e22',
+const button = {
+  backgroundColor: '#5469d4',
   borderRadius: '6px',
   color: '#ffffff',
   fontSize: '16px',
@@ -227,59 +217,57 @@ const ctaButton = {
   textDecoration: 'none',
   textAlign: 'center' as const,
   display: 'inline-block',
-  padding: '14px 32px',
+  padding: '12px 32px',
+  border: 'none',
+  cursor: 'pointer',
 };
 
-const benefits = {
+const linkText = {
   fontSize: '14px',
-  lineHeight: '1.6',
-  color: '#555555',
-  backgroundColor: '#f8f9fa',
-  padding: '16px',
-  borderRadius: '6px',
-  margin: '20px 0',
+  color: '#6b7c93',
+  textAlign: 'center' as const,
+  marginBottom: '24px',
 };
 
-const urgency = {
-  fontSize: '14px',
-  lineHeight: '1.6',
-  color: '#d32f2f',
-  backgroundColor: '#ffebee',
-  padding: '16px',
-  borderRadius: '6px',
-  border: '1px solid #ffcdd2',
-  margin: '20px 0',
+const link = {
+  color: '#5469d4',
+  textDecoration: 'none',
 };
 
 const hr = {
   borderColor: '#e6ebf1',
-  margin: '20px 0',
+  margin: '32px 0',
+};
+
+const helpText = {
+  fontSize: '14px',
+  color: '#6b7c93',
+  lineHeight: '1.5',
+  textAlign: 'center' as const,
 };
 
 const footer = {
-  textAlign: 'center' as const,
-  padding: '20px 0',
+  backgroundColor: '#f6f9fc',
+  padding: '24px 40px',
+  borderTop: '1px solid #e6ebf1',
+  borderRadius: '0 0 8px 8px',
 };
 
 const footerText = {
   fontSize: '14px',
-  color: '#8898aa',
-  margin: '0 0 8px',
+  color: '#6b7c93',
+  textAlign: 'center' as const,
+  marginBottom: '8px',
 };
 
 const footerLinks = {
-  fontSize: '12px',
-  color: '#8898aa',
-  margin: '0 0 8px',
+  fontSize: '14px',
+  color: '#6b7c93',
+  textAlign: 'center' as const,
 };
 
-const link = {
-  color: '#556cd6',
-  textDecoration: 'underline',
+const footerLink = {
+  color: '#6b7c93',
+  textDecoration: 'none',
 };
 
-const footerCopy = {
-  fontSize: '12px',
-  color: '#b8b8b8',
-  margin: '0',
-};

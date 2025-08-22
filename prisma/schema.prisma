@@ -9,20 +9,36 @@ datasource db {
 }
 
 model User {
-  id               String     @id @default(uuid())
-  email            String     @unique
+  id               String               @id @default(uuid())
+  email            String               @unique
   password         String
   firstName        String?
   lastName         String?
   phone            String?
   profileImage     String?
-  language         String     @default("fr")
-  role             UserRole   @default(CLIENT)
+  language         String               @default("fr")
+  role             UserRole             @default(CLIENT)
   stripeCustomerId String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
   metadata         String?
   businesses       Business[]
+  passwordResets   PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  code      String   // Code à 6 chiffres
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([code])
+  @@index([userId])
 }
 
 model Business {
@@ -425,6 +441,9 @@ model Product {
   image                 String?
   originalComposition   String?
   hasComposition        Boolean               @default(false)
+  isCustomizable        Boolean               @default(false)
+  sizeConstraints       Json?                 // {"S": {"maxViandes": 1}, "M": {"maxViandes": 2}}
+  buildingSteps         Json?                 // Étapes de construction pour produits customisables
   aiDescription         String?
   aiKeywords            String[]
   aiSentiment           Float?
@@ -459,18 +478,19 @@ model Product {
 }
 
 model ProductVariation {
-  id        String        @id @default(uuid())
-  productId String
-  name      String
-  type      VariationType @default(CUSTOM)
-  value     String
-  prices    Json
-  isVisible Boolean       @default(true)
-  isDefault Boolean       @default(false)
-  order     Int           @default(0)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id          String        @id @default(uuid())
+  productId   String
+  name        String
+  type        VariationType @default(CUSTOM)
+  value       String
+  prices      Json
+  constraints Json?         // Contraintes spécifiques à cette variation {"maxViandes": 2, "maxComponents": 3}
+  isVisible   Boolean       @default(true)
+  isDefault   Boolean       @default(false)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model CompositionStep {
@@ -1218,17 +1238,18 @@ model VariantResourceAssignment {
 }
 
 model BusinessCategoryConfig {
-  id                String           @id @default(uuid())
-  category          BusinessCategory @unique
-  displayName       String
-  systemPrompt      String           @db.Text
-  defaultParams     Json             @default("{}")
-  availableOptions  Json             @default("[]")
-  isActive          Boolean          @default(true)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  createdBy         String?
-  lastModifiedBy    String?
+  id                    String           @id @default(uuid())
+  category              BusinessCategory @unique
+  displayName           String
+  systemPrompt          String           @db.Text
+  menuExtractionPrompt  String?          @db.Text
+  defaultParams         Json             @default("{}")
+  availableOptions      Json             @default("[]")
+  isActive              Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  createdBy             String?
+  lastModifiedBy        String?
 }
 
 enum UserRole {

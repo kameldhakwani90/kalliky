@@ -17,7 +17,7 @@ export class NotificationService {
 
   constructor() {
     // Configuration email avec Nodemailer
-    this.emailTransporter = nodemailer.createTransporter({
+    this.emailTransporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.SMTP_USER,
@@ -54,13 +54,13 @@ export class NotificationService {
       const pendingItems = await prisma.notificationQueueItem.findMany({
         where: {
           status: 'PENDING',
-          scheduledFor: {
+          scheduledAt: {
             lte: new Date()
           }
         },
         orderBy: [
           { priority: 'desc' },
-          { scheduledFor: 'asc' }
+          { scheduledAt: 'asc' }
         ],
         take: 10,
         include: {

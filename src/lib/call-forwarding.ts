@@ -2,7 +2,7 @@
 // CALL FORWARDING SERVICE - Transfert d'appels vers humains
 // ============================================================================
 
-import { TelnyxService } from './telnyx-service';
+import { TelnyxService } from './telnyx';
 import { redisService } from './redis';
 import { prisma } from './prisma';
 

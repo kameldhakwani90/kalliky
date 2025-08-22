@@ -77,7 +77,22 @@ export async function POST(request: NextRequest) {
     }
     
     // Validation des paramètres optionnels
-    const validReasons = ['user_request', 'ai_escalation', 'keyword_trigger', 'manual'];\n    const validPriorities = ['low', 'normal', 'high', 'urgent'];\n    \n    if (reason && !validReasons.includes(reason)) {\n      return NextResponse.json(\n        { error: `Invalid reason. Must be one of: ${validReasons.join(', ')}` },\n        { status: 400, headers: rateLimitResult.headers }\n      );\n    }\n    \n    if (priority && !validPriorities.includes(priority)) {\n      return NextResponse.json(\n        { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },\n        { status: 400, headers: rateLimitResult.headers }\n      );\n    }
+    const validReasons = ['user_request', 'ai_escalation', 'keyword_trigger', 'manual'];
+    const validPriorities = ['low', 'normal', 'high', 'urgent'];
+    
+    if (reason && !validReasons.includes(reason)) {
+      return NextResponse.json(
+        { error: `Invalid reason. Must be one of: ${validReasons.join(', ')}` },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    if (priority && !validPriorities.includes(priority)) {
+      return NextResponse.json(
+        { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
     
     // Construire la requête de transfert
     const transferRequest: CallTransferRequest = {

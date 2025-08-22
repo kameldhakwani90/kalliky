@@ -32,7 +32,8 @@ export async function middleware(request: NextRequest) {
       '/api/webhooks/',     // Webhooks ont leur propre validation
       '/api/auth/login',    // Auth routes ont leur propre sécurité
       '/api/auth/register',
-      '/api/csrf'           // Route pour obtenir le token
+      '/api/csrf',          // Route pour obtenir le token
+      '/api/stores/'        // APIs de gestion des stores (employees, etc.)
     ];
 
     const isException = exceptions.some(exception => pathname.startsWith(exception));
@@ -69,12 +70,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Temporairement désactivé en raison de problèmes de compatibilité Edge Runtime
-     * TODO: Réactiver après avoir résolu les problèmes de crypto module
-     */
-    // '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$).*)',
   ],
-  // Forcer l'utilisation du runtime Node.js pour ce middleware
-  runtime: 'nodejs',
 };

@@ -105,52 +105,152 @@ export default function ConfigurationModal({
   };
 
   const renderEmailConfig = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <Tabs defaultValue="content" className="space-y-4">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="content">Contenu</TabsTrigger>
+        <TabsTrigger value="smtp">Configuration SMTP</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="content" className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="email-to">Destinataire</Label>
+            <Input
+              id="email-to"
+              placeholder="email@example.com"
+              value={config.settings?.to || ''}
+              onChange={(e) => updateSettings('to', e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email-cc">CC (optionnel)</Label>
+            <Input
+              id="email-cc"
+              placeholder="cc@example.com"
+              value={config.settings?.cc || ''}
+              onChange={(e) => updateSettings('cc', e.target.value)}
+            />
+          </div>
+        </div>
+        
         <div>
-          <Label htmlFor="email-to">Destinataire</Label>
+          <Label htmlFor="email-subject">Sujet du mail</Label>
           <Input
-            id="email-to"
-            placeholder="email@example.com"
-            value={config.settings?.to || ''}
-            onChange={(e) => updateSettings('to', e.target.value)}
+            id="email-subject"
+            placeholder="Nouvelle notification - {activityType}"
+            value={config.settings?.subject || ''}
+            onChange={(e) => updateSettings('subject', e.target.value)}
           />
         </div>
+        
         <div>
-          <Label htmlFor="email-cc">CC (optionnel)</Label>
+          <Label htmlFor="email-template">Template email</Label>
+          <Textarea
+            id="email-template"
+            placeholder="Bonjour,&#10;&#10;Une nouvelle {activityType} a été créée.&#10;&#10;Détails: {details}"
+            rows={6}
+            value={config.settings?.template || ''}
+            onChange={(e) => updateSettings('template', e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Variables disponibles: {'{activityType}'}, {'{details}'}, {'{date}'}, {'{storeName}'}
+          </p>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="smtp" className="space-y-4">
+        <div>
+          <Label htmlFor="smtp-provider">Fournisseur SMTP</Label>
+          <select
+            id="smtp-provider"
+            className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm"
+            onChange={(e) => {
+              const provider = e.target.value;
+              if (provider === 'gmail') {
+                updateSettings('smtpHost', 'smtp.gmail.com');
+                updateSettings('smtpPort', '587');
+              } else if (provider === 'ovh') {
+                updateSettings('smtpHost', 'ssl0.ovh.net');
+                updateSettings('smtpPort', '465');
+              } else if (provider === 'outlook') {
+                updateSettings('smtpHost', 'smtp.office365.com');
+                updateSettings('smtpPort', '587');
+              } else if (provider === 'yahoo') {
+                updateSettings('smtpHost', 'smtp.mail.yahoo.com');
+                updateSettings('smtpPort', '587');
+              }
+            }}
+          >
+            <option value="">Choisir un fournisseur</option>
+            <option value="gmail">Gmail</option>
+            <option value="ovh">OVH Mail</option>
+            <option value="outlook">Outlook/Office 365</option>
+            <option value="yahoo">Yahoo Mail</option>
+            <option value="custom">Configuration personnalisée</option>
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">
+            Sélectionnez votre fournisseur pour configurer automatiquement les paramètres
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="smtp-host">Serveur SMTP</Label>
+            <Input
+              id="smtp-host"
+              placeholder="smtp.gmail.com"
+              value={config.settings?.smtpHost || ''}
+              onChange={(e) => updateSettings('smtpHost', e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="smtp-port">Port</Label>
+            <Input
+              id="smtp-port"
+              placeholder="587"
+              value={config.settings?.smtpPort || ''}
+              onChange={(e) => updateSettings('smtpPort', e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="smtp-from">Email d'expédition</Label>
           <Input
-            id="email-cc"
-            placeholder="cc@example.com"
-            value={config.settings?.cc || ''}
-            onChange={(e) => updateSettings('cc', e.target.value)}
+            id="smtp-from"
+            type="email"
+            placeholder="votre-email@domaine.com"
+            value={config.settings?.smtpFrom || ''}
+            onChange={(e) => updateSettings('smtpFrom', e.target.value)}
           />
         </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="email-subject">Sujet du mail</Label>
-        <Input
-          id="email-subject"
-          placeholder="Nouvelle notification - {activityType}"
-          value={config.settings?.subject || ''}
-          onChange={(e) => updateSettings('subject', e.target.value)}
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="email-template">Template email</Label>
-        <Textarea
-          id="email-template"
-          placeholder="Bonjour,&#10;&#10;Une nouvelle {activityType} a été créée.&#10;&#10;Détails: {details}"
-          rows={6}
-          value={config.settings?.template || ''}
-          onChange={(e) => updateSettings('template', e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground mt-1">
-          Variables disponibles: {'{activityType}'}, {'{details}'}, {'{date}'}, {'{storeName}'}
-        </p>
-      </div>
-    </div>
+
+        <div>
+          <Label htmlFor="smtp-user">Nom d'utilisateur SMTP</Label>
+          <Input
+            id="smtp-user"
+            type="email"
+            placeholder="votre-email@domaine.com"
+            value={config.settings?.smtpUser || ''}
+            onChange={(e) => updateSettings('smtpUser', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="smtp-pass">Mot de passe SMTP</Label>
+          <Input
+            id="smtp-pass"
+            type="password"
+            placeholder="Mot de passe ou mot de passe d'application"
+            value={config.settings?.smtpPass || ''}
+            onChange={(e) => updateSettings('smtpPass', e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            ⚠️ Pour Gmail: utilisez un mot de passe d'application. Pour OVH/autres: votre mot de passe email.
+          </p>
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 
   const renderWhatsAppConfig = () => (

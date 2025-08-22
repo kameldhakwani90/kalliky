@@ -2,7 +2,7 @@
 // AI CALL ANALYZER - Analyse IA complète des transcripts d'appels
 // ============================================================================
 
-import { openai } from './openai';
+import { openaiService } from './openai';
 import { redisService } from './redis';
 import { loadCompleteStoreData, buildAIContext, CompleteStoreData } from './store-data-loader';
 import { openaiTracking } from './openai-tracking';
@@ -137,7 +137,7 @@ export async function analyzeCallRecording(
 
     // 4. APPEL OPENAI POUR ANALYSE
     const startTime = Date.now();
-    const completion = await openai.chat.completions.create({
+    const completion = await openaiService.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {

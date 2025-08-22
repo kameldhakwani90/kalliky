@@ -1,55 +1,39 @@
-'use server';
-
 /**
- * @fileOverview A text translation AI flow.
- *
- * - translateText - A function that handles the text translation.
- * - TranslateTextInput - The input type for the translateText function.
- * - TranslateTextOutput - The return type for the translateText function.
+ * @fileOverview A text translation service using API call.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+export interface TranslateTextInput {
+  text: string;
+  targetLanguage: string;
+}
 
-const TranslateTextInputSchema = z.object({
-  text: z.string().describe('The text to translate.'),
-  targetLanguage: z
-    .string()
-    .describe('The target language to translate the text into (e.g., "English", "French").'),
-});
-export type TranslateTextInput = z.infer<typeof TranslateTextInputSchema>;
-
-const TranslateTextOutputSchema = z.object({
-  translatedText: z.string().describe('The translated text.'),
-});
-export type TranslateTextOutput = z.infer<typeof TranslateTextOutputSchema>;
+export interface TranslateTextOutput {
+  translatedText: string;
+}
 
 export async function translateText(
   input: TranslateTextInput
 ): Promise<TranslateTextOutput> {
-  return translateTextFlow(input);
-}
+  try {
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
 
-const prompt = ai.definePrompt({
-  name: 'translateTextPrompt',
-  input: { schema: TranslateTextInputSchema },
-  output: { schema: TranslateTextOutputSchema },
-  prompt: `Translate the following text to {{targetLanguage}}.
+    if (!response.ok) {
+      throw new Error('Translation API failed');
+    }
 
-Text to translate:
-"{{text}}"
-
-Return only the translated text in the 'translatedText' field.`,
-});
-
-const translateTextFlow = ai.defineFlow(
-  {
-    name: 'translateTextFlow',
-    inputSchema: TranslateTextInputSchema,
-    outputSchema: TranslateTextOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Translation error:', error);
+    // Fallback: return original text if translation fails
+    return {
+      translatedText: input.text
+    };
   }
-);
+}

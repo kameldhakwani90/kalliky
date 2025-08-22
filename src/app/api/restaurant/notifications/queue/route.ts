@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
             actionSettings: action.settings,
             priority: action.priority,
             status: 'PENDING',
-            scheduledFor: scheduleTime,
+            scheduledAt: scheduleTime,
             data,
             metadata: {
               storeId,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         id: item.id,
         actionType: item.actionType,
         priority: item.priority,
-        scheduledFor: item.scheduledFor
+        scheduledAt: item.scheduledAt
       }))
     });
 
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
       where,
       orderBy: [
         { priority: 'desc' },
-        { scheduledFor: 'asc' }
+        { scheduledAt: 'asc' }
       ],
       take: limit,
       include: {

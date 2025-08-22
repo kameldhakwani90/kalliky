@@ -54,10 +54,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Valider le type de fichier
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg', 
+      'image/png', 
+      'image/jpg',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
-        error: 'Type de fichier non supporté. Utilisez PDF, JPEG ou PNG.' 
+        error: 'Type de fichier non supporté. Utilisez PDF, JPEG, PNG, Excel ou CSV.' 
       }, { status: 400 });
     }
 

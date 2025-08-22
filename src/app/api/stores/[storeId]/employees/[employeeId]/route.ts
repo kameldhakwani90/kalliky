@@ -69,10 +69,25 @@ export async function PUT(
         ...(body.name && { name: body.name.trim() }),
         ...(body.description !== undefined && { description: body.description?.trim() || null }),
         ...(body.uniqueId !== undefined && { uniqueId: body.uniqueId?.trim() || null }),
-        ...(body.contactInfo !== undefined && { contactInfo: body.contactInfo }),
-        ...(body.skills !== undefined && { skills: body.skills }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
-        ...(body.erpId !== undefined && { erpId: body.erpId?.trim() || null })
+        metadata: {
+          ...(existingEmployee.metadata || {}),
+          ...(body.contactInfo !== undefined && { contactInfo: body.contactInfo }),
+          ...(body.skills !== undefined && { skills: body.skills }),
+          ...(body.erpId !== undefined && { erpId: body.erpId?.trim() || null }),
+          ...(body.schedules !== undefined && { 
+            availability: {
+              schedules: body.schedules,
+              updatedAt: new Date().toISOString()
+            }
+          }),
+          ...(body.selectedServices !== undefined && { 
+            assignedServices: {
+              services: body.selectedServices,
+              updatedAt: new Date().toISOString()
+            }
+          })
+        }
       },
       include: {
         assignments: {

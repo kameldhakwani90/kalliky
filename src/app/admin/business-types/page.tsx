@@ -35,6 +35,7 @@ interface BusinessCategoryConfig {
   category: string;
   displayName: string;
   systemPrompt: string;
+  menuExtractionPrompt?: string;
   defaultParams: Record<string, any>;
   availableOptions: BusinessOption[];
   isActive: boolean;
@@ -60,6 +61,7 @@ export default function BusinessTypesPage() {
     category: '',
     displayName: '',
     systemPrompt: '',
+    menuExtractionPrompt: '',
     defaultParams: {},
     availableOptions: [] as BusinessOption[]
   });
@@ -119,6 +121,7 @@ export default function BusinessTypesPage() {
           category: '',
           displayName: '',
           systemPrompt: '',
+          menuExtractionPrompt: '',
           defaultParams: {},
           availableOptions: []
         });
@@ -226,12 +229,21 @@ export default function BusinessTypesPage() {
                 </div>
               </div>
               <div>
-                <Label>Prompt système</Label>
+                <Label>Prompt système (appels téléphoniques)</Label>
                 <Textarea 
                   value={newConfig.systemPrompt}
                   onChange={(e) => setNewConfig({...newConfig, systemPrompt: e.target.value})}
-                  rows={8}
+                  rows={6}
                   placeholder="Prompt système avec limite 3min..."
+                />
+              </div>
+              <div>
+                <Label>Prompt extraction menu (analyse d'images)</Label>
+                <Textarea 
+                  value={newConfig.menuExtractionPrompt}
+                  onChange={(e) => setNewConfig({...newConfig, menuExtractionPrompt: e.target.value})}
+                  rows={6}
+                  placeholder="Prompt pour analyser les images de menu et extraire produits, prix..."
                 />
               </div>
               <div className="flex justify-end space-x-2">
@@ -349,13 +361,14 @@ export default function BusinessTypesPage() {
             <Tabs defaultValue="prompt" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="prompt">Prompt Système</TabsTrigger>
+                <TabsTrigger value="menu-extraction">Extraction Menu</TabsTrigger>
                 <TabsTrigger value="params">Paramètres Défaut</TabsTrigger>
                 <TabsTrigger value="options">Options</TabsTrigger>
               </TabsList>
 
               <TabsContent value="prompt" className="space-y-4">
                 <div>
-                  <Label>Prompt système (limite 3min incluse)</Label>
+                  <Label>Prompt système (pour appels téléphoniques - limite 3min incluse)</Label>
                   <Textarea 
                     value={selectedConfig.systemPrompt}
                     onChange={(e) => isEditing && setSelectedConfig({
@@ -366,6 +379,29 @@ export default function BusinessTypesPage() {
                     rows={15}
                     className="font-mono text-sm"
                   />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Ce prompt est utilisé pour les appels téléphoniques IA avec limite de 3 minutes.
+                  </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="menu-extraction" className="space-y-4">
+                <div>
+                  <Label>Prompt d'extraction de menu (pour analyse d'images)</Label>
+                  <Textarea 
+                    value={selectedConfig.menuExtractionPrompt || ''}
+                    onChange={(e) => isEditing && setSelectedConfig({
+                      ...selectedConfig,
+                      menuExtractionPrompt: e.target.value
+                    })}
+                    readOnly={!isEditing}
+                    rows={15}
+                    className="font-mono text-sm"
+                    placeholder="Prompt pour analyser les images de menu et extraire les produits, prix et compositions..."
+                  />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Ce prompt est utilisé par l'IA pour analyser les images de menu et extraire automatiquement tous les produits avec leurs prix et compositions.
+                  </p>
                 </div>
               </TabsContent>
 

@@ -23,7 +23,8 @@ import {
   Sparkles,
   Briefcase,
   Plus,
-  Trash2
+  Trash2,
+  Settings2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -164,7 +165,9 @@ export default function AIConfigTab({ storeId, storeName, settings, onConfigUpda
         await audio.play();
         toast.success('Test vocal terminé');
       } else {
-        throw new Error('Erreur génération audio');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Erreur API TTS:', errorData);
+        throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
       }
     } catch (error) {
       console.error('Erreur test vocal:', error);

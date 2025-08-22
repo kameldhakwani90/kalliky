@@ -2,7 +2,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -1632,7 +1634,7 @@ function StoreWizard({ store, onSave, onCancel, isFirstActivity = false, userSta
 
 // Composant TelnyxPopup supprimé - configuration dans la page de gestion unifiée
 
-export default function StoresPage() {
+function StoresContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t } = useLanguage();
@@ -2366,5 +2368,13 @@ export default function StoresPage() {
             </Dialog>
             </div>
         </div>
+    );
+}
+
+export default function StoresPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <StoresContent />
+        </Suspense>
     );
 }

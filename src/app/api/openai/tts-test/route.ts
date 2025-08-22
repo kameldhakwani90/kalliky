@@ -26,7 +26,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      throw new Error('Erreur OpenAI TTS');
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Erreur OpenAI TTS:', response.status, errorData);
+      throw new Error(`Erreur OpenAI TTS: ${response.status} - ${JSON.stringify(errorData)}`);
     }
 
     // Retourner l'audio directement

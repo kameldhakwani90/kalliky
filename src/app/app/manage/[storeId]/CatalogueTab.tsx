@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   PlusCircle, 
   Search, 
@@ -43,6 +42,74 @@ interface SimpleImportPopupProps {
 function SimpleImportPopup({ isOpen, onClose, storeId, onImportComplete }: SimpleImportPopupProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingData, setProcessingData] = useState<{
+    sessionId: string;
+    status: string;
+    progress: string;
+    productsCreated?: number;
+  } | null>(null);
+
+  const pollProcessingStatus = async (sessionId: string) => {
+    const maxAttempts = 40; // 40 * 3 seconds = 2 minutes max
+    let attempts = 0;
+    
+    const poll = async (): Promise<void> => {
+      try {
+        const response = await fetch(`/api/ai/upload-status/${sessionId}`);
+        const data = await response.json();
+        
+        setProcessingData(prev => prev ? {
+          ...prev,
+          status: data.status,
+          progress: getProgressMessage(data.status),
+          productsCreated: data.productsCreated
+        } : null);
+        
+        if (data.status === 'COMPLETED') {
+          // Succès !
+          toast.success(`🎉 ${data.productsCreated} produits créés automatiquement !`);
+          setIsProcessing(false);
+          setProcessingData(null);
+          onImportComplete(); // Refresh la liste des produits
+          onClose();
+          return;
+        }
+        
+        if (data.status === 'FAILED') {
+          throw new Error('Le traitement IA a échoué');
+        }
+        
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw new Error('Timeout: le traitement prend trop de temps');
+        }
+        
+        // Continuer le polling dans 3 secondes
+        setTimeout(poll, 3000);
+        
+      } catch (error) {
+        console.error('Polling error:', error);
+        toast.error(error instanceof Error ? error.message : 'Erreur lors du traitement');
+        setIsProcessing(false);
+        setProcessingData(null);
+      }
+    };
+    
+    // Commencer le polling
+    poll();
+  };
+  
+  const getProgressMessage = (status: string): string => {
+    switch (status) {
+      case 'PENDING': return 'Préparation de l\'analyse...';
+      case 'EXTRACTING_TEXT': return 'L\'IA analyse votre menu...';
+      case 'PROCESSING': return 'Création des produits en cours...';
+      case 'COMPLETED': return 'Traitement terminé !';
+      case 'FAILED': return 'Erreur lors du traitement';
+      default: return 'Traitement en cours...';
+    }
+  };
 
   const handleFileUpload = async (file: File) => {
     const allowedTypes = [
@@ -55,8 +122,16 @@ function SimpleImportPopup({ isOpen, onClose, storeId, onImportComplete }: Simpl
       'text/csv'
     ];
 
+    // Limite de taille : 10 MB
+    const maxSize = 10 * 1024 * 1024; // 10MB en bytes
+
     if (!allowedTypes.includes(file.type)) {
       toast.error('Type de fichier non supporté. Utilisez PDF, JPEG, PNG, Excel ou CSV.');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      toast.error('Fichier trop volumineux. Limite : 10 MB maximum.');
       return;
     }
 
@@ -79,14 +154,24 @@ function SimpleImportPopup({ isOpen, onClose, storeId, onImportComplete }: Simpl
         throw new Error(error.error || 'Erreur lors de l\'upload');
       }
 
-      toast.success('🎉 Import réussi ! Produits et composants créés automatiquement.');
-      onImportComplete();
-      onClose();
+      const data = await response.json();
+      
+      // Démarrer le polling pour suivre le traitement IA
+      setIsUploading(false);
+      setIsProcessing(true);
+      setProcessingData({
+        sessionId: data.sessionId,
+        status: data.status,
+        progress: 'Analyse de votre menu en cours...'
+      });
+
+      await pollProcessingStatus(data.sessionId);
+      
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'import');
-    } finally {
       setIsUploading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -104,49 +189,94 @@ function SimpleImportPopup({ isOpen, onClose, storeId, onImportComplete }: Simpl
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg bg-black/95 backdrop-blur-xl border-white/20 text-white">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            🤖 Import AI - Catalogue
+          <DialogTitle className="flex items-center gap-2 text-white text-xl">
+            <div className="text-2xl">🤖</div>
+            Import AI - Catalogue
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Uploadez votre menu et notre IA extraira automatiquement tous les produits avec leurs compositions.
-          </p>
-
-          <div
-            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-              isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
-            }`}
-            onDrop={handleDrop}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-          >
-            <div className="space-y-3">
-              <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                {isUploading ? (
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                ) : (
-                  <Upload className="h-6 w-6 text-muted-foreground" />
-                )}
+        {isProcessing ? (
+          // Mode "IA en train de réfléchir"
+          <div className="space-y-8 py-4">
+            <div className="text-center">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-purple-500/20 to-blue-600/20 rounded-full flex items-center justify-center mb-4">
+                <div className="text-4xl animate-bounce">🧠</div>
               </div>
-              <div>
-                <p className="font-medium">{isUploading ? 'Upload en cours...' : 'Glissez votre fichier ici'}</p>
-                <p className="text-sm text-muted-foreground">ou cliquez pour sélectionner</p>
-              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">IA en action</h3>
+              <p className="text-blue-400 animate-pulse text-lg font-medium">
+                {processingData?.progress}
+              </p>
             </div>
-            
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv"
-              onChange={handleFileSelect}
-              disabled={isUploading}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-            />
+
+            {/* Animation de points qui bougent */}
+            <div className="flex justify-center space-x-2">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+            </div>
+
+            {/* Barre de progression simulée */}
+            <div className="w-full bg-white/10 rounded-full h-2">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full animate-pulse"></div>
+            </div>
+
+            <div className="text-center text-gray-400 text-sm">
+              Extraction des produits, prix et compositions...
+              {processingData?.productsCreated && (
+                <div className="text-green-400 mt-2">
+                  ✅ {processingData.productsCreated} produits créés
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          // Mode upload normal
+          <div className="space-y-6">
+            <p className="text-gray-400">
+              Uploadez votre menu et notre IA extraira automatiquement tous les produits avec leurs compositions.
+            </p>
+
+            <div
+              className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 ${
+                isDragging 
+                  ? 'border-blue-400 bg-blue-500/10' 
+                  : 'border-white/30 bg-white/5 hover:bg-white/10'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+            >
+              <div className="space-y-4">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-2xl flex items-center justify-center">
+                  {isUploading ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+                  ) : (
+                    <div className="text-3xl">📤</div>
+                  )}
+                </div>
+                <div>
+                  <p className="font-semibold text-white text-lg">
+                    {isUploading ? 'Upload en cours...' : 'Glissez votre fichier ici'}
+                  </p>
+                  <p className="text-gray-400">ou cliquez pour sélectionner</p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    Formats: PDF, JPEG, PNG, Excel, CSV
+                  </p>
+                </div>
+              </div>
+              
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv"
+                onChange={handleFileSelect}
+                disabled={isUploading}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -202,6 +332,8 @@ export default function CatalogueTab({ storeId, storeName, config, onConfigUpdat
   const [activeTab, setActiveTab] = useState('products');
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [isImportPopupOpen, setIsImportPopupOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Charger les vrais produits et catégories depuis l'API
   useEffect(() => {
@@ -248,6 +380,11 @@ export default function CatalogueTab({ storeId, storeName, config, onConfigUpdat
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -439,387 +576,412 @@ export default function CatalogueTab({ storeId, storeName, config, onConfigUpdat
 
   return (
     <div className="space-y-6">
-      {/* Header avec actions */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Catalogue des produits</CardTitle>
-              <CardDescription>
-                Gérez vos produits, catégories et prix
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleImport}>
-                <Upload className="h-4 w-4 mr-2" />
-                Importer
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Exporter
-              </Button>
-            </div>
+      {/* Header moderne avec navigation par icônes */}
+      <div className="backdrop-blur-xl bg-white/5 border-white/10 rounded-3xl p-6 border">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Catalogue des produits</h2>
+            <p className="text-gray-400">Gérez vos produits, catégories et prix</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="products" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Produits
-              </TabsTrigger>
-              <TabsTrigger value="categories" className="flex items-center gap-2">
-                <Tag className="h-4 w-4" />
-                Catégories
-              </TabsTrigger>
-            </TabsList>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleImport}
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Importer
+          </Button>
+        </div>
 
-            <TabsContent value="products" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Gestion des produits</h3>
-                <Button size="sm" onClick={handleAddProduct}>
+        {/* Navigation par icônes + boutons d'action */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-300 ${
+                activeTab === 'products'
+                  ? 'bg-white/20 text-white shadow-lg scale-105'
+                  : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="text-2xl">🛍️</div>
+              <span className="font-medium">Produits</span>
+              <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
+                {products.length}
+              </Badge>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-300 ${
+                activeTab === 'categories'
+                  ? 'bg-white/20 text-white shadow-lg scale-105'
+                  : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="text-2xl">🏷️</div>
+              <span className="font-medium">Catégories</span>
+              <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
+                {allCategories.length - 1}
+              </Badge>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {activeTab === 'products' && (
+              <Button 
+                onClick={handleAddProduct}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl px-6 py-2 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Ajouter produit
+              </Button>
+            )}
+            {activeTab === 'categories' && (
+              <Button 
+                onClick={() => setIsCategoryFormOpen(true)}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 rounded-xl px-6 py-2 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Ajouter catégorie
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Contenu Produits */}
+      {activeTab === 'products' && (
+        <div className="backdrop-blur-xl bg-white/5 border-white/10 rounded-3xl p-6 border space-y-6">
+          {/* Barre de recherche et filtres */}
+          <div className="flex gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                placeholder="Rechercher un produit..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
+              />
+            </div>
+            <select
+              className="px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:border-white/40 focus:outline-none transition-all"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="all" className="bg-gray-800">Toutes les catégories</option>
+              {allCategories.filter(c => c !== 'all').map(cat => (
+                <option key={cat} value={cat} className="bg-gray-800">{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Liste des produits moderne avec scroll */}
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+            {loading ? (
+              <div className="text-center p-8 text-gray-400">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                Chargement des produits...
+              </div>
+            ) : paginatedProducts.length === 0 ? (
+              <div className="text-center p-12">
+                <div className="text-6xl mb-4">🛍️</div>
+                <h3 className="text-xl font-semibold text-white mb-2">Aucun produit trouvé</h3>
+                <p className="text-gray-400 mb-6">Commencez par ajouter votre premier produit</p>
+                <Button 
+                  onClick={handleAddProduct}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl"
+                >
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Ajouter un produit
+                  Ajouter votre premier produit
                 </Button>
               </div>
-
-              {/* Barre de recherche et filtres */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Rechercher un produit..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <select
-                  className="px-3 py-2 border rounded-md"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                >
-                  <option value="all">Toutes les catégories</option>
-                  {allCategories.filter(c => c !== 'all').map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Statistiques */}
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">{products.length}</div>
-                    <p className="text-xs text-muted-foreground">Produits totaux</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">{allCategories.length - 1}</div>
-                    <p className="text-xs text-muted-foreground">Catégories</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">{products.filter(p => p.status === 'ACTIVE').length}</div>
-                    <p className="text-xs text-muted-foreground">Disponibles</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">
-                      {(() => {
-                        const prices = products
-                          .filter(p => p.variations && p.variations.length > 0 && p.variations[0].prices)
-                          .map(p => Object.values(p.variations[0].prices)[0] as number)
-                          .filter(price => typeof price === 'number' && !isNaN(price));
-                        return prices.length > 0 ? (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2) : '0.00';
-                      })()}€
+            ) : (
+              <>
+                <div className="grid gap-4">
+                  {paginatedProducts.map((product) => (
+                    <div 
+                      key={product.id} 
+                      className="backdrop-blur-xl bg-white/10 border-white/20 rounded-2xl p-6 border hover:bg-white/20 transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl flex items-center justify-center">
+                            <div className="text-xl">🛍️</div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-1">
+                              <h3 className="text-lg font-semibold text-white">{product.name}</h3>
+                              <Badge 
+                                variant="secondary" 
+                                className="bg-blue-500/20 text-blue-300 border-blue-500/30"
+                              >
+                                {product.category}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-400 text-sm">{product.description}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-white">
+                              {product.variations && product.variations.length > 0 && product.variations[0].prices 
+                                ? `${Object.values(product.variations[0].prices)[0]?.toFixed(2) || '0.00'}€`
+                                : '0.00€'
+                              }
+                            </div>
+                            <div className="text-sm text-gray-400">Prix de base</div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={product.status === 'ACTIVE'}
+                              onCheckedChange={() => handleToggleAvailability(product)}
+                              className={`
+                                data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-600
+                                data-[state=checked]:border-green-400 data-[state=unchecked]:border-gray-500
+                                relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors
+                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background
+                                disabled:cursor-not-allowed disabled:opacity-50
+                              `}
+                            />
+                            <div className="text-sm">
+                              <div className={`font-medium ${product.status === 'ACTIVE' ? 'text-green-400' : 'text-gray-400'}`}>
+                                {product.status === 'ACTIVE' ? "Disponible" : "Indisponible"}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                              <DropdownMenuItem onClick={() => handleEditProduct(product)} className="text-white hover:bg-gray-700">
+                                <Edit className="h-4 w-4 mr-2" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="text-red-400 hover:bg-gray-700"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">Prix moyen</p>
-                  </CardContent>
-                </Card>
-              </div>
+                  ))}
+                </div>
 
-              {/* Liste des produits */}
-              <div className="border rounded-lg">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-4">Produit</th>
-                  <th className="text-left p-4">Catégorie</th>
-                  <th className="text-left p-4">Prix</th>
-                  <th className="text-left p-4">Disponibilité</th>
-                  <th className="text-right p-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                      Chargement...
-                    </td>
-                  </tr>
-                ) : filteredProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                      Aucun produit trouvé
-                    </td>
-                  </tr>
-                ) : (
-                  filteredProducts.map((product) => (
-                    <tr key={product.id} className="border-t hover:bg-muted/30">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                            <Package className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <div className="font-medium">{product.name}</div>
-                            <div className="text-sm text-muted-foreground">{product.description}</div>
-                          </div>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-6">
+                    <div className="text-gray-400 text-sm">
+                      Affichage de {startIndex + 1} à {Math.min(startIndex + itemsPerPage, filteredProducts.length)} sur {filteredProducts.length} produits
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
+                      >
+                        ← Précédent
+                      </Button>
+                      
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className={`${
+                              currentPage === page
+                                ? 'bg-white text-black'
+                                : 'text-white hover:bg-white/10'
+                            }`}
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
+                      >
+                        Suivant →
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Contenu Catégories */}
+      {activeTab === 'categories' && (
+        <div className="backdrop-blur-xl bg-white/5 border-white/10 rounded-3xl p-6 border space-y-6">
+          {/* Catégories de produits */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Catégories de produits</h3>
+            {allCategories.filter(c => c !== 'all').length === 0 ? (
+              <div className="text-center p-12">
+                <div className="text-6xl mb-4">🏷️</div>
+                <h3 className="text-xl font-semibold text-white mb-2">Aucune catégorie trouvée</h3>
+                <p className="text-gray-400 mb-6">Organisez vos produits en créant des catégories</p>
+                <Button 
+                  onClick={() => setIsCategoryFormOpen(true)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 rounded-xl"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Créer votre première catégorie
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {allCategories.filter(c => c !== 'all').map((categoryName) => (
+                  <div 
+                    key={categoryName}
+                    className="backdrop-blur-xl bg-white/10 border-white/20 rounded-2xl p-6 border hover:bg-white/20 transition-all duration-300"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl flex items-center justify-center">
+                          <div className="text-xl">🏷️</div>
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <Badge variant="secondary">{product.category}</Badge>
-                      </td>
-                      <td className="p-4">
-                        <span className="font-semibold">
-                          {product.variations && product.variations.length > 0 && product.variations[0].prices 
-                            ? `${Object.values(product.variations[0].prices)[0]?.toFixed(2) || '0.00'}€`
-                            : '0.00€'
-                          }
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={product.status === 'ACTIVE'}
-                            onCheckedChange={() => handleToggleAvailability(product)}
-                          />
-                          <div className="flex flex-col">
-                            <span className="text-sm">
-                              {product.status === 'ACTIVE' ? "Disponible" : "Indisponible"}
-                            </span>
-                            {product.status === 'ACTIVE' && product.availabilitySchedule?.enabled && (
-                              <span className="text-xs text-muted-foreground">
-                                📅 Planning personnalisé
-                              </span>
-                            )}
-                          </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">{categoryName}</h3>
+                          <p className="text-gray-400 text-sm">Catégorie de produits</p>
                         </div>
-                      </td>
-                      <td className="p-4 text-right">
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <Badge 
+                          variant="secondary" 
+                          className="bg-green-500/20 text-green-300 border-green-500/30"
+                        >
+                          {products.filter(p => p.category === categoryName).length} produits
+                        </Badge>
+                        
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditProduct(product)}>
+                          <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                            <DropdownMenuItem className="text-white hover:bg-gray-700">
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteProduct(product.id)}
-                              className="text-destructive"
+                              onClick={() => toast.info('Fonction à implémenter')}
+                              className="text-red-400 hover:bg-gray-700"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Supprimer
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="categories" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Gestion des catégories</h3>
-                <Button size="sm" onClick={() => setIsCategoryFormOpen(true)}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Ajouter une catégorie
-                </Button>
-              </div>
-
-              {/* Statistiques des catégories */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">{allCategories.length - 1}</div>
-                    <p className="text-xs text-muted-foreground">Catégories de produits</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">
-                      {categories.reduce((sum, cat) => sum + (cat.components?.length || 0), 0)}
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">Composants totaux</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">
-                      {Math.round(categories.reduce((sum, cat) => sum + (cat.components?.length || 0), 0) / Math.max(categories.length, 1))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Catégories de composants */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Catégories de composants</h3>
+            <p className="text-gray-400 text-sm mb-6">Pour organiser les ingrédients et compositions</p>
+            
+            {categories.length === 0 ? (
+              <div className="text-center p-8 bg-white/5 rounded-2xl border border-white/10">
+                <div className="text-4xl mb-4">🧩</div>
+                <h4 className="text-lg font-semibold text-white mb-2">Aucune catégorie de composants</h4>
+                <p className="text-gray-400">Les catégories de composants sont créées automatiquement lors de l'import IA</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {categories.map((category) => (
+                  <div 
+                    key={category.id}
+                    className="backdrop-blur-xl bg-white/10 border-white/20 rounded-2xl p-6 border hover:bg-white/20 transition-all duration-300"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div 
+                          className="w-12 h-12 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: `${category.color || '#64748b'}20` }}
+                        >
+                          <div className="text-xl">🧩</div>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">{category.name}</h3>
+                          <p className="text-gray-400 text-sm">{category.description || 'Aucune description'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <Badge 
+                          variant="secondary" 
+                          className="bg-purple-500/20 text-purple-300 border-purple-500/30"
+                        >
+                          {category.components?.length || 0} composants
+                        </Badge>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                            <DropdownMenuItem className="text-white hover:bg-gray-700">
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteCategory(category.id)}
+                              className="text-red-400 hover:bg-gray-700"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">Moy. par catégorie composants</p>
-                  </CardContent>
-                </Card>
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
+        </div>
+      )}
 
-              {/* Liste des catégories de produits */}
-              <div className="border rounded-lg">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-4">Catégorie</th>
-                      <th className="text-left p-4">Nombre de produits</th>
-                      <th className="text-right p-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allCategories.filter(c => c !== 'all').length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="text-center p-8 text-muted-foreground">
-                          Aucune catégorie de produit trouvée
-                        </td>
-                      </tr>
-                    ) : (
-                      allCategories.filter(c => c !== 'all').map((categoryName) => (
-                        <tr key={categoryName} className="border-t hover:bg-muted/30">
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-4 h-4 rounded bg-blue-500"></div>
-                              <div>
-                                <div className="font-medium">{categoryName}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <Badge variant="secondary">
-                              {products.filter(p => p.category === categoryName).length} produits
-                            </Badge>
-                          </td>
-                          <td className="p-4 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Modifier
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    // TODO: Renommer tous les produits de cette catégorie
-                                    toast.info('Fonction à implémenter');
-                                  }}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Supprimer
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Section des catégories de composants */}
-              <div className="mt-8">
-                <h4 className="text-md font-semibold mb-4">Catégories de composants (pour les compositions)</h4>
-                <div className="border rounded-lg">
-                  <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-4">Catégorie</th>
-                        <th className="text-left p-4">Description</th>
-                        <th className="text-left p-4">Composants</th>
-                        <th className="text-right p-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {categories.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="text-center p-8 text-muted-foreground">
-                            Aucune catégorie de composant trouvée
-                          </td>
-                        </tr>
-                      ) : (
-                        categories.map((category) => (
-                          <tr key={category.id} className="border-t hover:bg-muted/30">
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-4 h-4 rounded" style={{ backgroundColor: category.color || '#64748b' }}></div>
-                                <div>
-                                  <div className="font-medium">{category.name}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <span className="text-sm text-muted-foreground">
-                                {category.description || 'Aucune description'}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <Badge variant="secondary">
-                                {category.components?.length || 0} composants
-                              </Badge>
-                            </td>
-                            <td className="p-4 text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Modifier
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDeleteCategory(category.id)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Supprimer
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Dialog de formulaire de produit */}
+      {/* Dialog de formulaire de produit - Style Apple */}
       <Dialog open={isProductFormOpen} onOpenChange={setIsProductFormOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-xl border-white/20 text-white">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-white text-xl flex items-center gap-2">
+              <div className="text-2xl">🛍️</div>
               {editingProduct ? 'Modifier le produit' : 'Ajouter un produit'}
             </DialogTitle>
           </DialogHeader>
@@ -833,36 +995,48 @@ export default function CatalogueTab({ storeId, storeName, config, onConfigUpdat
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de formulaire de catégorie */}
+      {/* Dialog de formulaire de catégorie - Style Apple */}
       <Dialog open={isCategoryFormOpen} onOpenChange={setIsCategoryFormOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-black/95 backdrop-blur-xl border-white/20 text-white">
           <DialogHeader>
-            <DialogTitle>Ajouter une catégorie</DialogTitle>
+            <DialogTitle className="text-white text-xl flex items-center gap-2">
+              <div className="text-2xl">🏷️</div>
+              Ajouter une catégorie
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="categoryName">Nom de la catégorie *</Label>
-              <Input
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label htmlFor="categoryName" className="text-white">Nom de la catégorie *</Label>
+              <input
                 id="categoryName"
                 placeholder="ex: Légumes, Viandes..."
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
+                className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="categoryDescription">Description</Label>
-              <Input
+            <div className="space-y-3">
+              <Label htmlFor="categoryDescription" className="text-white">Description</Label>
+              <input
                 id="categoryDescription"
                 placeholder="Description de la catégorie..."
                 value={newCategoryDescription}
                 onChange={(e) => setNewCategoryDescription(e.target.value)}
+                className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
               />
             </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setIsCategoryFormOpen(false)}>
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCategoryFormOpen(false)}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
                 Annuler
               </Button>
-              <Button onClick={handleAddCategory}>
+              <Button 
+                onClick={handleAddCategory}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0"
+              >
                 Créer la catégorie
               </Button>
             </div>

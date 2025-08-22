@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
+import jwt from 'jsonwebtoken';
 
 // Fonction d'authentification
 async function authenticateUser(request: NextRequest) {
@@ -10,7 +10,7 @@ async function authenticateUser(request: NextRequest) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string; email: string; role: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; email: string; role: string };
     return { user: { id: decoded.userId, email: decoded.email, role: decoded.role } };
   } catch {
     return null;
@@ -168,14 +168,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         name: name.trim(),
         description: description?.trim() || null,
         uniqueId: uniqueId?.trim() || null,
-        contactInfo: contactInfo || {},
-        skills: skills || {},
-        erpId: erpId?.trim() || null,
         isActive,
-        availability: schedules.length > 0 ? {
-          schedules: schedules,
-          updatedAt: new Date().toISOString()
-        } : null
+        metadata: {
+          contactInfo: contactInfo || {},
+          skills: skills || {},
+          erpId: erpId?.trim() || null,
+          availability: schedules.length > 0 ? {
+            schedules: schedules,
+            updatedAt: new Date().toISOString()
+          } : null
+        }
       },
       include: {
         assignments: {

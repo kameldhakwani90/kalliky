@@ -279,10 +279,40 @@ export default function AdminSettingsPage() {
             <CardHeader>
               <CardTitle>Configuration SMTP</CardTitle>
               <CardDescription>
-                Paramètres pour l'envoi d'emails via Gmail ou autre serveur SMTP
+                Paramètres pour l'envoi d'emails via différents fournisseurs
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="smtp_provider">Fournisseur SMTP</Label>
+                <select
+                  id="smtp_provider"
+                  className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm"
+                  onChange={(e) => {
+                    const provider = e.target.value;
+                    if (provider === 'gmail') {
+                      setSettings({...settings, smtp_host: 'smtp.gmail.com', smtp_port: '587'});
+                    } else if (provider === 'ovh') {
+                      setSettings({...settings, smtp_host: 'ssl0.ovh.net', smtp_port: '465'});
+                    } else if (provider === 'outlook') {
+                      setSettings({...settings, smtp_host: 'smtp.office365.com', smtp_port: '587'});
+                    } else if (provider === 'yahoo') {
+                      setSettings({...settings, smtp_host: 'smtp.mail.yahoo.com', smtp_port: '587'});
+                    }
+                  }}
+                >
+                  <option value="">Choisir un fournisseur</option>
+                  <option value="gmail">Gmail</option>
+                  <option value="ovh">OVH Mail</option>
+                  <option value="outlook">Outlook/Office 365</option>
+                  <option value="yahoo">Yahoo Mail</option>
+                  <option value="custom">Configuration personnalisée</option>
+                </select>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sélectionnez votre fournisseur pour configurer automatiquement les paramètres
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="smtp_host">Serveur SMTP</Label>
@@ -311,32 +341,26 @@ export default function AdminSettingsPage() {
                   type="email"
                   value={settings.smtp_user}
                   onChange={(e) => setSettings({...settings, smtp_user: e.target.value})}
-                  placeholder="votre-email@gmail.com"
+                  placeholder="votre-email@domaine.com"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Votre adresse email Gmail (même que l'email d'expédition)
+                  Votre adresse email (généralement la même que l'email d'expédition)
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="smtp_pass">Mot de passe d'application Gmail</Label>
+                <Label htmlFor="smtp_pass">Mot de passe SMTP</Label>
                 <Input
                   id="smtp_pass"
                   type="password"
                   value={settings.smtp_pass}
                   onChange={(e) => setSettings({...settings, smtp_pass: e.target.value})}
-                  placeholder="Mot de passe d'application Gmail"
+                  placeholder="Mot de passe ou mot de passe d'application"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  ⚠️ Utilisez un mot de passe d'application Gmail, pas votre mot de passe principal.
+                  ⚠️ Pour Gmail: utilisez un mot de passe d'application, pas votre mot de passe principal.
                   <br />
-                  <a 
-                    href="https://support.google.com/accounts/answer/185833" 
-                    target="_blank" 
-                    className="text-blue-600 hover:underline"
-                  >
-                    Guide pour créer un mot de passe d'application Gmail
-                  </a>
+                  Pour OVH/autres: utilisez votre mot de passe email habituel.
                 </p>
               </div>
             </CardContent>

@@ -1,13 +1,16 @@
 
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Package, ShoppingBag } from 'lucide-react';
 
-export default function MenuPage() {
+function MenuContent() {
     const searchParams = useSearchParams();
     const storeId = searchParams.get('storeId');
     const action = searchParams.get('action');
@@ -89,4 +92,12 @@ export default function MenuPage() {
             </motion.div>
         </div>
     )
+}
+
+export default function MenuPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <MenuContent />
+        </Suspense>
+    );
 }

@@ -83,6 +83,15 @@ const EMAIL_TEMPLATES: EmailTemplate[] = [
     sentCount: 45
   },
   {
+    id: 'password_reset_code',
+    name: 'Code de Réinitialisation',
+    type: 'password-reset-code',
+    subject: '🔒 Code de réinitialisation - Kalliky',
+    description: 'Envoyé avec le code à 6 chiffres pour réinitialiser le mot de passe',
+    enabled: true,
+    sentCount: 0
+  },
+  {
     id: 'trial_warning',
     name: 'Avertissement Trial',
     type: 'trial_warning',
@@ -340,6 +349,52 @@ export default function EmailConfigurationManager() {
             <CardContent className="space-y-4">
               {editedSettings && (
                 <>
+                  <div>
+                    <Label htmlFor="smtp_provider">Fournisseur SMTP</Label>
+                    <select
+                      id="smtp_provider"
+                      className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm"
+                      onChange={(e) => {
+                        const provider = e.target.value;
+                        if (provider === 'gmail') {
+                          setEditedSettings({
+                            ...editedSettings,
+                            smtp_host: 'smtp.gmail.com',
+                            smtp_port: '587'
+                          });
+                        } else if (provider === 'ovh') {
+                          setEditedSettings({
+                            ...editedSettings,
+                            smtp_host: 'ssl0.ovh.net',
+                            smtp_port: '465'
+                          });
+                        } else if (provider === 'outlook') {
+                          setEditedSettings({
+                            ...editedSettings,
+                            smtp_host: 'smtp.office365.com',
+                            smtp_port: '587'
+                          });
+                        } else if (provider === 'yahoo') {
+                          setEditedSettings({
+                            ...editedSettings,
+                            smtp_host: 'smtp.mail.yahoo.com',
+                            smtp_port: '587'
+                          });
+                        }
+                      }}
+                    >
+                      <option value="">Choisir un fournisseur</option>
+                      <option value="gmail">Gmail</option>
+                      <option value="ovh">OVH Mail</option>
+                      <option value="outlook">Outlook/Office 365</option>
+                      <option value="yahoo">Yahoo Mail</option>
+                      <option value="custom">Configuration personnalisée</option>
+                    </select>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Sélectionnez votre fournisseur pour configurer automatiquement les paramètres
+                    </p>
+                  </div>
+
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <Label htmlFor="smtp_host">Serveur SMTP</Label>

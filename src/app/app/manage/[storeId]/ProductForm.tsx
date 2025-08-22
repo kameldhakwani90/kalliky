@@ -55,7 +55,15 @@ interface CompositionStep {
 interface CompositionOption {
   id: string;
   name: string;
-  prices?: any;
+  prices?: { [variationId: string]: number };
+  uniformPrice?: number;
+  subComponents?: CompositionSubComponent[];
+}
+
+interface CompositionSubComponent {
+  id: string;
+  name: string;
+  prices?: { [variationId: string]: number };
   uniformPrice?: number;
 }
 
@@ -118,32 +126,32 @@ function ComponentAutocomplete({ value, onChange, onSelectComponent, availableCo
 
   return (
     <div className="relative">
-      <Input
+      <input
         ref={inputRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => value.length >= 2 && setShowSuggestions(filteredComponents.length > 0)}
         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
         placeholder={placeholder}
-        className={className}
+        className={`px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all ${className}`}
       />
       
       {showSuggestions && (
-        <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-40 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md shadow-lg max-h-40 overflow-y-auto">
           {filteredComponents.map((component) => (
             <div
               key={component.id}
-              className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
+              className="px-3 py-2 hover:bg-white/20 cursor-pointer text-sm text-white"
               onClick={() => handleSelectComponent(component)}
             >
               <div className="font-medium">{component.name}</div>
               {component.category && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-gray-300">
                   {component.category.name} • Utilisé {component.usageCount}x
                 </div>
               )}
               {component.aliases.length > 0 && (
-                <div className="text-xs text-blue-600">
+                <div className="text-xs text-blue-400">
                   Aussi: {component.aliases.join(', ')}
                 </div>
               )}
@@ -198,54 +206,51 @@ function DayScheduleRow({ dayKey, dayData, onUpdate }: DayScheduleRowProps) {
   };
 
   return (
-    <div className="flex items-center gap-3 py-2">
-      <div className="w-20 text-sm font-medium">{dayNames[dayKey]}</div>
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 py-2">
+      <div className="w-full sm:w-20 text-sm font-medium text-white">{dayNames[dayKey]}</div>
       
       <Switch 
         checked={dayData.enabled}
         onCheckedChange={(enabled) => onUpdate({ ...dayData, enabled })}
         size="sm"
+        className="data-[state=unchecked]:bg-white/20 data-[state=checked]:bg-green-500"
       />
 
       {dayData.enabled && (
-        <div className="flex-1 flex flex-wrap items-center gap-2">
+        <div className="flex-1 flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
           {dayData.timeSlots.map((slot, index) => (
-            <div key={index} className="flex items-center gap-1 bg-background rounded px-2 py-1">
-              <Input 
+            <div key={index} className="flex items-center gap-1 bg-white/10 border border-white/20 rounded px-2 py-1 min-w-fit">
+              <input 
                 type="time"
                 value={slot.start}
                 onChange={(e) => updateTimeSlot(index, 'start', e.target.value)}
-                className="w-20 h-6 text-xs border-0 p-1"
+                className="w-16 sm:w-20 h-6 text-xs border-0 p-1 bg-transparent text-white focus:outline-none"
               />
-              <span className="text-xs text-muted-foreground">-</span>
-              <Input 
+              <span className="text-xs text-gray-400">-</span>
+              <input 
                 type="time"
                 value={slot.end}
                 onChange={(e) => updateTimeSlot(index, 'end', e.target.value)}
-                className="w-20 h-6 text-xs border-0 p-1"
+                className="w-16 sm:w-20 h-6 text-xs border-0 p-1 bg-transparent text-white focus:outline-none"
               />
               {dayData.timeSlots.length > 1 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
+                <button 
                   onClick={() => removeTimeSlot(index)}
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded transition-all"
                 >
                   <X className="h-3 w-3" />
-                </Button>
+                </button>
               )}
             </div>
           ))}
           
-          <Button 
-            variant="outline" 
-            size="sm"
+          <button 
             onClick={addTimeSlot}
-            className="h-6 px-2 text-xs"
+            className="h-6 px-2 text-xs bg-white/10 border border-white/20 rounded text-white hover:bg-white/20 transition-all flex items-center gap-1"
           >
-            <Plus className="h-3 w-3 mr-1" />
+            <Plus className="h-3 w-3" />
             Plage
-          </Button>
+          </button>
         </div>
       )}
     </div>
@@ -459,12 +464,73 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
   );
 
   const [compositionSteps, setCompositionSteps] = useState<CompositionStep[]>(
-    product?.composition || []
+    (product?.composition || []).map((step: any) => ({
+      ...step,
+      options: step.options?.map((option: any) => {
+        const optionPrices: { [variationId: string]: number } = {};
+        if (product?.variations) {
+          product.variations.forEach((variation: any) => {
+            optionPrices[variation.id || `var-${Date.now()}`] = option.prices?.[variation.id] || 0;
+          });
+        }
+        
+        return {
+          ...option,
+          prices: option.prices || optionPrices,
+          subComponents: option.subComponents?.map((subComp: any) => {
+            const subCompPrices: { [variationId: string]: number } = {};
+            if (product?.variations) {
+              product.variations.forEach((variation: any) => {
+                subCompPrices[variation.id || `var-${Date.now()}`] = subComp.prices?.[variation.id] || 0;
+              });
+            }
+            
+            return {
+              ...subComp,
+              prices: subComp.prices || subCompPrices
+            };
+          }) || []
+        };
+      }) || []
+    }))
   );
 
   const [hasUniformPricing, setHasUniformPricing] = useState(false);
   const [hasMultipleSizes, setHasMultipleSizes] = useState(variations.length > 1);
   const [hasComposition, setHasComposition] = useState(compositionSteps.length > 0);
+
+  // Synchroniser les prix des options et sous-options quand les variations changent
+  useEffect(() => {
+    setCompositionSteps(prev => prev.map(step => ({
+      ...step,
+      options: step.options.map(option => {
+        const updatedPrices = { ...option.prices };
+        variations.forEach(variation => {
+          if (!(variation.id in updatedPrices)) {
+            updatedPrices[variation.id] = 0;
+          }
+        });
+        
+        return {
+          ...option,
+          prices: updatedPrices,
+          subComponents: option.subComponents?.map(subComp => {
+            const updatedSubPrices = { ...subComp.prices };
+            variations.forEach(variation => {
+              if (!(variation.id in updatedSubPrices)) {
+                updatedSubPrices[variation.id] = 0;
+              }
+            });
+            
+            return {
+              ...subComp,
+              prices: updatedSubPrices
+            };
+          })
+        };
+      })
+    })));
+  }, [variations]);
 
   // Charger les composants disponibles
   useEffect(() => {
@@ -630,11 +696,17 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
   };
 
   const addCompositionOption = (stepId: string) => {
+    const initialPrices: { [variationId: string]: number } = {};
+    variations.forEach(variation => {
+      initialPrices[variation.id] = 0;
+    });
+
     const newOption: CompositionOption = {
       id: `opt-${Date.now()}`,
       name: '',
-      prices: { 'dine-in': 0, 'takeaway': 0, 'delivery': 0, 'pickup': 0 },
-      uniformPrice: 0
+      prices: initialPrices,
+      uniformPrice: 0,
+      subComponents: []
     };
     
     setCompositionSteps(prev => prev.map(step =>
@@ -661,6 +733,113 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
     setCompositionSteps(prev => prev.map(step =>
       step.id === stepId 
         ? { ...step, options: step.options.filter(option => option.id !== optionId) }
+        : step
+    ));
+  };
+
+  const addSubComponent = (stepId: string, optionId: string) => {
+    const initialPrices: { [variationId: string]: number } = {};
+    variations.forEach(variation => {
+      initialPrices[variation.id] = 0;
+    });
+
+    const newSubComponent: CompositionSubComponent = {
+      id: `sub-${Date.now()}`,
+      name: '',
+      prices: initialPrices,
+      uniformPrice: 0
+    };
+    
+    setCompositionSteps(prev => prev.map(step =>
+      step.id === stepId 
+        ? {
+            ...step,
+            options: step.options.map(option =>
+              option.id === optionId 
+                ? { ...option, subComponents: [...(option.subComponents || []), newSubComponent] }
+                : option
+            )
+          }
+        : step
+    ));
+  };
+
+  const updateSubComponent = (stepId: string, optionId: string, subComponentId: string, field: string, value: any) => {
+    setCompositionSteps(prev => prev.map(step =>
+      step.id === stepId 
+        ? {
+            ...step,
+            options: step.options.map(option =>
+              option.id === optionId 
+                ? {
+                    ...option,
+                    subComponents: option.subComponents?.map(subComp =>
+                      subComp.id === subComponentId ? { ...subComp, [field]: value } : subComp
+                    )
+                  }
+                : option
+            )
+          }
+        : step
+    ));
+  };
+
+  const removeSubComponent = (stepId: string, optionId: string, subComponentId: string) => {
+    setCompositionSteps(prev => prev.map(step =>
+      step.id === stepId 
+        ? {
+            ...step,
+            options: step.options.map(option =>
+              option.id === optionId 
+                ? { ...option, subComponents: option.subComponents?.filter(subComp => subComp.id !== subComponentId) }
+                : option
+            )
+          }
+        : step
+    ));
+  };
+
+  // Fonction pour mettre à jour le prix d'une option par variation
+  const updateOptionPriceByVariation = (stepId: string, optionId: string, variationId: string, price: number) => {
+    setCompositionSteps(prev => prev.map(step =>
+      step.id === stepId 
+        ? {
+            ...step,
+            options: step.options.map(option =>
+              option.id === optionId 
+                ? { 
+                    ...option, 
+                    prices: { ...option.prices, [variationId]: price }
+                  }
+                : option
+            )
+          }
+        : step
+    ));
+  };
+
+  // Fonction pour mettre à jour le prix d'un sous-composant par variation
+  const updateSubComponentPriceByVariation = (stepId: string, optionId: string, subComponentId: string, variationId: string, price: number) => {
+    setCompositionSteps(prev => prev.map(step =>
+      step.id === stepId 
+        ? {
+            ...step,
+            options: step.options.map(option =>
+              option.id === optionId 
+                ? {
+                    ...option,
+                    subComponents: option.subComponents?.map(subComp =>
+                      subComp.id === subComponentId 
+                        ? { 
+                            ...subComp, 
+                            prices: { ...subComp.prices, [variationId]: price }
+                          }
+                        : subComp
+                    )
+                  }
+                : option
+            )
+          }
         : step
     ));
   };
@@ -811,41 +990,51 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Colonne gauche : Informations générales */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informations Générales</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="backdrop-blur-xl bg-white/10 border-white/20 rounded-3xl p-6 border">
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                <div className="text-2xl">📋</div>
+                Informations Générales
+              </h3>
+            </div>
+            <div className="space-y-6">
               
               {/* Image du produit */}
               <div className="space-y-2">
-                <Label>Image du produit</Label>
+                <label className="text-white font-medium">Image du produit</label>
                 <div className="flex items-center space-x-4">
-                  <div className="w-32 h-20 bg-muted rounded-lg flex items-center justify-center">
+                  <div className="w-32 h-20 bg-white/10 border border-white/20 rounded-lg flex items-center justify-center">
                     {formData.image && formData.image.trim() && formData.image.startsWith('http') ? (
                       <Image src={formData.image} alt="" width={128} height={80} className="rounded-lg object-cover" />
                     ) : (
-                      <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                      <ImagePlus className="h-8 w-8 text-gray-400" />
                     )}
                   </div>
                   <div className="flex-1 space-y-2">
-                    <Input 
+                    <input 
                       placeholder="URL de l'image..." 
                       value={formData.image}
                       onChange={(e) => handleInputChange('image', e.target.value)}
+                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
                     />
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => document.getElementById('image-upload')?.click()}>
-                        <Upload className="h-4 w-4 mr-2" />
+                      <button 
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                        className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm hover:bg-white/20 transition-all flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
                         Upload
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => setIsImportPopupOpen(true)}>
-                        <FileText className="h-4 w-4 mr-2" />
+                      </button>
+                      <button 
+                        onClick={() => setIsImportPopupOpen(true)}
+                        className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm hover:bg-white/20 transition-all flex items-center gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
                         🤖 Import AI
-                      </Button>
+                      </button>
                     </div>
                     <input
                       id="image-upload"
@@ -860,20 +1049,21 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
 
               {/* Nom du produit */}
               <div className="space-y-2">
-                <Label htmlFor="name">Nom du produit *</Label>
-                <Input 
+                <label htmlFor="name" className="text-white font-medium">Nom du produit *</label>
+                <input 
                   id="name"
                   placeholder="ex: Pizza Margherita"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
                 />
               </div>
 
               {/* Catégorie */}
               <div className="space-y-2">
-                <Label>Catégorie *</Label>
+                <label className="text-white font-medium">Catégorie *</label>
                 <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white rounded-xl focus:border-white/40">
                     <SelectValue placeholder="Sélectionner une catégorie" />
                   </SelectTrigger>
                   <SelectContent>
@@ -886,25 +1076,27 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
 
               {/* Description */}
               <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea 
+                <label className="text-white font-medium">Description</label>
+                <textarea 
                   placeholder="Description du produit..."
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={3}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all resize-none"
                 />
               </div>
 
               {/* Disponibilité */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Disponibilité</Label>
+                  <label className="text-white font-medium">Disponibilité</label>
                   <div className="flex items-center space-x-2">
                     <Switch 
                       checked={formData.status === 'ACTIVE'}
                       onCheckedChange={(checked) => handleInputChange('status', checked ? 'ACTIVE' : 'INACTIVE')}
+                      className="data-[state=unchecked]:bg-white/20 data-[state=checked]:bg-green-500"
                     />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-gray-300">
                       {formData.status === 'ACTIVE' ? 'Produit disponible' : 'Produit indisponible'}
                     </span>
                   </div>
@@ -913,23 +1105,24 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                 {formData.status === 'ACTIVE' && (
                   <div className="pl-4 border-l-2 border-muted space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label className="text-sm">Planning avancé</Label>
+                      <label className="text-sm text-white font-medium">Planning avancé</label>
                       <div className="flex items-center space-x-2">
                         <Switch 
                           checked={availabilitySchedule.enabled}
                           onCheckedChange={(checked) => 
                             setAvailabilitySchedule(prev => ({ ...prev, enabled: checked }))
                           }
+                          className="data-[state=unchecked]:bg-white/20 data-[state=checked]:bg-blue-500"
                         />
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-gray-300">
                           {availabilitySchedule.enabled ? 'Planning personnalisé' : 'Toujours disponible'}
                         </span>
                       </div>
                     </div>
 
                     {availabilitySchedule.enabled && (
-                      <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
-                        <div className="text-xs font-medium text-muted-foreground mb-2">
+                      <div className="space-y-2 p-3 bg-white/5 border border-white/10 rounded-lg">
+                        <div className="text-xs font-medium text-gray-300 mb-2">
                           Configurez les jours et horaires de disponibilité
                         </div>
                         {Object.entries(availabilitySchedule.days).map(([dayKey, dayData]) => (
@@ -953,7 +1146,7 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
 
               {/* Tags */}
               <div className="space-y-2">
-                <Label>Tags</Label>
+                <label className="text-white font-medium">Tags</label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {tags.map(tag => (
                     <Badge key={tag} variant="secondary" className="flex items-center gap-1">
@@ -963,53 +1156,59 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Input 
+                  <input 
                     placeholder="Ajouter un tag..."
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                    className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
                   />
-                  <Button variant="outline" size="sm" onClick={addTag}>
+                  <button 
+                    onClick={addTag}
+                    className="px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all"
+                  >
                     <Plus className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Colonne droite : Tailles & Tarifs */}
         <div className="space-y-6">
-          <Card className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="backdrop-blur-xl bg-white/10 border-white/20 rounded-3xl p-6 border">
+            <div className="mb-6">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Ruler className="h-5 w-5 text-blue-600" />
+                <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                  <div className="text-2xl">🏷️</div>
                   Tailles & Tarifs
-                </CardTitle>
+                </h3>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
-                    <Label className="text-sm font-medium">Prix unique</Label>
+                    <label className="text-sm font-medium text-white">Prix unique</label>
                     <Switch 
                       checked={hasUniformPricing}
                       onCheckedChange={handleUniformPricingToggle}
+                      className="data-[state=unchecked]:bg-white/20 data-[state=checked]:bg-blue-500"
                     />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Label className="text-sm font-medium">Plusieurs tailles</Label>
+                    <label className="text-sm font-medium text-white">Plusieurs tailles</label>
                     <Switch 
                       checked={hasMultipleSizes}
                       onCheckedChange={handleMultipleSizesToggle}
+                      className="data-[state=unchecked]:bg-white/20 data-[state=checked]:bg-blue-500"
                     />
                   </div>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="p-6">
+            </div>
+            <div className="space-y-4">
               <div className="space-y-4">
                 {/* En-têtes des colonnes */}
                 {hasUniformPricing ? (
-                  <div className={`grid gap-3 text-xs font-semibold text-muted-foreground uppercase ${hasMultipleSizes ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <div className={`grid gap-2 md:gap-3 text-xs font-semibold text-gray-300 uppercase ${hasMultipleSizes ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
                     <div className="flex items-center gap-1">
                       <Box className="h-3 w-3" />
                       {hasMultipleSizes ? "Taille" : "Article"}
@@ -1018,7 +1217,7 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                     {hasMultipleSizes && <div className="text-center">Actions</div>}
                   </div>
                 ) : (
-                  <div className={`grid gap-3 text-xs font-semibold text-muted-foreground uppercase ${hasMultipleSizes ? 'grid-cols-6' : 'grid-cols-5'}`}>
+                  <div className={`grid gap-2 md:gap-3 text-xs font-semibold text-gray-300 uppercase ${hasMultipleSizes ? 'grid-cols-1 sm:grid-cols-3 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-3 lg:grid-cols-5'}`}>
                     <div className="flex items-center gap-1">
                       <Box className="h-3 w-3" />
                       {hasMultipleSizes ? "Taille" : "Article"}
@@ -1033,17 +1232,17 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                 
                 {/* Variations */}
                 {variations.map((variation, index) => (
-                  <div key={variation.id} className={`grid gap-3 items-center p-3 rounded-xl bg-muted/30 ${hasUniformPricing ? (hasMultipleSizes ? 'grid-cols-3' : 'grid-cols-2') : (hasMultipleSizes ? 'grid-cols-6' : 'grid-cols-5')}`}>
+                  <div key={variation.id} className={`grid gap-2 md:gap-3 items-center p-3 rounded-xl bg-white/5 border border-white/10 ${hasUniformPricing ? (hasMultipleSizes ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2') : (hasMultipleSizes ? 'grid-cols-1 sm:grid-cols-3 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-3 lg:grid-cols-5')}`}>
                     <div className="flex items-center gap-2">
                       {hasMultipleSizes ? (
-                        <Input 
+                        <input 
                           value={variation.name}
                           onChange={(e) => updateVariation(variation.id, 'name', e.target.value)}
-                          className="text-sm font-medium border-0 bg-transparent"
+                          className="text-sm font-medium px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
                           placeholder="Nom de la taille"
                         />
                       ) : (
-                        <div className="text-sm font-medium text-muted-foreground">
+                        <div className="text-sm font-medium text-gray-300">
                           Prix standard
                         </div>
                       )}
@@ -1052,7 +1251,7 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                     {hasUniformPricing ? (
                       <>
                         <div className="relative flex items-center">
-                          <Input 
+                          <input 
                             type="text"
                             value={variation.editingUniformPrice !== undefined ? variation.editingUniformPrice : (variation.uniformPrice || '').toString()}
                             onChange={(e) => updateUniformPrice(variation.id, e.target.value)}
@@ -1063,22 +1262,20 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                               // Sélectionner tout le texte pour faciliter l'édition
                               setTimeout(() => e.target.select(), 0);
                             }}
-                            className="text-center text-sm border-0 bg-background/80 pr-8"
+                            className="w-16 sm:w-20 text-center text-sm border-0 bg-white/10 pr-6 text-white placeholder-gray-400 focus:outline-none rounded-md !bg-white/10 !text-white !border-white/20"
                             placeholder="0.00"
                           />
-                          <span className="absolute right-2 text-xs text-muted-foreground">€</span>
+                          <span className="absolute right-1 text-xs text-gray-300">€</span>
                         </div>
                         {hasMultipleSizes && (
                           <div className="flex justify-center">
                             {variations.length > 1 && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
+                              <button 
                                 onClick={() => removeVariation(variation.id)}
-                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                                className="h-8 w-8 p-2 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-lg transition-all"
                               >
                                 <X className="h-4 w-4" />
-                              </Button>
+                              </button>
                             )}
                           </div>
                         )}
@@ -1087,7 +1284,7 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                       <>
                         {['dine-in', 'takeaway', 'delivery', 'pickup'].map(channel => (
                           <div key={channel} className="relative flex items-center">
-                            <Input 
+                            <input 
                               type="text"
                               value={variation.editingPrices?.[channel] !== undefined ? variation.editingPrices[channel] : (variation.prices?.[channel] || '').toString()}
                               onChange={(e) => updateVariationPrice(variation.id, channel, e.target.value)}
@@ -1098,23 +1295,21 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                                 // Sélectionner tout le texte pour faciliter l'édition
                                 setTimeout(() => e.target.select(), 0);
                               }}
-                              className="text-center text-sm border-0 bg-background/80 pr-8"
+                              className="w-16 sm:w-20 text-center text-sm border-0 bg-white/10 pr-6 text-white placeholder-gray-400 focus:outline-none rounded-md !bg-white/10 !text-white !border-white/20"
                               placeholder="0.00"
                             />
-                            <span className="absolute right-2 text-xs text-muted-foreground">€</span>
+                            <span className="absolute right-1 text-xs text-gray-300">€</span>
                           </div>
                         ))}
                         {hasMultipleSizes && (
                           <div className="flex justify-center">
                             {variations.length > 1 && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
+                              <button 
                                 onClick={() => removeVariation(variation.id)}
-                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                                className="h-8 w-8 p-2 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-lg transition-all"
                               >
                                 <X className="h-4 w-4" />
-                              </Button>
+                              </button>
                             )}
                           </div>
                         )}
@@ -1124,133 +1319,226 @@ export default function ProductForm({ product, storeId, onSave, onCancel, availa
                 ))}
 
                 {hasMultipleSizes && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
+                  <button 
                     onClick={addVariation}
-                    className="w-full border-dashed"
+                    className="w-full py-2 px-4 bg-white/5 border-2 border-dashed border-white/20 rounded-xl text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4" />
                     Ajouter une taille
-                  </Button>
+                  </button>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Section Composition */}
-          <Card>
-            <CardHeader>
+          <div className="backdrop-blur-xl bg-white/10 border-white/20 rounded-3xl p-6 border">
+            <div className="mb-6">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Layers className="h-5 w-5 text-purple-600" />
+                <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                  <div className="text-2xl">🧩</div>
                   Composition
-                </CardTitle>
+                </h3>
                 <Switch 
                   checked={hasComposition}
                   onCheckedChange={setHasComposition}
+                  className="data-[state=unchecked]:bg-white/20 data-[state=checked]:bg-green-500"
                 />
               </div>
-            </CardHeader>
+            </div>
             {hasComposition && (
-              <CardContent className="space-y-4">
+              <div className="space-y-4 mt-4">
                 {compositionSteps.map((step) => (
-                  <Card key={step.id} className="border-dashed">
-                    <CardContent className="p-4 space-y-3">
+                  <div key={step.id} className="bg-white/5 border-2 border-dashed border-white/20 rounded-xl p-4 space-y-3">
                       <div className="flex items-center justify-between">
-                        <Input 
+                        <input 
                           placeholder="Nom de l'étape"
                           value={step.title}
                           onChange={(e) => updateCompositionStep(step.id, 'title', e.target.value)}
-                          className="flex-1"
+                          className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
                         />
                         <div className="flex items-center space-x-2 ml-4">
-                          <Label className="text-xs">Requis</Label>
+                          <label className="text-xs text-white font-medium">Requis</label>
                           <Switch 
                             checked={step.isRequired}
                             onCheckedChange={(checked) => updateCompositionStep(step.id, 'isRequired', checked)}
+                            className="data-[state=unchecked]:bg-white/20 data-[state=checked]:bg-orange-500"
                           />
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
+                          <button 
                             onClick={() => removeCompositionStep(step.id)}
-                            className="text-muted-foreground hover:text-destructive"
+                            className="p-2 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-lg transition-all"
                           >
                             <X className="h-4 w-4" />
-                          </Button>
+                          </button>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {step.options.map((option) => (
-                          <div key={option.id} className="flex items-center gap-2">
-                            <ComponentAutocomplete
-                              value={option.name}
-                              onChange={(value) => updateCompositionOption(step.id, option.id, 'name', value)}
-                              onSelectComponent={(component) => {
-                                // Auto-remplir le prix par défaut si disponible
-                                if (component.defaultPrices) {
-                                  updateCompositionOption(step.id, option.id, 'uniformPrice', component.defaultPrices.price || 0);
-                                }
-                              }}
-                              availableComponents={availableComponents}
-                              placeholder="Bo... → Bœuf cuit"
-                              className="flex-1"
-                            />
-                            <Input 
-                              type="number"
-                              step="0.01"
-                              value={option.uniformPrice || ''}
-                              placeholder="Prix"
-                              className="w-20"
-                              onChange={(e) => updateCompositionOption(step.id, option.id, 'uniformPrice', parseFloat(e.target.value) || 0)}
-                            />
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => removeCompositionOption(step.id, option.id)}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                          <div key={option.id} className="space-y-2">
+                            {/* Option principale */}
+                            <div className="flex items-center gap-2">
+                              <ComponentAutocomplete
+                                value={option.name}
+                                onChange={(value) => updateCompositionOption(step.id, option.id, 'name', value)}
+                                onSelectComponent={(component) => {
+                                  // Auto-remplir le prix par défaut si disponible
+                                  if (component.defaultPrices) {
+                                    if (hasMultipleSizes) {
+                                      // Appliquer le prix par défaut à toutes les variations
+                                      variations.forEach(variation => {
+                                        updateOptionPriceByVariation(step.id, option.id, variation.id, component.defaultPrices.price || 0);
+                                      });
+                                    } else {
+                                      updateCompositionOption(step.id, option.id, 'uniformPrice', component.defaultPrices.price || 0);
+                                    }
+                                  }
+                                }}
+                                availableComponents={availableComponents}
+                                placeholder="Bo... → Bœuf cuit"
+                                className="flex-1"
+                              />
+                              {/* Prix par taille pour les options */}
+                              {hasMultipleSizes ? (
+                                <div className="flex gap-1">
+                                  {variations.map((variation) => (
+                                    <input 
+                                      key={variation.id}
+                                      type="number"
+                                      step="0.01"
+                                      value={option.prices?.[variation.id] || ''}
+                                      placeholder="0.00"
+                                      title={`Prix pour ${variation.name}`}
+                                      className="w-12 px-1 py-2 text-xs bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
+                                      onChange={(e) => updateOptionPriceByVariation(step.id, option.id, variation.id, parseFloat(e.target.value) || 0)}
+                                    />
+                                  ))}
+                                </div>
+                              ) : (
+                                <input 
+                                  type="number"
+                                  step="0.01"
+                                  value={option.uniformPrice || ''}
+                                  placeholder="Prix"
+                                  className="w-20 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
+                                  onChange={(e) => updateCompositionOption(step.id, option.id, 'uniformPrice', parseFloat(e.target.value) || 0)}
+                                />
+                              )}
+                              <button 
+                                onClick={() => addSubComponent(step.id, option.id)}
+                                className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/10 rounded-lg transition-all"
+                                title="Ajouter un sous-composant"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                              <button 
+                                onClick={() => removeCompositionOption(step.id, option.id)}
+                                className="p-2 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-lg transition-all"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                            
+                            {/* Sous-composants */}
+                            {option.subComponents && option.subComponents.length > 0 && (
+                              <div className="ml-6 space-y-2 border-l-2 border-white/20 pl-4">
+                                {option.subComponents.map((subComponent) => (
+                                  <div key={subComponent.id} className="flex items-center gap-2">
+                                    <ComponentAutocomplete
+                                      value={subComponent.name}
+                                      onChange={(value) => updateSubComponent(step.id, option.id, subComponent.id, 'name', value)}
+                                      onSelectComponent={(component) => {
+                                        if (component.defaultPrices) {
+                                          if (hasMultipleSizes) {
+                                            // Appliquer le prix par défaut à toutes les variations
+                                            variations.forEach(variation => {
+                                              updateSubComponentPriceByVariation(step.id, option.id, subComponent.id, variation.id, component.defaultPrices.price || 0);
+                                            });
+                                          } else {
+                                            updateSubComponent(step.id, option.id, subComponent.id, 'uniformPrice', component.defaultPrices.price || 0);
+                                          }
+                                        }
+                                      }}
+                                      availableComponents={availableComponents}
+                                      placeholder="Sous-composant..."
+                                      className="flex-1 opacity-80"
+                                    />
+                                    {/* Prix par taille pour les sous-composants */}
+                                    {hasMultipleSizes ? (
+                                      <div className="flex gap-1">
+                                        {variations.map((variation) => (
+                                          <input 
+                                            key={variation.id}
+                                            type="number"
+                                            step="0.01"
+                                            value={subComponent.prices?.[variation.id] || ''}
+                                            placeholder="0.00"
+                                            title={`Prix pour ${variation.name}`}
+                                            className="w-10 px-1 py-1 text-xs bg-white/10 border border-white/20 rounded text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
+                                            onChange={(e) => updateSubComponentPriceByVariation(step.id, option.id, subComponent.id, variation.id, parseFloat(e.target.value) || 0)}
+                                          />
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <input 
+                                        type="number"
+                                        step="0.01"
+                                        value={subComponent.uniformPrice || ''}
+                                        placeholder="Prix"
+                                        className="w-16 px-2 py-1 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-white/40 focus:outline-none transition-all"
+                                        onChange={(e) => updateSubComponent(step.id, option.id, subComponent.id, 'uniformPrice', parseFloat(e.target.value) || 0)}
+                                      />
+                                    )}
+                                    <button 
+                                      onClick={() => removeSubComponent(step.id, option.id, subComponent.id)}
+                                      className="p-1 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-lg transition-all"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
+                        <button 
                           onClick={() => addCompositionOption(step.id)}
-                          className="w-full border-dashed"
+                          className="w-full py-2 px-4 bg-white/5 border-2 border-dashed border-white/20 rounded-xl text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="h-4 w-4" />
                           Ajouter une option
-                        </Button>
+                        </button>
                       </div>
-                    </CardContent>
-                  </Card>
+                  </div>
                 ))}
 
-                <Button 
-                  variant="outline" 
+                <button 
                   onClick={addCompositionStep}
-                  className="w-full border-dashed"
+                  className="w-full py-3 px-4 bg-white/5 border-2 border-dashed border-white/20 rounded-xl text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                 >
-                  <PlusCircle className="h-4 w-4 mr-2" />
+                  <PlusCircle className="h-4 w-4" />
                   Ajouter une étape
-                </Button>
-              </CardContent>
+                </button>
+              </div>
             )}
-          </Card>
+          </div>
         </div>
       </div>
 
       {/* Boutons d'action */}
-      <div className="flex justify-end space-x-2 pt-4 border-t">
-        <Button variant="outline" onClick={onCancel}>
+      <div className="flex justify-end space-x-4 pt-6">
+        <button 
+          onClick={onCancel}
+          className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all"
+        >
           Annuler
-        </Button>
-        <Button onClick={handleSubmit}>
+        </button>
+        <button 
+          onClick={handleSubmit}
+          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+        >
           {product ? 'Modifier' : 'Créer'} le produit
-        </Button>
+        </button>
       </div>
 
       {/* Popup d'import AI */}

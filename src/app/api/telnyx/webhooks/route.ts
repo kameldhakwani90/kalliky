@@ -325,12 +325,12 @@ async function handleCallInitiated(data: any) {
     await startRecording(call_control_id);
 
     // Récupérer les données optimisées depuis le cache Redis
-    const storeId = phoneNumber.business.stores[0]?.id;
+    const cacheStoreId = phoneNumber.business.stores[0]?.id;
     let storeData = null;
     
-    if (storeId) {
+    if (cacheStoreId) {
       try {
-        storeData = await StoreCacheService.getCachedStoreData(storeId);
+        storeData = await StoreCacheService.getCachedStoreData(cacheStoreId);
         console.log(`🏪 Données boutique chargées depuis le cache: ${storeData ? 'Oui' : 'Non'}`);
       } catch (error) {
         console.error('❌ Erreur chargement cache boutique:', error);

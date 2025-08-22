@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import EmployeePlanningModal from '@/components/employees/EmployeePlanningModal';
+import EmployeeEditModal from '@/components/employees/EmployeeEditModal';
 import EmployeeAvailabilityIndicator from '@/components/employees/EmployeeAvailabilityIndicator';
 import AddEmployeeModal from '@/components/employees/AddEmployeeModal';
 
@@ -92,7 +92,7 @@ export default function EmployeesTab({ storeId, storeName }: EmployeesTabProps) 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showPlanningModal, setShowPlanningModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
@@ -162,9 +162,9 @@ export default function EmployeesTab({ storeId, storeName }: EmployeesTabProps) 
     }
   };
 
-  const openPlanningModal = (employee: Employee) => {
+  const openEditModal = (employee: Employee) => {
     setSelectedEmployee(employee);
-    setShowPlanningModal(true);
+    setShowEditModal(true);
   };
 
   const addLeave = async (employee: Employee) => {
@@ -261,7 +261,10 @@ export default function EmployeesTab({ storeId, storeName }: EmployeesTabProps) 
             Gérez vos employés, leurs horaires et compétences pour {storeName}
           </p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
+        <Button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl px-6 py-2 shadow-lg hover:shadow-xl transition-all duration-300"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Ajouter un employé
         </Button>
@@ -293,7 +296,10 @@ export default function EmployeesTab({ storeId, storeName }: EmployeesTabProps) 
             <p className="text-muted-foreground mb-6">
               {searchTerm ? 'Aucun employé ne correspond à votre recherche' : 'Commencez par ajouter votre premier employé'}
             </p>
-            <Button onClick={() => setShowAddModal(true)}>
+            <Button 
+              onClick={() => setShowAddModal(true)}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl px-6 py-2 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Ajouter un employé
             </Button>
@@ -347,10 +353,7 @@ export default function EmployeesTab({ storeId, storeName }: EmployeesTabProps) 
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => {
-                            setSelectedEmployee(employee);
-                            setShowPlanningModal(true);
-                          }}
+                          onClick={() => openEditModal(employee)}
                         >
                           <Edit className="h-4 w-4 mr-2" />
                           Modifier
@@ -460,11 +463,11 @@ export default function EmployeesTab({ storeId, storeName }: EmployeesTabProps) 
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openPlanningModal(employee)}
+                      onClick={() => openEditModal(employee)}
                       className="h-7 text-xs"
                     >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Planning
+                      <Edit className="h-3 w-3 mr-1" />
+                      Modifier
                     </Button>
                     
                     <Button
@@ -494,12 +497,12 @@ export default function EmployeesTab({ storeId, storeName }: EmployeesTabProps) 
         }}
       />
       
-      {/* Modal de planning employé */}
-      {showPlanningModal && selectedEmployee && (
-        <EmployeePlanningModal
-          isOpen={showPlanningModal}
+      {/* Modal d'édition d'employé */}
+      {showEditModal && selectedEmployee && (
+        <EmployeeEditModal
+          isOpen={showEditModal}
           onClose={() => {
-            setShowPlanningModal(false);
+            setShowEditModal(false);
             setSelectedEmployee(null);
           }}
           employee={selectedEmployee}

@@ -183,21 +183,21 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className=\"min-h-screen bg-background py-8\">
-      <div className=\"container max-w-7xl mx-auto px-4\">
+    <div className="min-h-screen bg-background py-8">
+      <div className="container max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className=\"mb-8\">
-          <h1 className=\"text-3xl font-bold tracking-tight\">Analytics IA</h1>
-          <p className=\"text-muted-foreground\">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">Analytics IA</h1>
+          <p className="text-muted-foreground">
             Analysez les performances de votre agent IA téléphonique
           </p>
         </div>
 
         {/* Sélecteurs */}
-        <div className=\"flex gap-4 mb-8\">
+        <div className="flex gap-4 mb-8">
           <Select value={selectedStore} onValueChange={setSelectedStore}>
-            <SelectTrigger className=\"w-64\">
-              <SelectValue placeholder=\"Sélectionnez une boutique\" />
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Sélectionnez une boutique" />
             </SelectTrigger>
             <SelectContent>
               {stores.map((store) => (
@@ -209,98 +209,98 @@ export default function AnalyticsPage() {
           </Select>
 
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className=\"w-48\">
+            <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value=\"1d\">Dernières 24h</SelectItem>
-              <SelectItem value=\"7d\">7 derniers jours</SelectItem>
-              <SelectItem value=\"30d\">30 derniers jours</SelectItem>
-              <SelectItem value=\"90d\">3 derniers mois</SelectItem>
+              <SelectItem value="1d">Dernières 24h</SelectItem>
+              <SelectItem value="7d">7 derniers jours</SelectItem>
+              <SelectItem value="30d">30 derniers jours</SelectItem>
+              <SelectItem value="90d">3 derniers mois</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {selectedStore && (
-          <Tabs defaultValue=\"overview\" className=\"space-y-6\">
-            <TabsList className=\"grid grid-cols-4 w-full\">
-              <TabsTrigger value=\"overview\" className=\"flex items-center gap-2\">
-                <BarChart3 className=\"h-4 w-4\" />
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
                 Vue d'ensemble
               </TabsTrigger>
-              <TabsTrigger value=\"calls\" className=\"flex items-center gap-2\">
-                <Phone className=\"h-4 w-4\" />
+              <TabsTrigger value="calls" className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
                 Appels
               </TabsTrigger>
-              <TabsTrigger value=\"ai\" className=\"flex items-center gap-2\">
-                <Bot className=\"h-4 w-4\" />
+              <TabsTrigger value="ai" className="flex items-center gap-2">
+                <Bot className="h-4 w-4" />
                 Performance IA
               </TabsTrigger>
-              <TabsTrigger value=\"customers\" className=\"flex items-center gap-2\">
-                <Users className=\"h-4 w-4\" />
+              <TabsTrigger value="customers" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
                 Clients
               </TabsTrigger>
             </TabsList>
 
             {/* Vue d'ensemble */}
-            <TabsContent value=\"overview\" className=\"space-y-6\">
+            <TabsContent value="overview" className="space-y-6">
               {/* KPIs principaux */}
-              <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6\">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-center justify-between\">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className=\"text-sm font-medium text-muted-foreground\">Appels totaux</p>
-                        <p className=\"text-3xl font-bold\">{analytics.calls.total}</p>
-                        <p className=\"text-sm text-green-600\">+12% vs période précédente</p>
+                        <p className="text-sm font-medium text-muted-foreground">Appels totaux</p>
+                        <p className="text-3xl font-bold">{analytics.calls.total}</p>
+                        <p className="text-sm text-green-600">+12% vs période précédente</p>
                       </div>
-                      <div className=\"h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center\">
-                        <Phone className=\"h-6 w-6 text-blue-600\" />
+                      <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Phone className="h-6 w-6 text-blue-600" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-center justify-between\">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className=\"text-sm font-medium text-muted-foreground\">Commandes</p>
-                        <p className=\"text-3xl font-bold\">{analytics.orders.total}</p>
-                        <p className=\"text-sm text-green-600\">+8% vs période précédente</p>
+                        <p className="text-sm font-medium text-muted-foreground">Commandes</p>
+                        <p className="text-3xl font-bold">{analytics.orders.total}</p>
+                        <p className="text-sm text-green-600">+8% vs période précédente</p>
                       </div>
-                      <div className=\"h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center\">
-                        <CheckCircle className=\"h-6 w-6 text-green-600\" />
+                      <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <CheckCircle className="h-6 w-6 text-green-600" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-center justify-between\">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className=\"text-sm font-medium text-muted-foreground\">Chiffre d'affaires</p>
-                        <p className=\"text-3xl font-bold\">{analytics.orders.revenue.toFixed(2)}€</p>
-                        <p className=\"text-sm text-green-600\">+15% vs période précédente</p>
+                        <p className="text-sm font-medium text-muted-foreground">Chiffre d'affaires</p>
+                        <p className="text-3xl font-bold">{analytics.orders.revenue.toFixed(2)}€</p>
+                        <p className="text-sm text-green-600">+15% vs période précédente</p>
                       </div>
-                      <div className=\"h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center\">
-                        <DollarSign className=\"h-6 w-6 text-yellow-600\" />
+                      <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <DollarSign className="h-6 w-6 text-yellow-600" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-center justify-between\">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className=\"text-sm font-medium text-muted-foreground\">Taux de conversion</p>
-                        <p className=\"text-3xl font-bold\">{analytics.calls.conversionRate}%</p>
-                        <p className=\"text-sm text-green-600\">+3% vs période précédente</p>
+                        <p className="text-sm font-medium text-muted-foreground">Taux de conversion</p>
+                        <p className="text-3xl font-bold">{analytics.calls.conversionRate}%</p>
+                        <p className="text-sm text-green-600">+3% vs période précédente</p>
                       </div>
-                      <div className=\"h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center\">
-                        <TrendingUp className=\"h-6 w-6 text-purple-600\" />
+                      <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="h-6 w-6 text-purple-600" />
                       </div>
                     </div>
                   </CardContent>
@@ -308,19 +308,19 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Graphiques principaux */}
-              <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Évolution du chiffre d'affaires</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width=\"100%\" height={300}>
+                    <ResponsiveContainer width="100%" height={300}>
                       <AreaChart data={analytics.trends.revenueByDay}>
-                        <CartesianGrid strokeDasharray=\"3 3\" />
-                        <XAxis dataKey=\"date\" />
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
                         <YAxis />
                         <Tooltip formatter={(value: any) => [`${value}€`, 'CA']} />
-                        <Area type=\"monotone\" dataKey=\"revenue\" stroke=\"#8884d8\" fill=\"#8884d8\" fillOpacity={0.6} />
+                        <Area type="monotone" dataKey="revenue" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -331,15 +331,15 @@ export default function AnalyticsPage() {
                     <CardTitle>Répartition des clients</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width=\"100%\" height={300}>
+                    <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
                           data={analytics.trends.customerTypes}
-                          cx=\"50%\"
-                          cy=\"50%\"
+                          cx="50%"
+                          cy="50%"
                           innerRadius={60}
                           outerRadius={120}
-                          dataKey=\"count\"
+                          dataKey="count"
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         >
                           {analytics.trends.customerTypes.map((entry, index) => (
@@ -360,21 +360,21 @@ export default function AnalyticsPage() {
                   <CardDescription>Top 5 des produits commandés via l'IA</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className=\"space-y-4\">
+                  <div className="space-y-4">
                     {analytics.orders.topProducts.map((product, index) => (
-                      <div key={index} className=\"flex items-center justify-between p-4 border rounded-lg\">
-                        <div className=\"flex items-center gap-3\">
-                          <div className=\"w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold\">
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold">
                             #{index + 1}
                           </div>
                           <div>
-                            <div className=\"font-medium\">{product.name}</div>
-                            <div className=\"text-sm text-muted-foreground\">{product.count} commandes</div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-sm text-muted-foreground">{product.count} commandes</div>
                           </div>
                         </div>
-                        <div className=\"text-right\">
-                          <div className=\"font-bold\">{product.revenue.toFixed(2)}€</div>
-                          <div className=\"text-sm text-muted-foreground\">
+                        <div className="text-right">
+                          <div className="font-bold">{product.revenue.toFixed(2)}€</div>
+                          <div className="text-sm text-muted-foreground">
                             {(product.revenue / product.count).toFixed(2)}€/unité
                           </div>
                         </div>
@@ -386,18 +386,18 @@ export default function AnalyticsPage() {
             </TabsContent>
 
             {/* Appels */}
-            <TabsContent value=\"calls\" className=\"space-y-6\">
-              <div className=\"grid grid-cols-1 md:grid-cols-3 gap-6\">
+            <TabsContent value="calls" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-center gap-4\">
-                      <div className=\"h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center\">
-                        <PhoneIncoming className=\"h-6 w-6 text-green-600\" />
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <PhoneIncoming className="h-6 w-6 text-green-600" />
                       </div>
                       <div>
-                        <p className=\"text-sm font-medium text-muted-foreground\">Appels répondus</p>
-                        <p className=\"text-2xl font-bold\">{analytics.calls.answered}</p>
-                        <p className=\"text-sm text-muted-foreground\">
+                        <p className="text-sm font-medium text-muted-foreground">Appels répondus</p>
+                        <p className="text-2xl font-bold">{analytics.calls.answered}</p>
+                        <p className="text-sm text-muted-foreground">
                           {((analytics.calls.answered / analytics.calls.total) * 100).toFixed(1)}% du total
                         </p>
                       </div>
@@ -406,15 +406,15 @@ export default function AnalyticsPage() {
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-center gap-4\">
-                      <div className=\"h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center\">
-                        <PhoneMissed className=\"h-6 w-6 text-red-600\" />
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <PhoneMissed className="h-6 w-6 text-red-600" />
                       </div>
                       <div>
-                        <p className=\"text-sm font-medium text-muted-foreground\">Appels manqués</p>
-                        <p className=\"text-2xl font-bold\">{analytics.calls.missed}</p>
-                        <p className=\"text-sm text-muted-foreground\">
+                        <p className="text-sm font-medium text-muted-foreground">Appels manqués</p>
+                        <p className="text-2xl font-bold">{analytics.calls.missed}</p>
+                        <p className="text-sm text-muted-foreground">
                           {((analytics.calls.missed / analytics.calls.total) * 100).toFixed(1)}% du total
                         </p>
                       </div>
@@ -423,15 +423,15 @@ export default function AnalyticsPage() {
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"flex items-center gap-4\">
-                      <div className=\"h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center\">
-                        <Clock className=\"h-6 w-6 text-blue-600\" />
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Clock className="h-6 w-6 text-blue-600" />
                       </div>
                       <div>
-                        <p className=\"text-sm font-medium text-muted-foreground\">Durée moyenne</p>
-                        <p className=\"text-2xl font-bold\">{formatDuration(analytics.calls.avgDuration)}</p>
-                        <p className=\"text-sm text-muted-foreground\">par appel</p>
+                        <p className="text-sm font-medium text-muted-foreground">Durée moyenne</p>
+                        <p className="text-2xl font-bold">{formatDuration(analytics.calls.avgDuration)}</p>
+                        <p className="text-sm text-muted-foreground">par appel</p>
                       </div>
                     </div>
                   </CardContent>
@@ -444,10 +444,10 @@ export default function AnalyticsPage() {
                   <CardDescription>Nombre d'appels et de commandes par tranche horaire</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width=\"100%\" height={400}>
+                  <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={analytics.trends.callsByHour}>
-                      <CartesianGrid strokeDasharray=\"3 3\" />
-                      <XAxis dataKey=\"hour\" tickFormatter={(hour) => `${hour}h`} />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="hour" tickFormatter={(hour) => `${hour}h`} />
                       <YAxis />
                       <Tooltip 
                         labelFormatter={(hour) => `${hour}h00`}
@@ -456,8 +456,8 @@ export default function AnalyticsPage() {
                           name === 'calls' ? 'Appels' : 'Commandes'
                         ]}
                       />
-                      <Bar dataKey=\"calls\" fill=\"#8884d8\" name=\"calls\" />
-                      <Bar dataKey=\"orders\" fill=\"#82ca9d\" name=\"orders\" />
+                      <Bar dataKey="calls" fill="#8884d8" name="calls" />
+                      <Bar dataKey="orders" fill="#82ca9d" name="orders" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -465,70 +465,70 @@ export default function AnalyticsPage() {
             </TabsContent>
 
             {/* Performance IA */}
-            <TabsContent value=\"ai\" className=\"space-y-6\">
-              <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6\">
+            <TabsContent value="ai" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"space-y-2\">
-                      <div className=\"flex items-center justify-between\">
-                        <p className=\"text-sm font-medium text-muted-foreground\">Précision IA</p>
-                        <Badge variant=\"default\">{analytics.ai.accuracy}%</Badge>
+                  <CardContent className="p-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">Précision IA</p>
+                        <Badge variant="default">{analytics.ai.accuracy}%</Badge>
                       </div>
-                      <Progress value={analytics.ai.accuracy} className=\"w-full\" />
-                      <p className=\"text-xs text-muted-foreground\">Reconnaissance et traitement</p>
+                      <Progress value={analytics.ai.accuracy} className="w-full" />
+                      <p className="text-xs text-muted-foreground">Reconnaissance et traitement</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"space-y-2\">
-                      <div className=\"flex items-center justify-between\">
-                        <p className=\"text-sm font-medium text-muted-foreground\">Temps de réponse</p>
-                        <Badge variant=\"secondary\">{analytics.ai.responseTime}s</Badge>
+                  <CardContent className="p-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">Temps de réponse</p>
+                        <Badge variant="secondary">{analytics.ai.responseTime}s</Badge>
                       </div>
-                      <Progress value={(2 - analytics.ai.responseTime) * 50} className=\"w-full\" />
-                      <p className=\"text-xs text-muted-foreground\">Latence moyenne</p>
+                      <Progress value={(2 - analytics.ai.responseTime) * 50} className="w-full" />
+                      <p className="text-xs text-muted-foreground">Latence moyenne</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"space-y-2\">
-                      <div className=\"flex items-center justify-between\">
-                        <p className=\"text-sm font-medium text-muted-foreground\">Satisfaction client</p>
-                        <Badge variant=\"default\">{analytics.ai.customerSatisfaction}/5</Badge>
+                  <CardContent className="p-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">Satisfaction client</p>
+                        <Badge variant="default">{analytics.ai.customerSatisfaction}/5</Badge>
                       </div>
-                      <Progress value={(analytics.ai.customerSatisfaction / 5) * 100} className=\"w-full\" />
-                      <p className=\"text-xs text-muted-foreground\">Note moyenne des clients</p>
+                      <Progress value={(analytics.ai.customerSatisfaction / 5) * 100} className="w-full" />
+                      <p className="text-xs text-muted-foreground">Note moyenne des clients</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"space-y-2\">
-                      <div className=\"flex items-center justify-between\">
-                        <p className=\"text-sm font-medium text-muted-foreground\">Taux d'erreur</p>
-                        <Badge variant={analytics.ai.errorRate < 5 ? \"secondary\" : \"destructive\"}>
+                  <CardContent className="p-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">Taux d'erreur</p>
+                        <Badge variant={analytics.ai.errorRate < 5 ? "secondary" : "destructive"}>
                           {analytics.ai.errorRate}%
                         </Badge>
                       </div>
-                      <Progress value={100 - analytics.ai.errorRate} className=\"w-full\" />
-                      <p className=\"text-xs text-muted-foreground\">Erreurs de traitement</p>
+                      <Progress value={100 - analytics.ai.errorRate} className="w-full" />
+                      <p className="text-xs text-muted-foreground">Erreurs de traitement</p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Statut du système IA</CardTitle>
                     <CardDescription>État en temps réel des composants</CardDescription>
                   </CardHeader>
-                  <CardContent className=\"space-y-4\">
+                  <CardContent className="space-y-4">
                     {[
                       { name: 'OpenAI Realtime API', status: 'active', latency: '120ms' },
                       { name: 'Telnyx Téléphonie', status: 'active', latency: '45ms' },
@@ -536,18 +536,18 @@ export default function AnalyticsPage() {
                       { name: 'Webhook notifications', status: 'active', latency: '89ms' },
                       { name: 'Analytics pipeline', status: 'warning', latency: '234ms' }
                     ].map((component, index) => (
-                      <div key={index} className=\"flex items-center justify-between p-3 border rounded-lg\">
-                        <div className=\"flex items-center gap-3\">
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
                           {component.status === 'active' ? (
-                            <CheckCircle className=\"h-5 w-5 text-green-500\" />
+                            <CheckCircle className="h-5 w-5 text-green-500" />
                           ) : component.status === 'warning' ? (
-                            <AlertTriangle className=\"h-5 w-5 text-yellow-500\" />
+                            <AlertTriangle className="h-5 w-5 text-yellow-500" />
                           ) : (
-                            <XCircle className=\"h-5 w-5 text-red-500\" />
+                            <XCircle className="h-5 w-5 text-red-500" />
                           )}
-                          <span className=\"font-medium\">{component.name}</span>
+                          <span className="font-medium">{component.name}</span>
                         </div>
-                        <div className=\"text-right\">
+                        <div className="text-right">
                           <Badge variant={
                             component.status === 'active' ? 'default' : 
                             component.status === 'warning' ? 'secondary' : 'destructive'
@@ -555,7 +555,7 @@ export default function AnalyticsPage() {
                             {component.status === 'active' ? 'Actif' : 
                              component.status === 'warning' ? 'Attention' : 'Erreur'}
                           </Badge>
-                          <div className=\"text-xs text-muted-foreground\">{component.latency}</div>
+                          <div className="text-xs text-muted-foreground">{component.latency}</div>
                         </div>
                       </div>
                     ))}
@@ -568,25 +568,25 @@ export default function AnalyticsPage() {
                     <CardDescription>Dernières erreurs détectées</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className=\"space-y-3\">
+                    <div className="space-y-3">
                       {[
                         { time: '14:23', type: 'Timeout API', severity: 'low', resolved: true },
                         { time: '12:45', type: 'Produit non trouvé', severity: 'medium', resolved: true },
                         { time: '11:12', type: 'Client raccroché', severity: 'low', resolved: true },
                         { time: '09:34', type: 'Erreur de transcription', severity: 'medium', resolved: false }
                       ].map((error, index) => (
-                        <div key={index} className=\"flex items-center justify-between p-3 border rounded-lg\">
-                          <div className=\"flex items-center gap-3\">
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
                             <div className={`w-2 h-2 rounded-full ${
                               error.severity === 'high' ? 'bg-red-500' :
                               error.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
                             }`} />
                             <div>
-                              <div className=\"font-medium text-sm\">{error.type}</div>
-                              <div className=\"text-xs text-muted-foreground\">{error.time}</div>
+                              <div className="font-medium text-sm">{error.type}</div>
+                              <div className="text-xs text-muted-foreground">{error.time}</div>
                             </div>
                           </div>
-                          <Badge variant={error.resolved ? \"secondary\" : \"destructive\"}>
+                          <Badge variant={error.resolved ? "secondary" : "destructive"}>
                             {error.resolved ? 'Résolu' : 'En cours'}
                           </Badge>
                         </div>
@@ -598,34 +598,34 @@ export default function AnalyticsPage() {
             </TabsContent>
 
             {/* Clients */}
-            <TabsContent value=\"customers\" className=\"space-y-6\">
-              <div className=\"grid grid-cols-1 md:grid-cols-3 gap-6\">
+            <TabsContent value="customers" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"text-center\">
-                      <p className=\"text-3xl font-bold\">158</p>
-                      <p className=\"text-sm text-muted-foreground\">Clients totaux</p>
-                      <p className=\"text-xs text-green-600 mt-1\">+12 cette semaine</p>
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold">158</p>
+                      <p className="text-sm text-muted-foreground">Clients totaux</p>
+                      <p className="text-xs text-green-600 mt-1">+12 cette semaine</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"text-center\">
-                      <p className=\"text-3xl font-bold\">{analytics.orders.avgBasket.toFixed(2)}€</p>
-                      <p className=\"text-sm text-muted-foreground\">Panier moyen</p>
-                      <p className=\"text-xs text-green-600 mt-1\">+8% ce mois</p>
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold">{analytics.orders.avgBasket.toFixed(2)}€</p>
+                      <p className="text-sm text-muted-foreground">Panier moyen</p>
+                      <p className="text-xs text-green-600 mt-1">+8% ce mois</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardContent className=\"p-6\">
-                    <div className=\"text-center\">
-                      <p className=\"text-3xl font-bold\">68%</p>
-                      <p className=\"text-sm text-muted-foreground\">Clients fidèles</p>
-                      <p className=\"text-xs text-green-600 mt-1\">+5% ce mois</p>
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold">68%</p>
+                      <p className="text-sm text-muted-foreground">Clients fidèles</p>
+                      <p className="text-xs text-green-600 mt-1">+5% ce mois</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -637,40 +637,40 @@ export default function AnalyticsPage() {
                   <CardDescription>Clients ayant appelé récemment</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className=\"space-y-4\">
+                  <div className="space-y-4">
                     {[
                       { phone: '+33 6 12 34 56 78', name: 'Marie Dupont', lastCall: '2h', orders: 3, total: 87.50, type: 'Régulier' },
                       { phone: '+33 6 98 76 54 32', name: 'Client', lastCall: '4h', orders: 1, total: 29.80, type: 'Nouveau' },
                       { phone: '+33 6 55 44 33 22', name: 'Pierre Martin', lastCall: '6h', orders: 12, total: 340.20, type: 'VIP' },
                       { phone: '+33 6 11 22 33 44', name: 'Sophie Bernard', lastCall: '1j', orders: 5, total: 145.60, type: 'Régulier' }
                     ].map((customer, index) => (
-                      <div key={index} className=\"flex items-center justify-between p-4 border rounded-lg\">
-                        <div className=\"flex items-center gap-4\">
-                          <div className=\"w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center\">
-                            <Users className=\"h-5 w-5 text-primary\" />
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <Users className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <div className=\"font-medium\">{customer.name}</div>
-                            <div className=\"text-sm text-muted-foreground\">{customer.phone}</div>
+                            <div className="font-medium">{customer.name}</div>
+                            <div className="text-sm text-muted-foreground">{customer.phone}</div>
                           </div>
                         </div>
-                        <div className=\"flex items-center gap-6\">
-                          <div className=\"text-center\">
-                            <div className=\"text-sm font-medium\">{customer.orders}</div>
-                            <div className=\"text-xs text-muted-foreground\">commandes</div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-center">
+                            <div className="text-sm font-medium">{customer.orders}</div>
+                            <div className="text-xs text-muted-foreground">commandes</div>
                           </div>
-                          <div className=\"text-center\">
-                            <div className=\"text-sm font-medium\">{customer.total.toFixed(2)}€</div>
-                            <div className=\"text-xs text-muted-foreground\">total</div>
+                          <div className="text-center">
+                            <div className="text-sm font-medium">{customer.total.toFixed(2)}€</div>
+                            <div className="text-xs text-muted-foreground">total</div>
                           </div>
-                          <div className=\"text-center\">
+                          <div className="text-center">
                             <Badge variant={
                               customer.type === 'VIP' ? 'default' :
                               customer.type === 'Régulier' ? 'secondary' : 'outline'
                             }>
                               {customer.type}
                             </Badge>
-                            <div className=\"text-xs text-muted-foreground mt-1\">il y a {customer.lastCall}</div>
+                            <div className="text-xs text-muted-foreground mt-1">il y a {customer.lastCall}</div>
                           </div>
                         </div>
                       </div>

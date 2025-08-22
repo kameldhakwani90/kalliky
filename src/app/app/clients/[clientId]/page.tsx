@@ -2,6 +2,8 @@
 
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useRef, useEffect } from 'react';
 import { notFound, useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';

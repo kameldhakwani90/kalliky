@@ -1,14 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
+
+// Fonction d'authentification
+async function authenticateUser(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string; email: string; role: string };
+    return { user: { id: decoded.userId, email: decoded.email, role: decoded.role } };
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await authenticateUser(request);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -25,21 +39,27 @@ export async function GET(
           }
         }
       },
-      include: {
+      select: {
+        id: true,
+        aiProcessingStatus: true,
+        overallConfidence: true,
+        productsCreatedCount: true,
+        componentsCreated: true,
+        componentCategoriesCreated: true,
+        productsWithComposition: true,
+        needsReview: true,
+        reviewNotes: true,
+        extractedText: true,
+        detectedComponents: true,
+        originalFileName: true,
+        fileType: true,
+        fileSize: true,
+        createdAt: true,
+        completedAt: true,
         store: {
           select: {
             id: true,
             name: true
-          }
-        },
-        products: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-            hasComposition: true,
-            sourceType: true,
-            sourceConfidence: true
           }
         }
       }
@@ -119,10 +139,6 @@ export async function GET(
       
       // Store info
       store: uploadSession.store,
-      
-      // Produits créés (aperçu)
-      productsPreview: uploadSession.products.slice(0, 5),
-      totalProducts: uploadSession.products.length,
       
       // Temps estimé restant
       estimatedTimeRemaining: uploadSession.aiProcessingStatus === 'COMPLETED' ? null :

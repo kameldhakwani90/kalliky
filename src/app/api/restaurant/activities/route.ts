@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
         id: store.id,
         name: store.name,
         address: store.address,
-        serviceType: store.settings ? JSON.parse(store.settings as string).serviceType || 'products' : 'products'
+        serviceType: store.settings && typeof store.settings === 'object' ? (store.settings as any).serviceType || 'products' : 'products'
       })),
       activities: transformedActivities
     });

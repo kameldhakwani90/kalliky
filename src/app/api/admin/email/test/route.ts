@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer le transporteur avec les paramètres fournis
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: smtp_host,
       port: parseInt(smtp_port),
       secure: false, // true pour 465, false pour les autres ports

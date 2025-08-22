@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import nodemailer from 'nodemailer';
 
 // Configuration des services de notification
-const emailTransporter = nodemailer.createTransporter({
+const emailTransporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: false,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { prisma } from '@/lib/prisma';
 
 // Fonction d'authentification
 async function authenticateUser(request: NextRequest) {
@@ -29,11 +30,44 @@ export async function GET(
 
     const { storeId, employeeId } = await params;
 
-    // Pour l'instant, retourner un tableau vide car il n'y a pas de modèle Leave dans la base
-    // TODO: Implémenter le modèle Leave si nécessaire
+    // Vérifier que le store appartient à l'utilisateur
+    const store = await prisma.store.findFirst({
+      where: {
+        id: storeId,
+        business: {
+          ownerId: session.user.id
+        }
+      }
+    });
+
+    if (!store) {
+      return NextResponse.json({ 
+        error: 'Store non trouvé ou accès non autorisé' 
+      }, { status: 404 });
+    }
+
+    // Récupérer l'employé et ses congés depuis metadata
+    const employee = await prisma.serviceResource.findFirst({
+      where: {
+        id: employeeId,
+        storeId,
+        type: 'EMPLOYEE'
+      }
+    });
+
+    if (!employee) {
+      return NextResponse.json({
+        error: 'Employé non trouvé'
+      }, { status: 404 });
+    }
+
+    // Extraire les congés depuis metadata
+    const metadata = employee.metadata as any;
+    const leaves = metadata?.leaves || [];
+
     return NextResponse.json({
-      leaves: [],
-      total: 0
+      leaves: leaves,
+      total: leaves.length
     });
 
   } catch (error) {
@@ -58,20 +92,67 @@ export async function POST(
     const { storeId, employeeId } = await params;
     const body = await request.json();
 
-    // Pour l'instant, simuler la création d'un congé
-    // TODO: Implémenter le modèle Leave si nécessaire
+    // Vérifier que le store appartient à l'utilisateur
+    const store = await prisma.store.findFirst({
+      where: {
+        id: storeId,
+        business: {
+          ownerId: session.user.id
+        }
+      }
+    });
+
+    if (!store) {
+      return NextResponse.json({ 
+        error: 'Store non trouvé ou accès non autorisé' 
+      }, { status: 404 });
+    }
+
+    // Récupérer l'employé
+    const employee = await prisma.serviceResource.findFirst({
+      where: {
+        id: employeeId,
+        storeId,
+        type: 'EMPLOYEE'
+      }
+    });
+
+    if (!employee) {
+      return NextResponse.json({
+        error: 'Employé non trouvé'
+      }, { status: 404 });
+    }
+
+    // Créer le nouveau congé
+    const newLeave = {
+      id: `leave-${Date.now()}`,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      type: body.type || 'VACATION',
+      notes: body.notes || '',
+      status: 'PENDING',
+      createdAt: new Date().toISOString()
+    };
+
+    // Ajouter le congé dans metadata
+    const metadata = employee.metadata as any || {};
+    const existingLeaves = metadata.leaves || [];
+    const updatedLeaves = [...existingLeaves, newLeave];
+
+    // Mettre à jour l'employé
+    await prisma.serviceResource.update({
+      where: { id: employeeId },
+      data: {
+        metadata: {
+          ...metadata,
+          leaves: updatedLeaves
+        }
+      }
+    });
+
     return NextResponse.json({
       success: true,
-      leave: {
-        id: `leave-${Date.now()}`,
-        employeeId,
-        startDate: body.startDate,
-        endDate: body.endDate,
-        type: body.type || 'vacation',
-        reason: body.reason,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      }
+      leave: newLeave
     });
 
   } catch (error) {

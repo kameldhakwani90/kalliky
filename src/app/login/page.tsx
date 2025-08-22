@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,16 +11,28 @@ import { Label } from '@/components/ui/label';
 import { authService } from '@/services/auth.service';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2, ArrowLeft, Bot } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2, ArrowLeft, Bot } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message === 'password-reset-success') {
+      setSuccessMessage('Mot de passe mis à jour avec succès ! Vous pouvez maintenant vous connecter.');
+      // Nettoyer l'URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +120,19 @@ export default function LoginPage() {
           <motion.div variants={itemVariants}>
             <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/10 p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {successMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-green-500/20 border border-green-500/30 rounded-2xl p-4"
+                  >
+                    <div className="flex items-center gap-3 text-green-400">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-medium">{successMessage}</span>
+                    </div>
+                  </motion.div>
+                )}
+                
                 {error && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -163,6 +190,15 @@ export default function LoginPage() {
                   )}
                 </Button>
 
+                <div className="text-center">
+                  <Link 
+                    href="/auth/forgot-password" 
+                    className="text-sm text-gray-400 hover:text-white underline transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
+                </div>
+
                 <p className="text-sm text-gray-400 text-center">
                   La redirection se fera automatiquement selon vos droits d'accès.
                 </p>
@@ -179,5 +215,13 @@ export default function LoginPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

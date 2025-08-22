@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { authService } from '@/services/auth.service';
+import jwt from 'jsonwebtoken';
+
+// Fonction d'authentification simple
+async function authenticateUser(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string; email: string; role: string };
+    return { user: { id: decoded.userId, email: decoded.email, role: decoded.role } };
+  } catch {
+    return null;
+  }
+}
 
 // GET - Récupérer une configuration métier spécifique
 export async function GET(
@@ -9,8 +24,8 @@ export async function GET(
 ) {
   try {
     // Vérifier les droits super admin
-    const user = await authService.getCurrentUser();
-    if (!user || user.role !== 'SUPER_ADMIN') {
+    const session = await authenticateUser(request);
+    if (!session?.user || session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
     }
 
@@ -37,8 +52,8 @@ export async function PUT(
 ) {
   try {
     // Vérifier les droits super admin
-    const user = await authService.getCurrentUser();
-    if (!user || user.role !== 'SUPER_ADMIN') {
+    const session = await authenticateUser(request);
+    if (!session?.user || session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
     }
 
@@ -59,10 +74,11 @@ export async function PUT(
       data: {
         displayName: data.displayName || existing.displayName,
         systemPrompt: data.systemPrompt || existing.systemPrompt,
+        menuExtractionPrompt: data.menuExtractionPrompt !== undefined ? data.menuExtractionPrompt : existing.menuExtractionPrompt,
         defaultParams: data.defaultParams !== undefined ? data.defaultParams : existing.defaultParams,
         availableOptions: data.availableOptions !== undefined ? data.availableOptions : existing.availableOptions,
         isActive: data.isActive !== undefined ? data.isActive : existing.isActive,
-        lastModifiedBy: user.id,
+        lastModifiedBy: session.user.id,
         updatedAt: new Date()
       }
     });
@@ -85,8 +101,8 @@ export async function DELETE(
 ) {
   try {
     // Vérifier les droits super admin
-    const user = await authService.getCurrentUser();
-    if (!user || user.role !== 'SUPER_ADMIN') {
+    const session = await authenticateUser(request);
+    if (!session?.user || session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
     }
 
