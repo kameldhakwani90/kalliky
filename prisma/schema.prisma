@@ -470,11 +470,35 @@ model Product {
   variations            ProductVariation[]
   upsellSuggestions     UpsellSuggestion[]    @relation("ProductUpsells")
   suggestedIn           UpsellSuggestion[]    @relation("SuggestedProduct")
+  
+  // Nouveaux champs pour intégration services
+  productType           ProductType?          @default(RETAIL)
+  isBookable            Boolean               @default(false)
+  bookingSettings       Json?                 // durée, capacité, etc.
+  serviceLinks          ProductService[]
 
   @@index([storeId, hasComposition])
   @@index([sourceType, sourceConfidence])
   @@index([storeId, status])
   @@index([aiKeywords])
+  @@index([productType, isBookable])
+}
+
+// Table de liaison entre produits et services
+model ProductService {
+  id        String   @id @default(uuid())
+  productId String
+  serviceId String
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  product   Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  service   UniversalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  @@unique([productId, serviceId])
+  @@index([serviceId, isActive])
 }
 
 model ProductVariation {
@@ -914,6 +938,8 @@ model UniversalService {
   scheduleConfig    ServiceScheduleConfig?
   variants          ServiceVariant[]
   subServices       SubService[]
+  linkedProducts    ProductService[]       // Nouveau: produits liés au service
+  additionalOptions ServiceAdditionalOption[] // Nouveau: options additionnelles du service
   store             Store                  @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([storeId, name])
@@ -1547,6 +1573,21 @@ enum NotificationStatus {
   FAILED
 }
 
+enum ProductType {
+  RETAIL        // Produit de vente au détail
+  RENTAL        // Produit de location (voiture, équipement)
+  SERVICE_ITEM  // Produit lié à un service (soin, prestation)
+  CONSUMABLE    // Produit consommable
+}
+
+enum ServiceCategoryType {
+  STANDARD      // Service standard
+  RENTAL        // Service de location
+  CONSULTATION  // Service de consultation
+  APPOINTMENT   // Service sur rendez-vous
+  EVENT         // Service événementiel
+}
+
 enum ResourceType {
   EMPLOYEE
   EQUIPMENT
@@ -1662,4 +1703,61 @@ enum TelnyxUsageType {
   OUTBOUND_CALL    // appel sortant
   SMS_INBOUND      // SMS reçu
   SMS_OUTBOUND     // SMS envoyé
+}
+
+// ============================================================================
+// SYSTÈME SERVICES AVEC OPTIONS ADDITIONNELLES
+// ============================================================================
+
+// Options additionnelles que le client peut créer pour ses services
+// Ex: "Livraison à domicile (+8€)", "Service en terrasse (gratuit)"
+model ServiceAdditionalOption {
+  id                String    @id @default(uuid())
+  serviceId         String
+  name              String    // "Livraison à domicile", "Service terrasse"
+  description       String?   // Description détaillée optionnelle
+  price             Float     // 8.00, 0.00, 25.00
+  priceType         PriceType // FIXED, PER_PERSON, PER_DAY, PER_HOUR
+  isActive          Boolean   @default(true)
+  orderIndex        Int       @default(0) // Pour ordonner les options
+  
+  // Métadonnées optionnelles
+  metadata          Json?     // Configurations supplémentaires
+  
+  // Relations
+  service           UniversalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  optionResources   ServiceAdditionalOptionResource[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([serviceId, isActive])
+  @@index([serviceId, orderIndex])
+}
+
+// Ressources (employés/équipements) spécifiquement affectées aux options
+// Ex: Option "Livraison" → besoin Karim (livreur) + Scooter
+model ServiceAdditionalOptionResource {
+  id                String       @id @default(uuid())
+  optionId          String
+  resourceType      ResourceType // EMPLOYEE, EQUIPMENT
+  resourceId        String       // ID dans ServiceResource (employé ou équipement)
+  isRequired        Boolean      @default(true)
+  constraints       Json?        // {"hours": "18h-23h", "maxDistance": "5km", "maxQuantity": 1}
+  
+  // Relations
+  option            ServiceAdditionalOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  
+  createdAt         DateTime @default(now())
+  
+  @@unique([optionId, resourceType, resourceId])
+  @@index([optionId, resourceType])
+}
+
+// Types de prix pour les options
+enum PriceType {
+  FIXED        // Prix fixe (ex: +15€)
+  PER_PERSON   // Par personne (ex: +8€/pers)
+  PER_DAY      // Par jour (ex: +25€/jour)  
+  PER_HOUR     // Par heure (ex: +10€/heure)
 }

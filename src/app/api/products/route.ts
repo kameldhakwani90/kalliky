@@ -319,6 +319,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const {
       id,
+      storeId,
       name,
       description,
       category,
@@ -335,10 +336,29 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Si storeId est fourni, vérifier l'accès au store d'abord
+    if (storeId) {
+      const store = await prisma.store.findFirst({
+        where: {
+          id: storeId,
+          business: {
+            ownerId: session.user.id
+          }
+        }
+      });
+
+      if (!store) {
+        return NextResponse.json({ 
+          error: 'Store non trouvé ou accès non autorisé' 
+        }, { status: 403 });
+      }
+    }
+
     // Vérifier que le produit existe et appartient à l'utilisateur
     const existingProduct = await prisma.product.findFirst({
       where: {
         id,
+        ...(storeId && { storeId }),
         store: {
           business: {
             ownerId: session.user.id

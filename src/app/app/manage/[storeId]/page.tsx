@@ -179,10 +179,10 @@ export default function UnifiedManagementPage() {
       status: 'Configuré'
     },
     {
-      id: 'equipment',
-      title: 'Équipements',
-      description: 'Imprimantes et terminaux de paiement',
-      emoji: '🖨️',
+      id: 'resources',
+      title: 'Ressources',
+      description: 'Équipements et outils de travail',
+      emoji: '🔧',
       color: 'from-gray-500 to-gray-600',
       available: true,
       count: 0, // À récupérer depuis la DB

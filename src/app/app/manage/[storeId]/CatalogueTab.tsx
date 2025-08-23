@@ -430,7 +430,8 @@ export default function CatalogueTab({ storeId, storeName, config, onConfigUpdat
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: product.id,
-          status: newStatus
+          status: newStatus,
+          storeId: storeId
         }),
       });
 
@@ -739,13 +740,7 @@ export default function CatalogueTab({ storeId, storeName, config, onConfigUpdat
                             <Switch 
                               checked={product.status === 'ACTIVE'}
                               onCheckedChange={() => handleToggleAvailability(product)}
-                              className={`
-                                data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-600
-                                data-[state=checked]:border-green-400 data-[state=unchecked]:border-gray-500
-                                relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors
-                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background
-                                disabled:cursor-not-allowed disabled:opacity-50
-                              `}
+                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-400 data-[state=checked]:to-emerald-500 data-[state=unchecked]:bg-white/20 scale-75"
                             />
                             <div className="text-sm">
                               <div className={`font-medium ${product.status === 'ACTIVE' ? 'text-green-400' : 'text-gray-400'}`}>
