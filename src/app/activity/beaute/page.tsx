@@ -139,9 +139,9 @@ export default function BeautePage() {
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-              <Link href="/signup">
+              <Link href="/plans">
                 <Button size="lg" className="text-xl px-16 py-8 bg-pink-500 text-white hover:bg-pink-600 group font-bold rounded-full">
-                  💅 15 Jours Gratuits
+                  💅 Voir nos Plans
                   <ArrowRight className="ml-4 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -368,9 +368,9 @@ export default function BeautePage() {
                   Testez sans risque, vos clients adoreront prendre RDV à toute heure !
                 </p>
                 
-                <Link href="/signup">
+                <Link href="/plans">
                   <Button size="lg" className="text-2xl px-20 py-10 bg-pink-500 text-white hover:bg-pink-600 group font-bold rounded-full shadow-2xl">
-                    💅 Démarrer Mon Salon Connecté
+                    💅 Voir nos Plans Beauté
                     <ArrowRight className="ml-4 h-8 w-8 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>

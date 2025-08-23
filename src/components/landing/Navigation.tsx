@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Bot, Globe } from 'lucide-react';
+import { Menu, X, Bot, Globe, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [metiersOpen, setMetiersOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
@@ -29,15 +30,15 @@ export function Navigation() {
   };
 
   const navItems = [
-    { name: t({ fr: 'Fonctionnalités', en: 'Features' }), href: '#features' },
     { name: t({ fr: 'Métiers', en: 'Industries' }), href: '#metiers', dropdown: [
       { name: t({ fr: '🍕 Restaurant', en: '🍕 Restaurant' }), href: '/food' },
       { name: t({ fr: '💇‍♀️ Salon Beauté', en: '💇‍♀️ Beauty Salon' }), href: '/beaute' },
       { name: t({ fr: '🏠 Agence Immobilier', en: '🏠 Real Estate Agency' }), href: '/location' },
       { name: t({ fr: '🏨 Maison d\'Hôtes', en: '🏨 Guest House' }), href: '/airbnb' },
     ]},
-    { name: t({ fr: 'Tarifs', en: 'Pricing' }), href: '#pricing' },
-    { name: t({ fr: 'Contact', en: 'Contact' }), href: '#contact' },
+    { name: t({ fr: 'Tarifs', en: 'Pricing' }), href: '/plans' },
+    { name: t({ fr: 'Blog', en: 'Blog' }), href: '/blog' },
+    { name: t({ fr: 'Contact', en: 'Contact' }), href: '/contact' },
   ];
 
   return (
@@ -57,12 +58,12 @@ export function Navigation() {
             <motion.div
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ duration: 0.2 }}
-              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg"
+              className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg"
             >
-              <Bot className="h-6 w-6 text-black" />
+              <span className="text-white font-bold text-sm">OS</span>
             </motion.div>
             <span className="text-2xl font-bold text-white tracking-tight">
-              OrderSpot
+              OrderSpot.pro
             </span>
           </Link>
 
@@ -89,6 +90,13 @@ export function Navigation() {
                       ))}
                     </div>
                   </>
+                ) : item.href.startsWith('/') ? (
+                  <Link href={item.href}>
+                    <button className="text-gray-300 hover:text-white transition-colors duration-200 font-medium relative">
+                      {item.name}
+                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white transition-all duration-200 group-hover:w-full" />
+                    </button>
+                  </Link>
                 ) : (
                   <button
                     onClick={() => scrollToSection(item.href.replace('#', ''))}
@@ -127,9 +135,9 @@ export function Navigation() {
                 {t({ fr: 'Connexion', en: 'Login' })}
               </Button>
             </Link>
-            <Link href="/signup">
+            <Link href="/plans">
               <Button className="bg-white text-black hover:bg-gray-100 font-semibold px-6 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl">
-                {language === 'fr' ? 'Essayer Gratuitement' : 'Try for Free'}
+                {language === 'fr' ? 'Voir nos Plans' : 'View Plans'}
               </Button>
             </Link>
           </div>
@@ -137,7 +145,12 @@ export function Navigation() {
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={() => {
+                setIsOpen(!isOpen);
+                if (!isOpen) {
+                  setMetiersOpen(false); // Reset métiers state when opening menu
+                }
+              }}
               className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -156,24 +169,64 @@ export function Navigation() {
               className="md:hidden bg-black/90 backdrop-blur-xl border-t border-white/10 rounded-b-2xl"
             >
               <div className="py-6 space-y-4">
-                {navItems.map((item) => (
-                  <button
-                    key={item.name}
-                    onClick={() => scrollToSection(item.href.replace('#', ''))}
-                    className="block w-full text-left px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors font-medium"
-                  >
-                    {item.name}
-                  </button>
-                ))}
+                {navItems.map((item) => 
+                  item.dropdown ? (
+                    <div key={item.name} className="px-6">
+                      <button 
+                        onClick={() => setMetiersOpen(!metiersOpen)}
+                        className="flex items-center justify-between w-full text-left py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors font-medium"
+                      >
+                        <span>{item.name}</span>
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${metiersOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {metiersOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-2 ml-4 mt-3">
+                              {item.dropdown.map((subItem) => (
+                                <Link key={subItem.name} href={subItem.href}>
+                                  <div className="block py-2 text-gray-300 hover:text-white transition-colors text-sm pl-2 border-l border-gray-600 hover:border-white">
+                                    {subItem.name}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ) : item.href.startsWith('/') ? (
+                    <Link key={item.name} href={item.href}>
+                      <button className="block w-full text-left px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors font-medium">
+                        {item.name}
+                      </button>
+                    </Link>
+                  ) : (
+                    <button
+                      key={item.name}
+                      onClick={() => scrollToSection(item.href.replace('#', ''))}
+                      className="block w-full text-left px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors font-medium"
+                    >
+                      {item.name}
+                    </button>
+                  )
+                )}
                 <div className="border-t border-white/10 pt-4 mt-6 px-6 space-y-3">
                   <Link href="/login" className="block">
                     <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-white/10">
                       {t({ fr: 'Connexion', en: 'Login' })}
                     </Button>
                   </Link>
-                  <Link href="/signup" className="block">
+                  <Link href="/plans" className="block">
                     <Button className="w-full bg-white text-black hover:bg-gray-100 font-semibold">
-                      {t({ fr: 'Essayer Gratuitement', en: 'Try for Free' })}
+                      {t({ fr: 'Voir nos Plans', en: 'View Plans' })}
                     </Button>
                   </Link>
                 </div>

@@ -133,9 +133,9 @@ export default function RestaurantPage() {
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-              <Link href="/signup">
+              <Link href="/plans">
                 <Button size="lg" className="text-xl px-16 py-8 bg-orange-500 text-white hover:bg-orange-600 group font-bold rounded-full">
-                  🚀 15 Jours Gratuits
+                  🚀 Voir nos Plans
                   <ArrowRight className="ml-4 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -306,12 +306,12 @@ export default function RestaurantPage() {
                 <p className="text-xl text-gray-300 mb-8">
                   <span className="font-semibold">10 appels offerts</span> • <span className="font-semibold">3 minutes max par appel</span>
                   <br />
-                  Comme un restaurateur bac-10, vous verrez la différence dès le premier appel !
+                  Simple et efficace, vous constaterez la différence dès le premier appel !
                 </p>
                 
-                <Link href="/signup">
+                <Link href="/plans">
                   <Button size="lg" className="text-2xl px-20 py-10 bg-orange-500 text-white hover:bg-orange-600 group font-bold rounded-full shadow-2xl">
-                    🍕 Démarrer Mon Essai Restaurant
+                    🍕 Voir nos Plans Restaurant
                     <ArrowRight className="ml-4 h-8 w-8 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>

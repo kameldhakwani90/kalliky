@@ -1,9 +1,10 @@
 export function Logo() {
   return (
-    <div className="flex items-center justify-center -space-x-1">
-      <span className="font-headline text-2xl font-bold tracking-tighter bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
-        OrderSpot
-      </span>
+    <div className="flex items-center gap-2">
+      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+        <span className="text-white font-bold text-sm">OS</span>
+      </div>
+      <span className="text-xl font-bold text-gray-900">OrderSpot.pro</span>
     </div>
   );
 }

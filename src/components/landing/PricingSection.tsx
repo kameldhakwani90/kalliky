@@ -150,90 +150,72 @@ export function PricingSection() {
             </motion.div>
           </motion.div>
 
-          {/* Pricing Cards */}
-          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {plans.map((plan, index) => (
-              <motion.div
-                key={plan.id}
-                variants={itemVariants}
-                whileHover={{ 
-                  scale: plan.highlight ? 1.03 : 1.02, 
-                  y: -8,
-                  transition: { duration: 0.2 }
-                }}
-                className="group relative"
-              >
-                {/* Popular Badge */}
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                    <Badge className="bg-white text-black px-4 py-2 font-semibold shadow-xl">
-                      <Star className="h-4 w-4 mr-1" />
-                      Le Plus Populaire
-                    </Badge>
+          {/* Pricing Overview Card */}
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              variants={itemVariants}
+              whileHover={{ 
+                scale: 1.02, 
+                y: -8,
+                transition: { duration: 0.2 }
+              }}
+              className="group relative"
+            >
+              <div className="relative backdrop-blur-md rounded-3xl border bg-gradient-to-br from-white/20 to-white/10 border-white/20 shadow-2xl overflow-hidden">
+                {/* Hover Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                <div className="relative z-10 p-12 text-center">
+                  <div className="mb-8">
+                    <h3 className="text-3xl font-bold text-white mb-4">Des Plans Pour Tous Les Besoins</h3>
+                    <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                      Du petit restaurant local aux chaînes franchisées, trouvez la solution IA parfaite pour votre business.
+                    </p>
                   </div>
-                )}
 
-                <div className={`relative h-full backdrop-blur-md rounded-3xl border transition-all duration-500 overflow-hidden ${
-                  plan.highlight 
-                    ? 'bg-gradient-to-br from-white/20 to-white/10 border-white/20 shadow-2xl' 
-                    : 'bg-gradient-to-br from-white/10 to-white/5 border-white/10 hover:border-white/20'
-                }`}>
-                  
-                  {/* Hover Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                  {/* Header */}
-                  <div className="relative z-10 p-8 text-center">
-                    <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                    <p className="text-gray-400 mb-6">{plan.description}</p>
+                  {/* Quick Benefits */}
+                  <div className="grid md:grid-cols-3 gap-6 mb-10">
+                    <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl backdrop-blur">
+                      <div className="text-3xl mb-3">🚀</div>
+                      <h4 className="text-lg font-semibold text-white mb-2">Starter</h4>
+                      <p className="text-gray-400 text-sm">À partir de 129€/mois</p>
+                      <p className="text-gray-300 text-sm mt-1">Petites entreprises</p>
+                    </div>
                     
-                    <div className="mb-8">
-                      {plan.price === 'Sur mesure' ? (
-                        <div className="text-3xl font-bold text-white">Sur mesure</div>
-                      ) : (
-                        <div className="flex items-baseline justify-center">
-                          <span className="text-5xl font-bold text-white">{plan.price}€</span>
-                          <span className="text-gray-400 ml-2">{plan.period}</span>
-                        </div>
-                      )}
+                    <div className="flex flex-col items-center p-4 bg-white/10 rounded-2xl backdrop-blur border border-white/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="text-3xl">⭐</div>
+                        <Badge className="bg-white text-black text-xs px-2 py-1">Populaire</Badge>
+                      </div>
+                      <h4 className="text-lg font-semibold text-white mb-2">Pro</h4>
+                      <p className="text-gray-400 text-sm">À partir de 329€/mois</p>
+                      <p className="text-gray-300 text-sm mt-1">IA Premium + Analytics</p>
                     </div>
-
-                    {/* CTA Button */}
-                    <Link href="/signup">
-                      <Button 
-                        size="lg" 
-                        className={`w-full mb-8 font-semibold transition-all duration-200 ${
-                          plan.highlight 
-                            ? 'bg-white text-black hover:bg-gray-100 shadow-xl hover:shadow-2xl' 
-                            : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/30'
-                        }`}
-                      >
-                        {plan.cta}
-                      </Button>
-                    </Link>
-                  </div>
-
-                  {/* Features */}
-                  <div className="relative z-10 px-8 pb-8">
-                    <div className="space-y-4">
-                      {plan.features.map((feature, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -10 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: i * 0.05 }}
-                          className="flex items-center gap-3"
-                        >
-                          <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0" />
-                          <span className="text-gray-300 text-sm">{feature}</span>
-                        </motion.div>
-                      ))}
+                    
+                    <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl backdrop-blur">
+                      <div className="text-3xl mb-3">👑</div>
+                      <h4 className="text-lg font-semibold text-white mb-2">Business</h4>
+                      <p className="text-gray-400 text-sm">Sur devis</p>
+                      <p className="text-gray-300 text-sm mt-1">Chaînes & franchises</p>
                     </div>
                   </div>
+
+                  {/* Main CTA */}
+                  <Link href="/plans">
+                    <Button 
+                      size="lg" 
+                      className="bg-white text-black hover:bg-gray-100 shadow-xl hover:shadow-2xl font-semibold px-8 py-4 text-lg"
+                    >
+                      Voir Tous Nos Plans
+                    </Button>
+                  </Link>
+
+                  <p className="text-gray-400 text-sm mt-4">
+                    ✅ 14 jours d'essai gratuit • Sans engagement • Support français inclus
+                  </p>
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
           </div>
 
           {/* Bottom Section */}

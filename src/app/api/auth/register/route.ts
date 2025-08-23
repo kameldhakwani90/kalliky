@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, UserRole, SubscriptionPlan } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { rateLimitMiddleware } from '@/lib/rate-limiter';
+import { validatePasswordStrength } from '@/lib/password-utils';
 
 const prisma = new PrismaClient();
 
@@ -63,9 +64,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!password || typeof password !== 'string' || password.length < 8) {
+    if (!password || typeof password !== 'string') {
       return NextResponse.json(
-        { error: 'Mot de passe requis (minimum 8 caractères)' },
+        { error: 'Mot de passe requis' },
+        { status: 400, headers: rateLimitResult.headers }
+      );
+    }
+    
+    // Validation de la force du mot de passe
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      return NextResponse.json(
+        { 
+          error: 'Le mot de passe ne répond pas aux exigences de sécurité. Il doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.',
+          feedback: passwordValidation.feedback 
+        },
         { status: 400, headers: rateLimitResult.headers }
       );
     }

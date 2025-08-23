@@ -138,9 +138,9 @@ export default function AirbnbPage() {
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-              <Link href="/signup">
+              <Link href="/plans">
                 <Button size="lg" className="text-xl px-16 py-8 bg-yellow-500 text-black hover:bg-yellow-600 group font-bold rounded-full">
-                  🌍 15 Jours Gratuits
+                  🌍 Voir nos Plans
                   <ArrowRight className="ml-4 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -373,9 +373,9 @@ export default function AirbnbPage() {
                   Testez avec vos vrais clients internationaux !
                 </p>
                 
-                <Link href="/signup">
+                <Link href="/plans">
                   <Button size="lg" className="text-2xl px-20 py-10 bg-yellow-500 text-black hover:bg-yellow-600 group font-bold rounded-full shadow-2xl">
-                    🏨 Démarrer Mon Airbnb IA
+                    🏨 Voir nos Plans Airbnb
                     <ArrowRight className="ml-4 h-8 w-8 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, Loader2, ArrowLeft, Star, Phone, Info } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -13,6 +14,8 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TELNYX_COUNTRIES, POPULAR_COUNTRIES, OTHER_COUNTRIES, getTelnyxCountry, formatCountryPrice } from '@/lib/constants/countries';
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
+import { validatePasswordStrength } from '@/lib/password-utils';
 
 // IMPORTANT: NE PAS CHANGER LES PRIX OU FONCTIONNALITÉS - SEULEMENT LE DESIGN
 const plans = [
@@ -126,12 +129,31 @@ interface FormData {
   hasProducts: boolean;
   hasReservations: boolean;
   hasConsultations: boolean;
+  // Acceptation légale
+  acceptTerms: boolean;
+  acceptPrivacy: boolean;
+  acceptMarketing: boolean;
 }
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1: Choose plan, 2: Create account
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('PRO');
+  
+  // Récupérer le plan depuis l'URL
+  useEffect(() => {
+    const planParam = searchParams.get('plan');
+    if (planParam) {
+      // Normaliser le nom du plan (STARTER, PRO, BUSINESS)
+      const normalizedPlan = planParam.toUpperCase();
+      const validPlans = ['STARTER', 'PRO', 'BUSINESS'];
+      if (validPlans.includes(normalizedPlan)) {
+        setSelectedPlanId(normalizedPlan);
+      }
+    }
+  }, [searchParams]);
+  
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -139,7 +161,7 @@ export default function SignupPage() {
     password: '',
     phone: '',
     businessName: '',
-    selectedPlan: 'PRO',
+    selectedPlan: selectedPlanId,
     language: 'fr',
     // Champs boutique
     storeName: '',
@@ -149,17 +171,21 @@ export default function SignupPage() {
     // Services multi-métiers (tous activés par défaut)
     hasProducts: true,
     hasReservations: true,
-    hasConsultations: true
+    hasConsultations: true,
+    // Acceptation légale
+    acceptTerms: false,
+    acceptPrivacy: false,
+    acceptMarketing: false
   });
 
-  const handlePlanSelect = (planId: string) => {
-    if (planId === 'BUSINESS') {
-      // Pour le plan Business, rediriger vers un formulaire de contact
-      window.location.href = 'mailto:contact@kalliky.com?subject=Demande Plan Business';
-      return;
-    }
-    setFormData({ ...formData, selectedPlan: planId });
-    setStep(2);
+  // Synchroniser le plan sélectionné avec formData
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, selectedPlan: selectedPlanId }));
+  }, [selectedPlanId]);
+
+  const handleChangePlan = () => {
+    // Rediriger vers la page des plans (à créer)
+    router.push('/plans');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,6 +197,17 @@ export default function SignupPage() {
       if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || 
           !formData.businessName || !formData.storeName || !formData.storeAddress || !formData.storePhone || !formData.storeCountry) {
         throw new Error('Veuillez remplir tous les champs obligatoires');
+      }
+
+      // Validation de la force du mot de passe
+      const passwordValidation = validatePasswordStrength(formData.password);
+      if (!passwordValidation.isValid) {
+        throw new Error('Le mot de passe ne répond pas aux exigences de sécurité. Il doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.');
+      }
+
+      // Validation de l'acceptation des conditions légales
+      if (!formData.acceptTerms || !formData.acceptPrivacy) {
+        throw new Error('Vous devez accepter les conditions d\'utilisation et la politique de confidentialité');
       }
 
       // Créer directement la session Stripe avec toutes les données
@@ -267,118 +304,54 @@ export default function SignupPage() {
             </Link>
             
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              {step === 1 ? (
-                <>
-                  Choisissez Votre
-                  <br />
-                  <span className="bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
-                    Plan Parfait
-                  </span>
-                </>
-              ) : (
-                <>
-                  Créez Votre
-                  <br />
-                  <span className="bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
-                    Compte
-                  </span>
-                </>
-              )}
+              Créez Votre
+              <br />
+              <span className="bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
+                Compte
+              </span>
             </h1>
             
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              {step === 1 
-                ? 'Commencez votre essai gratuit de 14 jours. Sans engagement.' 
-                : `Plan ${selectedPlan?.name} sélectionné - Finalisez votre inscription`}
+              Plan {selectedPlan?.name} sélectionné - Finalisez votre inscription
             </p>
           </motion.div>
 
-          {/* Step 1: Choose Plan */}
-          {step === 1 && (
-            <motion.div variants={containerVariants} className="grid md:grid-cols-3 gap-8">
-              {plans.map((plan, index) => (
-                <motion.div
-                  key={plan.id}
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  className="group relative"
-                >
-                  {plan.recommended && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                      <div className="bg-white text-black px-4 py-2 font-semibold rounded-full shadow-xl flex items-center gap-1">
-                        <Star className="h-4 w-4" />
-                        {plan.subtitle || 'Recommandé'}
-                      </div>
-                    </div>
-                  )}
-
-                  <div 
-                    onClick={() => handlePlanSelect(plan.id)}
-                    className={`relative h-full backdrop-blur-md rounded-3xl border transition-all duration-500 overflow-hidden cursor-pointer ${
-                      plan.recommended 
-                        ? 'bg-gradient-to-br from-white/20 to-white/10 border-white/20 shadow-2xl' 
-                        : 'bg-gradient-to-br from-white/10 to-white/5 border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                    {/* Header */}
-                    <div className="relative z-10 p-8 text-center">
-                      <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                      <p className="text-gray-400 mb-6">{plan.target}</p>
-                      
-                      <div className="mb-8">
-                        <div className="text-4xl font-bold">{plan.price}</div>
-                        <p className="text-gray-400 text-sm mt-1">{plan.description}</p>
-                      </div>
-
-                      <Button 
-                        className={`w-full mb-8 font-semibold transition-all duration-200 ${
-                          plan.recommended 
-                            ? 'bg-white text-black hover:bg-gray-100' 
-                            : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
-                        }`}
-                      >
-                        {plan.id === 'BUSINESS' ? 'Nous contacter' : 'Choisir ce plan'}
-                      </Button>
-                    </div>
-
-                    {/* Features */}
-                    <div className="relative z-10 px-8 pb-8">
-                      <div className="space-y-3">
-                        {plan.features.map((feature, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <span className="text-sm text-gray-300">{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {plan.blockedFeatures && plan.blockedFeatures.length > 0 && (
-                        <div className="mt-6 pt-6 border-t border-white/10">
-                          <div className="space-y-2">
-                            {plan.blockedFeatures.map((feature, i) => (
-                              <div key={i} className="flex items-start gap-2 opacity-50">
-                                <span className="text-sm text-gray-500">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+          {/* Selected Plan Card */}
+          <motion.div variants={itemVariants} className="max-w-2xl mx-auto mb-8">
+            <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/10 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <Star className="h-6 w-6 text-white" />
                   </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
+                  <div>
+                    <p className="text-white font-semibold text-lg">Plan {selectedPlan?.name}</p>
+                    <p className="text-2xl font-bold text-white">{selectedPlan?.price}</p>
+                    <p className="text-gray-400">{selectedPlan?.description}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleChangePlan}
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                >
+                  Changer
+                </Button>
+              </div>
+              <p className="text-sm text-gray-400 mt-4">
+                ✅ 14 jours d'essai gratuit • Résiliation à tout moment
+              </p>
+            </div>
+          </motion.div>
 
-          {/* Step 2: Create Account */}
-          {step === 2 && (
-            <motion.div 
-              initial="hidden"
-              animate="visible"
-              variants={containerVariants}
-              className="max-w-2xl mx-auto"
-            >
+          {/* Create Account Form */}
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="max-w-2xl mx-auto"
+          >
               <motion.div variants={itemVariants}>
                 <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/10 p-8">
                   <form onSubmit={handleSubmit} className="space-y-6">
@@ -452,10 +425,15 @@ export default function SignupPage() {
                             id="password"
                             type="password"
                             required
-                            minLength={6}
+                            minLength={8}
                             className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                            placeholder="Minimum 8 caractères"
                             value={formData.password}
                             onChange={(e) => setFormData({...formData, password: e.target.value})}
+                          />
+                          <PasswordStrengthIndicator 
+                            password={formData.password} 
+                            showFeedback={true} 
                           />
                         </div>
                       </div>
@@ -620,34 +598,96 @@ export default function SignupPage() {
 
                     <Separator className="bg-white/20" />
 
-                    {/* Plan Summary */}
-                    <div className="bg-white/5 backdrop-blur rounded-2xl p-6">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                          <Star className="h-6 w-6 text-white" />
+                    {/* Acceptation légale */}
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold text-white">Acceptation des conditions</h3>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id="acceptTerms"
+                            checked={formData.acceptTerms}
+                            onCheckedChange={(checked) => 
+                              setFormData({...formData, acceptTerms: checked === true})
+                            }
+                            className="mt-1 border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="acceptTerms" className="text-sm text-gray-300 cursor-pointer">
+                              J'accepte les{' '}
+                              <Link href="/legal/terms" target="_blank" className="text-blue-400 underline hover:no-underline">
+                                Conditions Générales d'Utilisation
+                              </Link>{' '}
+                              et les{' '}
+                              <Link href="/legal/sales" target="_blank" className="text-blue-400 underline hover:no-underline">
+                                Conditions Générales de Vente
+                              </Link>{' '}
+                              <span className="text-red-400">*</span>
+                            </label>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-white font-semibold text-lg">Plan {selectedPlan?.name}</p>
-                          <p className="text-2xl font-bold text-white">{selectedPlan?.price}</p>
-                          <p className="text-gray-400">{selectedPlan?.description}</p>
+
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id="acceptPrivacy"
+                            checked={formData.acceptPrivacy}
+                            onCheckedChange={(checked) => 
+                              setFormData({...formData, acceptPrivacy: checked === true})
+                            }
+                            className="mt-1 border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="acceptPrivacy" className="text-sm text-gray-300 cursor-pointer">
+                              J'accepte la{' '}
+                              <Link href="/legal/privacy" target="_blank" className="text-blue-400 underline hover:no-underline">
+                                Politique de Confidentialité (RGPD)
+                              </Link>{' '}
+                              et consens au traitement de mes données personnelles{' '}
+                              <span className="text-red-400">*</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id="acceptMarketing"
+                            checked={formData.acceptMarketing}
+                            onCheckedChange={(checked) => 
+                              setFormData({...formData, acceptMarketing: checked === true})
+                            }
+                            className="mt-1 border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="acceptMarketing" className="text-sm text-gray-300 cursor-pointer">
+                              J'accepte de recevoir des communications marketing et des offres commerciales 
+                              d'OrderSpot.pro (optionnel)
+                            </label>
+                          </div>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-400">
-                        ✅ 14 jours d'essai gratuit • Résiliation à tout moment
-                      </p>
+
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                        <p className="text-blue-300 text-xs leading-relaxed">
+                          <strong>Protection de vos données :</strong> Vos données sont chiffrées, stockées en Europe (RGPD), 
+                          et ne sont jamais vendues à des tiers. Vous pouvez exercer vos droits (accès, rectification, suppression) 
+                          à tout moment via privacy@orderspot.pro
+                        </p>
+                      </div>
                     </div>
+
+                    <Separator className="bg-white/20" />
 
                     {/* Actions */}
                     <div className="flex gap-4 pt-6">
                       <Button
                         type="button"
                         variant="ghost"
-                        onClick={() => setStep(1)}
+                        onClick={handleChangePlan}
                         disabled={loading}
                         className="text-gray-400 hover:text-white hover:bg-white/10"
                       >
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        Retour
+                        Changer de plan
                       </Button>
                       <Button 
                         type="submit" 
@@ -661,17 +701,18 @@ export default function SignupPage() {
                   </form>
                 </div>
 
-                <p className="text-center text-sm text-gray-400 mt-6">
-                  En continuant, vous acceptez nos{' '}
-                  <a href="#" className="text-white underline hover:no-underline">conditions d'utilisation</a>{' '}
-                  et notre{' '}
-                  <a href="#" className="text-white underline hover:no-underline">politique de confidentialité</a>.
-                </p>
               </motion.div>
             </motion.div>
-          )}
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupContent />
+    </Suspense>
   );
 }

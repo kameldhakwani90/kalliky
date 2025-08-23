@@ -22,7 +22,12 @@ import {
   ExternalLink,
   Edit,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Shield,
+  Eye,
+  Trash2,
+  UserX,
+  FileX
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -65,6 +70,27 @@ interface ClientDetail {
     amount: number;
     status: string;
   }>;
+  gdprData: {
+    consentDate: string;
+    dataRetentionEnd: string;
+    lastExport: string | null;
+    marketingConsent: boolean;
+    cookiesConsent: boolean;
+    dataProcessingConsent: boolean;
+    rightToForgotten: boolean;
+    dataExports: Array<{
+      id: string;
+      date: string;
+      type: string;
+      status: string;
+    }>;
+    deletionRequests: Array<{
+      id: string;
+      date: string;
+      status: string;
+      processedDate: string | null;
+    }>;
+  };
 }
 
 // Données mockées
@@ -77,13 +103,13 @@ const mockClientDetail: ClientDetail = {
   company: 'Le Bistrot Parisien',
   plan: 'PRO',
   status: 'active',
-  subscriptionStart: '2024-01-15',
+  subscriptionStart: '2025-01-15',
   subscriptionEnd: '2025-01-15',
   totalRevenue: 3948.00,
   storesCount: 2,
-  lastLogin: '2024-08-14',
+  lastLogin: '2025-08-14',
   stripeCustomerId: 'cus_test123',
-  createdAt: '2024-01-15',
+  createdAt: '2025-01-15',
   stores: [
     {
       id: 'store-1',
@@ -105,24 +131,24 @@ const mockClientDetail: ClientDetail = {
       id: 'inv-001',
       amount: 329.00,
       status: 'paid',
-      date: '2024-08-01',
-      period: 'Août 2024',
+      date: '2025-08-01',
+      period: 'Août 2025',
       stripeInvoiceId: 'in_1234567890'
     },
     {
       id: 'inv-002',
       amount: 329.00,
       status: 'paid',
-      date: '2024-07-01',
-      period: 'Juillet 2024',
+      date: '2025-07-01',
+      period: 'Juillet 2025',
       stripeInvoiceId: 'in_0987654321'
     },
     {
       id: 'inv-003',
       amount: 329.00,
       status: 'pending',
-      date: '2024-09-01',
-      period: 'Septembre 2024',
+      date: '2025-09-01',
+      period: 'Septembre 2025',
       stripeInvoiceId: 'in_1122334455'
     }
   ],
@@ -130,7 +156,7 @@ const mockClientDetail: ClientDetail = {
     {
       id: 'sub-001',
       plan: 'PRO',
-      startDate: '2024-01-15',
+      startDate: '2025-01-15',
       endDate: '2025-01-15',
       amount: 329.00,
       status: 'active'
@@ -138,12 +164,36 @@ const mockClientDetail: ClientDetail = {
     {
       id: 'sub-002',
       plan: 'STARTER',
-      startDate: '2024-01-01',
-      endDate: '2024-01-15',
+      startDate: '2025-01-01',
+      endDate: '2025-01-15',
       amount: 129.00,
       status: 'completed'
     }
-  ]
+  ],
+  gdprData: {
+    consentDate: '2025-01-15',
+    dataRetentionEnd: '2030-01-15',
+    lastExport: '2025-07-15',
+    marketingConsent: true,
+    cookiesConsent: true,
+    dataProcessingConsent: true,
+    rightToForgotten: false,
+    dataExports: [
+      {
+        id: 'exp-001',
+        date: '2025-07-15',
+        type: 'données-complètes',
+        status: 'completed'
+      },
+      {
+        id: 'exp-002', 
+        date: '2025-03-10',
+        type: 'données-facturation',
+        status: 'completed'
+      }
+    ],
+    deletionRequests: []
+  }
 };
 
 export default function ClientDetailPage() {
@@ -297,6 +347,7 @@ export default function ClientDetailPage() {
           <TabsTrigger value="stores">Points de vente</TabsTrigger>
           <TabsTrigger value="invoices">Facturation</TabsTrigger>
           <TabsTrigger value="subscription">Abonnements</TabsTrigger>
+          <TabsTrigger value="gdpr">RGPD</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stores" className="space-y-4">
@@ -431,6 +482,181 @@ export default function ClientDetailPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="gdpr" className="space-y-4">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Consentements RGPD
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Traitement des données</span>
+                  <Badge variant="outline" className={client.gdprData.dataProcessingConsent ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                    {client.gdprData.dataProcessingConsent ? <CheckCircle className="mr-1 h-3 w-3" /> : <AlertCircle className="mr-1 h-3 w-3" />}
+                    {client.gdprData.dataProcessingConsent ? 'Accordé' : 'Refusé'}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Marketing</span>
+                  <Badge variant="outline" className={client.gdprData.marketingConsent ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                    {client.gdprData.marketingConsent ? <CheckCircle className="mr-1 h-3 w-3" /> : <AlertCircle className="mr-1 h-3 w-3" />}
+                    {client.gdprData.marketingConsent ? 'Accordé' : 'Refusé'}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Cookies</span>
+                  <Badge variant="outline" className={client.gdprData.cookiesConsent ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                    {client.gdprData.cookiesConsent ? <CheckCircle className="mr-1 h-3 w-3" /> : <AlertCircle className="mr-1 h-3 w-3" />}
+                    {client.gdprData.cookiesConsent ? 'Accordé' : 'Refusé'}
+                  </Badge>
+                </div>
+                <div className="pt-4 border-t space-y-2">
+                  <div className="text-xs text-muted-foreground">
+                    <strong>Consentement donné le :</strong> {new Date(client.gdprData.consentDate).toLocaleDateString('fr-FR')}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <strong>Rétention jusqu'au :</strong> {new Date(client.gdprData.dataRetentionEnd).toLocaleDateString('fr-FR')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Actions RGPD
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Download className="mr-2 h-4 w-4" />
+                    Exporter toutes les données
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Afficher les données stockées
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Modifier les consentements
+                  </Button>
+                  <Button variant="destructive" className="w-full justify-start">
+                    <UserX className="mr-2 h-4 w-4" />
+                    Initier suppression RGPD
+                  </Button>
+                </div>
+                <div className="pt-4 border-t">
+                  <div className="text-xs text-muted-foreground">
+                    {client.gdprData.lastExport && (
+                      <>
+                        <strong>Dernier export :</strong> {new Date(client.gdprData.lastExport).toLocaleDateString('fr-FR')}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Historique des exports</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type d'export</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {client.gdprData.dataExports.map((exportItem) => (
+                      <TableRow key={exportItem.id}>
+                        <TableCell>{new Date(exportItem.date).toLocaleDateString('fr-FR')}</TableCell>
+                        <TableCell className="font-medium">{exportItem.type}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getStatusColor(exportItem.status)}>
+                            {exportItem.status === 'completed' ? 'Terminé' : 'En cours'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {client.gdprData.dataExports.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          Aucun export de données
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {client.gdprData.deletionRequests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <Trash2 className="h-5 w-5" />
+                  Demandes de suppression
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date de demande</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Date de traitement</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {client.gdprData.deletionRequests.map((request) => (
+                        <TableRow key={request.id}>
+                          <TableCell>{new Date(request.date).toLocaleDateString('fr-FR')}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={getStatusColor(request.status)}>
+                              {request.status === 'completed' ? 'Traitée' : 
+                               request.status === 'pending' ? 'En attente' : 'En cours'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {request.processedDate ? new Date(request.processedDate).toLocaleDateString('fr-FR') : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

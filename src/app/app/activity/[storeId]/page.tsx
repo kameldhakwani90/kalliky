@@ -44,10 +44,10 @@ type ActivityLog = {
 };
 
 const mockActivities: Record<string, ActivityLog[]> = {
-    "store-1": Array.from({ length: 25 }, (_, i) => ({ id: `#${1025 - i}`, type: 'Commande', customer: `Alice Martin ${i}`, customerId: `cust-${i+1}`, phone: `06123456${78-i}`, date: new Date(2024, 4, 30 - Math.floor(i/2)), amount: `${(24.50 + i * 2).toFixed(2)}€` })),
-    "store-loc": Array.from({ length: 8 }, (_, i) => ({ id: `#R${87 - i}`, type: 'Réservation', customer: `Carlos Sainz ${i}`, customerId: `cust-${30+i}`, phone: `06112233${44-i}`, date: new Date(2024, 4, 30 - i*2), amount: `${(1900 - i * 150).toFixed(2)}€` })),
-    "store-4": Array.from({ length: 12 }, (_, i) => ({ id: `#C${12 - i}`, type: 'Consultation', customer: `Mme. Lefevre ${i}`, customerId: `cust-${40+i}`, phone: `01234567${89-i}`, date: new Date(2024, 4, 30 - i*3), amount: 'N/A' })),
-    "store-spa": Array.from({ length: 5 }, (_, i) => ({ id: `#S${33-i}`, type: 'Réservation', customer: `Claire Chazal ${i}`, customerId: `cust-${55+i}`, phone: `07556677${88-i}`, date: new Date(2024, 4, 30 - i*5), amount: `${(250 + i * 10).toFixed(2)}€` })),
+    "store-1": Array.from({ length: 25 }, (_, i) => ({ id: `#${1025 - i}`, type: 'Commande', customer: `Alice Martin ${i}`, customerId: `cust-${i+1}`, phone: `06123456${78-i}`, date: new Date(2025, 4, 30 - Math.floor(i/2)), amount: `${(24.50 + i * 2).toFixed(2)}€` })),
+    "store-loc": Array.from({ length: 8 }, (_, i) => ({ id: `#R${87 - i}`, type: 'Réservation', customer: `Carlos Sainz ${i}`, customerId: `cust-${30+i}`, phone: `06112233${44-i}`, date: new Date(2025, 4, 30 - i*2), amount: `${(1900 - i * 150).toFixed(2)}€` })),
+    "store-4": Array.from({ length: 12 }, (_, i) => ({ id: `#C${12 - i}`, type: 'Consultation', customer: `Mme. Lefevre ${i}`, customerId: `cust-${40+i}`, phone: `01234567${89-i}`, date: new Date(2025, 4, 30 - i*3), amount: 'N/A' })),
+    "store-spa": Array.from({ length: 5 }, (_, i) => ({ id: `#S${33-i}`, type: 'Réservation', customer: `Claire Chazal ${i}`, customerId: `cust-${55+i}`, phone: `07556677${88-i}`, date: new Date(2025, 4, 30 - i*5), amount: `${(250 + i * 10).toFixed(2)}€` })),
 };
 
 const serviceTypeInfo: Record<ServiceType, { icon: React.ElementType, label: Record<'fr'|'en', string>, activityLabel: ActivityType }> = {

@@ -101,10 +101,10 @@ function LoginContent() {
             </Link>
             
             <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
-                <Bot className="h-7 w-7 text-black" />
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">OS</span>
               </div>
-              <span className="text-3xl font-bold">OrderSpot</span>
+              <span className="text-3xl font-bold">OrderSpot.pro</span>
             </div>
             
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -207,7 +207,7 @@ function LoginContent() {
             
             <p className="text-center text-gray-400 mt-8">
               Pas encore de compte ?{' '}
-              <Link href="/signup" className="text-white underline hover:no-underline font-medium">
+              <Link href="/plans" className="text-white underline hover:no-underline font-medium">
                 Inscrivez-vous
               </Link>
             </p>

@@ -139,9 +139,9 @@ export default function LocationPage() {
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-              <Link href="/signup">
+              <Link href="/plans">
                 <Button size="lg" className="text-xl px-16 py-8 bg-blue-500 text-white hover:bg-blue-600 group font-bold rounded-full">
-                  🏡 15 Jours Gratuits
+                  🏡 Voir nos Plans
                   <ArrowRight className="ml-4 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -378,9 +378,9 @@ export default function LocationPage() {
                   Testez sans risque avec vos vrais prospects immobiliers !
                 </p>
                 
-                <Link href="/signup">
+                <Link href="/plans">
                   <Button size="lg" className="text-2xl px-20 py-10 bg-blue-500 text-white hover:bg-blue-600 group font-bold rounded-full shadow-2xl">
-                    🏡 Démarrer Mon Agence IA
+                    🏡 Voir nos Plans Immobilier
                     <ArrowRight className="ml-4 h-8 w-8 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>

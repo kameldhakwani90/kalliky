@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     // Mettre à jour le rôle de l'utilisateur connecté
     const updatedUser = await prisma.user.update({
       where: { id: decoded.userId },
-      data: { role: 'SUPERADMIN' }
+      data: { role: 'SUPER_ADMIN' }
     });
 
     return NextResponse.json({ 

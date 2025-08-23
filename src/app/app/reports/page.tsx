@@ -163,7 +163,7 @@ const mockStores: StoreInfo[] = [
 const mockOrders: DetailedOrder[] = [
     {
         id: "#987",
-        date: "16/05/2024",
+        date: "16/05/2025",
         storeId: "store-1",
         items: [
              { id: "item-x", name: 'Plat exemple 1', quantity: 2, basePrice: 25.00, taxRate: 10, customizations: [], finalPrice: 25.00 },
@@ -173,7 +173,7 @@ const mockOrders: DetailedOrder[] = [
     },
     {
         id: "#1028",
-        date: "29/05/2024",
+        date: "29/05/2025",
         storeId: "store-3",
         items: [
             { id: "item-pza-4f", name: 'Pizza 4 Fromages', quantity: 1, basePrice: 15.00, taxRate: 10, customizations: [], finalPrice: 15.00 },
@@ -183,7 +183,7 @@ const mockOrders: DetailedOrder[] = [
     },
     {
         id: "#1031",
-        date: "30/05/2024",
+        date: "30/05/2025",
         storeId: "store-2",
         items: [
              { id: "item-z", name: 'Burger', quantity: 1, basePrice: 18.00, taxRate: 10, customizations: [], finalPrice: 18.00 },
@@ -195,43 +195,43 @@ const mockOrders: DetailedOrder[] = [
 const initialReports: Report[] = [
     {
         id: 'rep-1',
-        date: new Date(2024, 4, 16),
+        date: new Date(2025, 4, 16),
         reason: 'Retard de livraison',
         status: 'Résolu',
         details: 'La commande a été livrée avec 30 minutes de retard. Un geste commercial (boisson offerte sur la prochaine commande) a été fait.',
         customer: { id: 'cust-1', name: 'Alice Martin', phone: '01 23 45 67 89' },
         storeId: 'store-1',
         orderId: "#987",
-        call: { id: 'call-2', date: "15/05/2024 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "Bonjour, je voudrais passer la commande #987...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+        call: { id: 'call-2', date: "15/05/2025 - 12:10", duration: "4m 10s", type: 'Commande', transcript: "Bonjour, je voudrais passer la commande #987...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
     },
     {
         id: 'rep-2',
-        date: new Date(2024, 4, 29),
+        date: new Date(2025, 4, 29),
         reason: 'Erreur dans la commande',
         status: 'Ouvert',
         details: 'Le client a reçu une Pizza Regina au lieu d\'une 4 Fromages.',
         customer: { id: 'cust-3', name: 'Carole Leblanc', phone: '06 11 22 33 44' },
         storeId: 'store-3',
         orderId: "#1028",
-        call: { id: 'call-4', date: "29/05/2024 - 19:10", duration: "3m 15s", type: 'Commande', transcript: "Bonjour, je voudrais une pizza 4 fromages et deux coca...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+        call: { id: 'call-4', date: "29/05/2025 - 19:10", duration: "3m 15s", type: 'Commande', transcript: "Bonjour, je voudrais une pizza 4 fromages et deux coca...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
         proofs: [
             {
                 url: 'https://placehold.co/600x400.png',
                 hint: 'wrong pizza',
-                caption: 'Photo envoyée par le client le 29/05/2024'
+                caption: 'Photo envoyée par le client le 29/05/2025'
             }
         ]
     },
     {
         id: 'rep-3',
-        date: new Date(2024, 4, 30),
+        date: new Date(2025, 4, 30),
         reason: 'Problème de paiement',
         status: 'En cours',
         details: 'Le paiement par lien n\'a pas fonctionné. Le client a dû payer en espèces à la livraison.',
         customer: { id: 'cust-2', name: 'Bob Dupont', phone: '07 87 65 43 21' },
         storeId: 'store-2',
         orderId: "#1031",
-        call: { id: 'call-5', date: "30/05/2024 - 11:45", duration: "2m 50s", type: 'Commande', transcript: "Bonjour, je voudrais commander pour la commande #1031...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
+        call: { id: 'call-5', date: "30/05/2025 - 11:45", duration: "2m 50s", type: 'Commande', transcript: "Bonjour, je voudrais commander pour la commande #1031...", audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
     }
 ];
 

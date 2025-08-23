@@ -236,14 +236,14 @@ const mockStores: Store[] = [
 ];
 
 const mockHistory: HistoryItem[] = [
-    { type: 'order', id: "#1025", date: "30/05/2024", storeId: 'store-1', items: [{ id: "item-sn", name: 'Salade Niçoise', quantity: 1, basePrice: 24.50, customizations: [], finalPrice: 24.50, taxRate: 10 }], total: 24.50 },
-    { type: 'order', id: "#1024", date: "30/05/2024", storeId: 'store-1', items: [{ id: "item-pm", name: 'Pizza Margherita', quantity: 1, basePrice: 18.00, customizations: [], finalPrice: 18.00, taxRate: 10 }], total: 18.00 },
-    { type: 'order', id: "#1023", date: "29/05/2024", storeId: 'store-1', items: [], total: 55.20 },
-    { type: 'reservation', id: "#R87", date: "30/05/2024", serviceName: "Location Porsche 911 (2 jours)", total: 1900, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Porsche 911 (2 jours x 950.00€)", amount: 1900 }] },
-    { type: 'reservation', id: "#R86", date: "31/05/2024", serviceName: "Location Ferrari F8", total: 950, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Ferrari F8 (1 jour x 950.00€)", amount: 950 }] },
-    { type: 'consultation', id: "#C12", date: "30/05/2024", serviceName: "Consultation Droit des sociétés", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [], transcript: "Bonjour, je suis en train de créer une startup dans le domaine de la tech et j'aurais besoin de conseils pour rédiger les statuts et un pacte d'actionnaires. J'ai vu que vous étiez spécialisé en droit des affaires.", analysis: { score: 85, summary: "Le prospect est hautement qualifié. Son besoin (statuts, pacte d'actionnaires) est au coeur de l'expertise de l'avocat et il mentionne des mots-clés pertinents (startup, tech).", positivePoints: ["Création de startup", "Pacte d'actionnaires", "Droit des affaires"], negativePoints: [] } },
-    { type: 'consultation', id: "#C11", date: "29/05/2024", serviceName: "Consultation Création d'entreprise", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [], transcript: "Bonjour, je voudrais savoir comment faire pour une garde d'enfant après un divorce. C'est bien vous qui vous occupez du droit de la famille ?", analysis: { score: 10, summary: "Le prospect n'est pas qualifié. Sa demande concerne le droit de la famille, un domaine explicitement exclu de l'expertise de l'avocat.", positivePoints: [], negativePoints: ["Garde d'enfant", "Divorce", "Droit de la famille"] } },
-    { type: 'reservation', id: "#S33", date: "31/05/2024", serviceName: "Forfait 'Détente Absolue'", total: 250, storeId: 'store-spa', taxRate: 20, pricingDetails: [{ description: "Forfait 'Détente Absolue'", amount: 250 }] },
+    { type: 'order', id: "#1025", date: "30/05/2025", storeId: 'store-1', items: [{ id: "item-sn", name: 'Salade Niçoise', quantity: 1, basePrice: 24.50, customizations: [], finalPrice: 24.50, taxRate: 10 }], total: 24.50 },
+    { type: 'order', id: "#1024", date: "30/05/2025", storeId: 'store-1', items: [{ id: "item-pm", name: 'Pizza Margherita', quantity: 1, basePrice: 18.00, customizations: [], finalPrice: 18.00, taxRate: 10 }], total: 18.00 },
+    { type: 'order', id: "#1023", date: "29/05/2025", storeId: 'store-1', items: [], total: 55.20 },
+    { type: 'reservation', id: "#R87", date: "30/05/2025", serviceName: "Location Porsche 911 (2 jours)", total: 1900, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Porsche 911 (2 jours x 950.00€)", amount: 1900 }] },
+    { type: 'reservation', id: "#R86", date: "31/05/2025", serviceName: "Location Ferrari F8", total: 950, storeId: 'store-loc', taxRate: 20, pricingDetails: [{ description: "Location Ferrari F8 (1 jour x 950.00€)", amount: 950 }] },
+    { type: 'consultation', id: "#C12", date: "30/05/2025", serviceName: "Consultation Droit des sociétés", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [], transcript: "Bonjour, je suis en train de créer une startup dans le domaine de la tech et j'aurais besoin de conseils pour rédiger les statuts et un pacte d'actionnaires. J'ai vu que vous étiez spécialisé en droit des affaires.", analysis: { score: 85, summary: "Le prospect est hautement qualifié. Son besoin (statuts, pacte d'actionnaires) est au coeur de l'expertise de l'avocat et il mentionne des mots-clés pertinents (startup, tech).", positivePoints: ["Création de startup", "Pacte d'actionnaires", "Droit des affaires"], negativePoints: [] } },
+    { type: 'consultation', id: "#C11", date: "29/05/2025", serviceName: "Consultation Création d'entreprise", total: 0, storeId: 'store-4', taxRate: 20, pricingDetails: [], transcript: "Bonjour, je voudrais savoir comment faire pour une garde d'enfant après un divorce. C'est bien vous qui vous occupez du droit de la famille ?", analysis: { score: 10, summary: "Le prospect n'est pas qualifié. Sa demande concerne le droit de la famille, un domaine explicitement exclu de l'expertise de l'avocat.", positivePoints: [], negativePoints: ["Garde d'enfant", "Divorce", "Droit de la famille"] } },
+    { type: 'reservation', id: "#S33", date: "31/05/2025", serviceName: "Forfait 'Détente Absolue'", total: 250, storeId: 'store-spa', taxRate: 20, pricingDetails: [{ description: "Forfait 'Détente Absolue'", amount: 250 }] },
 ];
 
 
@@ -251,7 +251,7 @@ const mockAIConversations: AIConversation[] = [
     {
         id: 'ai-conv-1',
         callId: 'call-001',
-        date: '01/08/2024',
+        date: '01/08/2025',
         duration: '3:24',
         status: 'COMPLETED',
         language: 'fr',
@@ -259,27 +259,27 @@ const mockAIConversations: AIConversation[] = [
             {
                 role: 'assistant',
                 content: 'Bonjour et merci d\'appeler Le Gourmet Parisien. Je suis votre assistante virtuelle. Comment puis-je vous aider aujourd\'hui ?',
-                timestamp: '2024-08-01T14:00:00Z'
+                timestamp: '2025-08-01T14:00:00Z'
             },
             {
                 role: 'user',
                 content: 'Bonjour, je souhaiterais réserver une table pour 4 personnes pour ce soir vers 20h.',
-                timestamp: '2024-08-01T14:00:15Z'
+                timestamp: '2025-08-01T14:00:15Z'
             },
             {
                 role: 'assistant',
                 content: 'Parfait ! Je peux vous proposer une table pour 4 personnes ce soir. Puis-je avoir votre nom pour la réservation ?',
-                timestamp: '2024-08-01T14:00:20Z'
+                timestamp: '2025-08-01T14:00:20Z'
             },
             {
                 role: 'user',
                 content: 'Martin, Alice Martin.',
-                timestamp: '2024-08-01T14:00:35Z'
+                timestamp: '2025-08-01T14:00:35Z'
             },
             {
                 role: 'assistant',
                 content: 'Merci Mme Martin. Votre table pour 4 personnes est réservée ce soir à 20h. Pourrais-je avoir votre numéro de téléphone pour confirmer ?',
-                timestamp: '2024-08-01T14:00:40Z'
+                timestamp: '2025-08-01T14:00:40Z'
             }
         ],
         extractedInfo: {
@@ -287,7 +287,7 @@ const mockAIConversations: AIConversation[] = [
             customerName: 'Alice Martin',
             customerPhone: '06 12 34 56 78',
             reservation: {
-                date: '2024-08-01',
+                date: '2025-08-01',
                 time: '20:00',
                 guests: 4
             },
@@ -303,7 +303,7 @@ const mockAIConversations: AIConversation[] = [
     {
         id: 'ai-conv-2',
         callId: 'call-002',
-        date: '28/07/2024',
+        date: '28/07/2025',
         duration: '2:15',
         status: 'COMPLETED',
         language: 'fr',
@@ -311,17 +311,17 @@ const mockAIConversations: AIConversation[] = [
             {
                 role: 'assistant',
                 content: 'Bonjour et merci d\'appeler Le Gourmet Parisien. Comment puis-je vous aider ?',
-                timestamp: '2024-07-28T12:30:00Z'
+                timestamp: '2025-07-28T12:30:00Z'
             },
             {
                 role: 'user',
                 content: 'Bonjour, j\'aimerais connaître vos horaires d\'ouverture et si vous avez des plats végétariens.',
-                timestamp: '2024-07-28T12:30:10Z'
+                timestamp: '2025-07-28T12:30:10Z'
             },
             {
                 role: 'assistant',
                 content: 'Nous sommes ouverts du mardi au samedi de 12h à 14h30 et de 19h à 22h30. Nous proposons plusieurs options végétariennes, notamment notre salade niçoise végétarienne et notre risotto aux champignons.',
-                timestamp: '2024-07-28T12:30:25Z'
+                timestamp: '2025-07-28T12:30:25Z'
             }
         ],
         extractedInfo: {
@@ -346,12 +346,12 @@ const mockCustomers: Customer[] = [
         status: "Fidèle", 
         avgBasket: "30.00€", 
         totalSpent: "54.50€", 
-        firstSeen: "28/05/2024", 
-        lastSeen: "30/05/2024", 
+        firstSeen: "28/05/2025", 
+        lastSeen: "30/05/2025", 
         history: mockHistory.filter(h => h.id === "#1025"), 
         callHistory: [{
             id: 'call-001',
-            date: '01/08/2024',
+            date: '01/08/2025',
             duration: '3:24',
             type: 'Commande',
             transcript: 'Conversation complète disponible dans l\'onglet IA',
@@ -370,8 +370,8 @@ const mockCustomers: Customer[] = [
         status: "Nouveau", 
         avgBasket: "18.00€", 
         totalSpent: "18.00€", 
-        firstSeen: "30/05/2024", 
-        lastSeen: "30/05/2024", 
+        firstSeen: "30/05/2025", 
+        lastSeen: "30/05/2025", 
         history: mockHistory.filter(h => h.id === "#1024"), 
         callHistory: [], 
         aiConversations: [],
@@ -385,8 +385,8 @@ const mockCustomers: Customer[] = [
         status: "Nouveau", 
         avgBasket: "55.20€", 
         totalSpent: "55.20€", 
-        firstSeen: "29/05/2024", 
-        lastSeen: "29/05/2024", 
+        firstSeen: "29/05/2025", 
+        lastSeen: "29/05/2025", 
         history: mockHistory.filter(h => h.id === "#1023"), 
         callHistory: [], 
         aiConversations: [mockAIConversations[1]],
@@ -400,8 +400,8 @@ const mockCustomers: Customer[] = [
         status: "Nouveau", 
         avgBasket: "1900.00€", 
         totalSpent: "1900.00€", 
-        firstSeen: "30/05/2024", 
-        lastSeen: "30/05/2024", 
+        firstSeen: "30/05/2025", 
+        lastSeen: "30/05/2025", 
         history: mockHistory.filter(h => h.id === "#R87"), 
         callHistory: [], 
         aiConversations: [],
@@ -415,8 +415,8 @@ const mockCustomers: Customer[] = [
         status: "Nouveau", 
         avgBasket: "950.00€", 
         totalSpent: "950.00€", 
-        firstSeen: "31/05/2024", 
-        lastSeen: "31/05/2024", 
+        firstSeen: "31/05/2025", 
+        lastSeen: "31/05/2025", 
         history: mockHistory.filter(h => h.id === "#R86"), 
         callHistory: [], 
         aiConversations: [],
@@ -430,8 +430,8 @@ const mockCustomers: Customer[] = [
         status: "Nouveau", 
         avgBasket: "0€", 
         totalSpent: "0€", 
-        firstSeen: "30/05/2024", 
-        lastSeen: "30/05/2024", 
+        firstSeen: "30/05/2025", 
+        lastSeen: "30/05/2025", 
         history: mockHistory.filter(h => h.id === "#C12"), 
         callHistory: [], 
         aiConversations: [],
@@ -445,8 +445,8 @@ const mockCustomers: Customer[] = [
         status: "Nouveau", 
         avgBasket: "0€", 
         totalSpent: "0€", 
-        firstSeen: "29/05/2024", 
-        lastSeen: "29/05/2024", 
+        firstSeen: "29/05/2025", 
+        lastSeen: "29/05/2025", 
         history: mockHistory.filter(h => h.id === "#C11"), 
         callHistory: [], 
         aiConversations: [],
@@ -460,8 +460,8 @@ const mockCustomers: Customer[] = [
         status: "Nouveau", 
         avgBasket: "250.00€", 
         totalSpent: "250.00€", 
-        firstSeen: "31/05/2024", 
-        lastSeen: "31/05/2024", 
+        firstSeen: "31/05/2025", 
+        lastSeen: "31/05/2025", 
         history: mockHistory.filter(h => h.id === "#S33"), 
         callHistory: [], 
         aiConversations: [],

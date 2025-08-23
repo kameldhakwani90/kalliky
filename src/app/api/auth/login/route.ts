@@ -124,8 +124,45 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Erreurs Prisma/Base de données
+    if (error && typeof error === 'object') {
+      const err = error as any;
+      
+      // Erreur de table manquante (développement)
+      if (err.code === 'P2021') {
+        return NextResponse.json(
+          { error: 'Service temporairement indisponible. Veuillez réessayer dans quelques instants.' },
+          { status: 503 }
+        );
+      }
+      
+      // Erreur de connexion à la base de données
+      if (err.code === 'P1001' || err.code === 'P1008' || err.code === 'P1009') {
+        return NextResponse.json(
+          { error: 'Problème de connexion au service. Veuillez réessayer.' },
+          { status: 503 }
+        );
+      }
+      
+      // Erreurs de contraintes
+      if (err.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Cette adresse email est déjà associée à un compte.' },
+          { status: 409 }
+        );
+      }
+      
+      // Timeout de la base de données
+      if (err.code === 'P2024' || err.message?.includes('timeout')) {
+        return NextResponse.json(
+          { error: 'Le service met du temps à répondre. Veuillez réessayer.' },
+          { status: 504 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Erreur serveur interne' },
+      { error: 'Erreur serveur interne. Nos équipes ont été notifiées.' },
       { status: 500 }
     );
   }

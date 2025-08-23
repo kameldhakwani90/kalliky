@@ -77,7 +77,7 @@ export function HeroSection() {
           {/* Main Title */}
           <motion.div variants={itemVariants} className="mb-8 mt-16 md:mt-20 lg:mt-24">
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold text-white mb-6 leading-[0.9] tracking-tight">
-              <span className="block">OrderSpot</span>
+              <span className="block">OrderSpot.pro</span>
               <motion.span 
                 className="block bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -112,9 +112,9 @@ export function HeroSection() {
 
           {/* CTA Buttons */}
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center mb-20">
-            <Link href="/signup">
+            <Link href="/plans">
               <Button size="lg" className="text-lg px-12 py-6 bg-white text-black hover:bg-gray-100 group font-semibold rounded-full transition-all duration-300 shadow-2xl hover:shadow-white/25">
-                {t({ fr: 'Commencer Gratuitement', en: 'Start for Free' })}
+                {t({ fr: 'Voir nos Plans', en: 'View Plans' })}
                 <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>

@@ -56,13 +56,13 @@ export function FooterSection() {
             </motion.h2>
             
             <motion.p variants={itemVariants} className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
-              Rejoignez les restaurateurs qui ont déjà boosté leurs ventes avec OrderSpot
+              Rejoignez les restaurateurs qui ont déjà boosté leurs ventes avec OrderSpot.pro
             </motion.p>
             
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link href="/signup">
+              <Link href="/plans">
                 <Button size="lg" className="bg-white text-black hover:bg-gray-100 text-lg px-12 py-6 group font-semibold rounded-full">
-                  Commencer Maintenant
+                  Voir nos Plans
                   <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -94,7 +94,7 @@ export function FooterSection() {
                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
                   <Bot className="h-6 w-6 text-black" />
                 </div>
-                <span className="text-2xl font-bold">OrderSpot</span>
+                <span className="text-2xl font-bold">OrderSpot.pro</span>
               </Link>
               
               <p className="text-gray-400 leading-relaxed">
@@ -135,7 +135,7 @@ export function FooterSection() {
               <h3 className="text-xl font-semibold mb-6">Produit</h3>
               <ul className="space-y-4 text-gray-400">
                 <li><Link href="#features" className="hover:text-white transition-colors">Fonctionnalités</Link></li>
-                <li><Link href="#pricing" className="hover:text-white transition-colors">Tarifs</Link></li>
+                <li><Link href="/plans" className="hover:text-white transition-colors">Tarifs</Link></li>
                 <li><Link href="#" className="hover:text-white transition-colors">Intégrations</Link></li>
                 <li><Link href="#" className="hover:text-white transition-colors">API</Link></li>
                 <li><Link href="#" className="hover:text-white transition-colors">Sécurité</Link></li>
@@ -180,7 +180,7 @@ export function FooterSection() {
               </ul>
               
               <div className="mt-6 pt-6 border-t border-white/10">
-                <Link href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+                <Link href="/help" className="text-sm text-gray-400 hover:text-white transition-colors">
                   Centre d'aide →
                 </Link>
               </div>
@@ -194,18 +194,21 @@ export function FooterSection() {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-gray-400">
             <div className="flex items-center gap-2">
-              © 2024 OrderSpot.pro. Tous droits réservés.
+              © 2025 OrderSpot.pro. Tous droits réservés.
             </div>
             
             <div className="flex flex-wrap justify-center gap-8">
-              <Link href="#" className="hover:text-white transition-colors">
-                Politique de confidentialité
+              <Link href="/legal/privacy" className="hover:text-white transition-colors">
+                RGPD & Confidentialité
               </Link>
-              <Link href="#" className="hover:text-white transition-colors">
-                Conditions d'utilisation
+              <Link href="/legal/terms" className="hover:text-white transition-colors">
+                Conditions Générales d'Utilisation
               </Link>
-              <Link href="#" className="hover:text-white transition-colors">
-                Mentions légales
+              <Link href="/legal/sales" className="hover:text-white transition-colors">
+                Conditions Générales de Vente
+              </Link>
+              <Link href="/legal/mentions" className="hover:text-white transition-colors">
+                Mentions Légales
               </Link>
               <Link href="#" className="hover:text-white transition-colors">
                 RGPD

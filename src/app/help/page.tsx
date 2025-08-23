@@ -87,29 +87,26 @@ const generalFeatures = [
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div className="relative overflow-hidden">
-        {/* Header */}
-        <div className="backdrop-blur-xl bg-white/5 border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full backdrop-blur-sm border border-white/20">
-                <BookOpen className="h-5 w-5 text-blue-400" />
-                <span className="text-sm font-medium text-white">Centre d'aide Kalliky</span>
-              </div>
-              <h1 className="text-5xl font-bold text-white mb-4">
-                Guides par Secteur d'Activité
-              </h1>
-              <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-                Documentation complète et guides pratiques pour optimiser votre activité avec Kalliky
-              </p>
-            </div>
+    <div className="relative overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-12">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full backdrop-blur-sm border border-white/20">
+            <BookOpen className="h-5 w-5 text-blue-400" />
+            <span className="text-sm font-medium text-white">Centre d'aide OrderSpot.pro</span>
           </div>
+          <h1 className="text-5xl font-bold text-white mb-4">
+            Guides par Secteur d'Activité
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Documentation complète et guides pratiques pour optimiser votre activité avec OrderSpot.pro
+          </p>
         </div>
+      </div>
 
-        {/* Sectors Grid */}
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid md:grid-cols-2 gap-8">
+      {/* Sectors Grid */}
+      <div className="px-6 py-8">
+        <div className="grid md:grid-cols-2 gap-8">
             {sectors.map((sector) => (
               <Link 
                 key={sector.id}
@@ -148,10 +145,10 @@ export default function HelpPage() {
               </Link>
             ))}
           </div>
-        </div>
+      </div>
 
-        {/* General Features */}
-        <div className="max-w-7xl mx-auto px-6 pb-16">
+      {/* General Features */}
+      <div className="px-6 pb-8">
           <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-white mb-4">
@@ -180,14 +177,14 @@ export default function HelpPage() {
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="max-w-4xl mx-auto px-6 pb-16">
+      {/* CTA */}
+      <div className="px-6 pb-8">
           <div className="backdrop-blur-xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-white/20 rounded-3xl p-8 text-center">
             <h3 className="text-2xl font-bold text-white mb-4">
               Besoin d'aide personnalisée ?
             </h3>
             <p className="text-gray-300 mb-6">
-              Notre équipe d'experts est là pour vous accompagner dans la mise en place de votre solution Kalliky
+              Notre équipe d'experts est là pour vous accompagner dans la mise en place de votre solution OrderSpot.pro
             </p>
             <div className="flex justify-center gap-4">
               <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl px-8">
@@ -200,7 +197,6 @@ export default function HelpPage() {
               </Button>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
