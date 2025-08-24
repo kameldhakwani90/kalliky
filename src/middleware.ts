@@ -30,12 +30,10 @@ export async function middleware(request: NextRequest) {
     // Exceptions - routes qui ont leur propre validation
     const exceptions = [
       '/api/webhooks/',     // Webhooks ont leur propre validation
-      '/api/auth/login',    // Auth routes ont leur propre sécurité
+      '/api/auth/login',    // Auth routes ont leur propre sécurité  
       '/api/auth/register',
       '/api/auth/auto-login-signup', // Auto-login après signup
       '/api/csrf',          // Route pour obtenir le token
-      '/api/stores/',       // APIs de gestion des stores (employees, etc.)
-      '/api/restaurant/',   // APIs restaurant (activities, notifications, etc.)
       '/api/stripe/checkout-signup' // Route publique de signup
     ];
 
@@ -56,19 +54,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Pour les routes GET d'API, ajouter un token CSRF dans la réponse
+  // Créer la réponse et ajouter automatiquement le token CSRF
   const response = NextResponse.next();
   
-  if (isAPIRoute && request.method === 'GET') {
-    return setCSRFToken(response);
-  }
-
-  // Pour les pages web, toujours inclure un token CSRF
-  if (!isAPIRoute) {
-    return setCSRFToken(response);
-  }
-
-  return response;
+  // Ajouter le token CSRF à toutes les réponses (API et pages web)
+  // Le frontend peut le récupérer depuis les headers ou cookies automatiquement
+  return setCSRFToken(response);
 }
 
 export const config = {
