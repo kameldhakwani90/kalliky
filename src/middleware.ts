@@ -35,7 +35,16 @@ export async function middleware(request: NextRequest) {
       '/api/auth/auto-login-signup', // Auto-login après signup
       '/api/csrf',          // Route pour obtenir le token
       '/api/stripe/checkout-signup', // Route publique de signup
-      '/api/services'       // Services API - TODO: ajouter CSRF côté frontend
+      '/api/services',      // Services API
+      '/api/products',      // Products API
+      '/api/customers',     // Customers API
+      '/api/stores/',       // Stores API
+      '/api/restaurant/',   // Restaurant API
+      '/api/admin/',        // Admin API
+      '/api/stripe/',       // Stripe API (sauf checkout-signup)
+      '/api/telnyx/',       // Telnyx API
+      '/api/openai/',       // OpenAI API
+      '/api/ai/'            // AI API
     ];
 
     const isException = exceptions.some(exception => pathname.startsWith(exception));
