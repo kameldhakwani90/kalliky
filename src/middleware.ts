@@ -34,7 +34,8 @@ export async function middleware(request: NextRequest) {
       '/api/auth/register',
       '/api/auth/auto-login-signup', // Auto-login après signup
       '/api/csrf',          // Route pour obtenir le token
-      '/api/stripe/checkout-signup' // Route publique de signup
+      '/api/stripe/checkout-signup', // Route publique de signup
+      '/api/services'       // Services API - TODO: ajouter CSRF côté frontend
     ];
 
     const isException = exceptions.some(exception => pathname.startsWith(exception));
