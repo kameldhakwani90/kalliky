@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
-import { verifyJWT } from '@/lib/jwt';
 
 // Types pour l'analyse d'appel
 interface CallAnalysisResult {
@@ -143,12 +143,12 @@ async function analyzeCallTranscript(transcript: string, storeId: string): Promi
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('token')?.value;
+    const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('auth-token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'Token manquant' }, { status: 401 });
     }
 
-    const decoded = verifyJWT(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string; email: string; role: string };
     if (!decoded?.userId) {
       return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
     }
@@ -315,12 +315,12 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('token')?.value;
+    const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('auth-token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'Token manquant' }, { status: 401 });
     }
 
-    const decoded = verifyJWT(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string; email: string; role: string };
     if (!decoded?.userId) {
       return NextResponse.json({ error: 'Token invalide' }, { status: 401 });
     }
@@ -330,13 +330,108 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
+    // Si pas de storeId, faire les stats globales pour tous les stores de l'utilisateur
     if (!storeId) {
-      return NextResponse.json({ 
-        error: 'storeId requis' 
-      }, { status: 400 });
+      // Récupérer tous les stores de l'utilisateur
+      const userStores = await prisma.store.findMany({
+        where: {
+          business: {
+            ownerId: decoded.userId
+          }
+        },
+        select: { id: true }
+      });
+
+      const storeIds = userStores.map(s => s.id);
+
+      if (storeIds.length === 0) {
+        return NextResponse.json({
+          callLogs: [],
+          stats: {
+            totalCalls: 0,
+            averageDuration: 0,
+            averageConfidence: 0,
+            intentDistribution: []
+          },
+          pagination: { limit, offset, total: 0 }
+        });
+      }
+
+      // Récupérer les logs d'appels pour tous les stores
+      const callLogs = await prisma.callLog.findMany({
+        where: { storeId: { in: storeIds } },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              status: true
+            }
+          },
+          actions: {
+            select: {
+              id: true,
+              type: true,
+              status: true,
+              data: true
+            }
+          }
+        },
+        orderBy: { timestamp: 'desc' },
+        skip: offset,
+        take: limit
+      });
+
+      // Statistiques globales
+      const stats = await prisma.callLog.aggregate({
+        where: { storeId: { in: storeIds } },
+        _count: {
+          id: true
+        },
+        _avg: {
+          duration: true,
+          confidence: true
+        }
+      });
+
+      // Répartition par intent
+      const intentStats = await prisma.callLog.groupBy({
+        by: ['intent'],
+        where: { storeId: { in: storeIds } },
+        _count: {
+          intent: true
+        }
+      });
+
+      return NextResponse.json({
+        callLogs: callLogs.map(log => ({
+          id: log.id,
+          phoneNumber: log.phoneNumber,
+          duration: log.duration,
+          timestamp: log.timestamp,
+          intent: log.intent,
+          confidence: log.confidence,
+          customer: log.customer,
+          actionsCount: log.actions.length,
+          pendingActions: log.actions.filter(a => a.status === 'pending').length
+        })),
+        stats: {
+          totalCalls: stats._count.id,
+          averageDuration: stats._avg.duration,
+          averageConfidence: stats._avg.confidence,
+          intentDistribution: intentStats
+        },
+        pagination: {
+          limit,
+          offset,
+          total: stats._count.id
+        }
+      });
     }
 
-    // Vérifier l'accès au store
+    // Vérifier l'accès au store spécifique
     const store = await prisma.store.findFirst({
       where: {
         id: storeId,
@@ -352,7 +447,7 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Récupérer les logs d'appels
+    // Récupérer les logs d'appels pour le store spécifique
     const callLogs = await prisma.callLog.findMany({
       where: { storeId },
       include: {

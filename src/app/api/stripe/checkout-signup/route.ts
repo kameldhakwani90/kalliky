@@ -11,9 +11,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(request: NextRequest) {
   try {
     const { userData, businessData, storeData, plan } = await request.json();
+    
+    console.log('📝 Signup data received:', {
+      hasUserData: !!userData,
+      hasBusinessData: !!businessData, 
+      hasStoreData: !!storeData,
+      plan: plan,
+      email: userData?.email
+    });
 
     // Validation des données obligatoires
     if (!userData || !businessData || !storeData || !plan) {
+      console.log('❌ Missing required data');
       return NextResponse.json(
         { error: 'Données manquantes' },
         { status: 400 }
@@ -26,6 +35,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
+      console.log('❌ Email already exists:', userData.email);
       return NextResponse.json(
         { error: 'Cet email est déjà utilisé' },
         { status: 400 }
@@ -40,7 +50,10 @@ export async function POST(request: NextRequest) {
     };
 
     const priceId = priceIds[plan as keyof typeof priceIds];
+    console.log('💰 Price ID check:', { plan, priceId, available: Object.keys(priceIds) });
+    
     if (!priceId) {
+      console.log('❌ Invalid plan or missing price ID');
       return NextResponse.json({ error: 'Plan invalide' }, { status: 400 });
     }
 

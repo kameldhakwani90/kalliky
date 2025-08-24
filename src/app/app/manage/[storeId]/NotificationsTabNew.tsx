@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import ConfigurationModal from './ConfigurationModal';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Bell, 
   Plus, 
@@ -22,8 +20,17 @@ import {
   CalendarDays,
   Webhook,
   Phone,
-  MessageCircle
+  MessageCircle,
+  MoreVertical
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface NotificationsTabProps {
   storeId: string;
@@ -31,7 +38,7 @@ interface NotificationsTabProps {
   businessId?: string;
 }
 
-export default function NotificationsTab({ storeId, storeName, businessId = 'demo-business' }: NotificationsTabProps) {
+export default function NotificationsTabNew({ storeId, storeName, businessId = 'demo-business' }: NotificationsTabProps) {
   const [configs, setConfigs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'ORDER' | 'SERVICE' | 'CONSULTATION' | 'SIGNALEMENT'>('ORDER');
@@ -103,16 +110,6 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
     }
   };
 
-  const getTabIcon = (type: string) => {
-    switch (type) {
-      case 'ORDER': return <Utensils className="h-4 w-4" />;
-      case 'SERVICE': return <Calendar className="h-4 w-4" />;
-      case 'CONSULTATION': return <UserCheck className="h-4 w-4" />;
-      case 'SIGNALEMENT': return <Bell className="h-4 w-4" />;
-      default: return <Bell className="h-4 w-4" />;
-    }
-  };
-
   const getConfigForType = (type: string) => {
     return configs.find(c => c.activityType === type) || {
       activityType: type,
@@ -161,7 +158,7 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
         const checkData = await checkResponse.json();
         
         if (!checkData.canAdd) {
-          alert(`Impossible d'ajouter cette notification:\n${checkData.upgradeMessage || checkData.reason}`);
+          toast.error(`Impossible d'ajouter cette notification: ${checkData.upgradeMessage || checkData.reason}`);
           return;
         }
       }
@@ -196,13 +193,15 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
 
       if (response.ok) {
         await loadNotificationConfigs();
-        await loadLimitsStatus(); // Recharger les limites
+        await loadLimitsStatus();
+        toast.success('Action ajoutée avec succès');
       } else {
         const errorData = await response.json();
-        alert(`Erreur: ${errorData.error}\n${errorData.upgradeMessage || ''}`);
+        toast.error(`Erreur: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Erreur ajout action:', error);
+      toast.error('Erreur lors de l\'ajout de l\'action');
     }
     
     setShowAddAction(false);
@@ -229,9 +228,38 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
       if (response.ok) {
         await loadNotificationConfigs();
         await loadLimitsStatus();
+        toast.success('Action supprimée');
       }
     } catch (error) {
       console.error('Erreur suppression action:', error);
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const toggleNotifications = async (activityType: string, isActive: boolean) => {
+    try {
+      const config = getConfigForType(activityType);
+      
+      const response = await fetch('/api/restaurant/notifications/configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId,
+          businessId,
+          activityType,
+          isActive,
+          conditions: config.conditions || {},
+          actions: config.actions || []
+        })
+      });
+
+      if (response.ok) {
+        await loadNotificationConfigs();
+        toast.success(`Notifications ${isActive ? 'activées' : 'désactivées'}`);
+      }
+    } catch (error) {
+      console.error('Erreur toggle notifications:', error);
+      toast.error('Erreur lors de la modification');
     }
   };
 
@@ -263,34 +291,11 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
       if (response.ok) {
         await loadNotificationConfigs();
         await loadLimitsStatus();
+        toast.success('Configuration sauvegardée');
       }
     } catch (error) {
       console.error('Erreur sauvegarde configuration action:', error);
-    }
-  };
-
-  const toggleNotifications = async (activityType: string, isActive: boolean) => {
-    try {
-      const config = getConfigForType(activityType);
-      
-      const response = await fetch('/api/restaurant/notifications/configs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          storeId,
-          businessId,
-          activityType,
-          isActive,
-          conditions: config.conditions || {},
-          actions: config.actions || []
-        })
-      });
-
-      if (response.ok) {
-        await loadNotificationConfigs();
-      }
-    } catch (error) {
-      console.error('Erreur toggle notifications:', error);
+      toast.error('Erreur lors de la sauvegarde');
     }
   };
 
@@ -324,7 +329,7 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
                   </Badge>
                 </div>
                 <div className="text-xs text-gray-400">
-                  Max {limitsStatus.limits.maxNotificationsPerType} notifications/type
+                  Max {limitsStatus.limits?.maxNotificationsPerType || 0} notifications/type
                 </div>
               </div>
             )}
@@ -341,6 +346,7 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
           </div>
         </div>
       </div>
+
       <div className="backdrop-blur-xl bg-white/5 border-white/10 rounded-3xl p-6 border space-y-6">
         <div className="flex gap-4">
           <div className="flex-1">
@@ -360,12 +366,12 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
                   <div 
                     key={type}
                     onClick={() => setActiveTab(type as any)}
-                    className={`cursor-pointer bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 ${
+                    className={`cursor-pointer bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 group ${
                       activeTab === type ? 'ring-2 ring-blue-500/50 bg-white/15' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="text-2xl">
+                      <div className="text-2xl group-hover:scale-110 transition-transform duration-300">
                         {type === 'ORDER' ? '🛒' : type === 'SERVICE' ? '📅' : type === 'CONSULTATION' ? '👥' : '⚠️'}
                       </div>
                       <div className="flex-1">
@@ -447,185 +453,159 @@ export default function NotificationsTab({ storeId, storeName, businessId = 'dem
                                 <DialogTitle className="text-white">Choisir un type d'action</DialogTitle>
                               </DialogHeader>
                               <div className="grid gap-3">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {getTabIcon(type)}
-                          <div>
-                            <CardTitle>
-                              {type === 'ORDER' ? 'Notifications Commandes' : 
-                               type === 'SERVICE' ? 'Notifications Services' : 
-                               type === 'CONSULTATION' ? 'Notifications Consultations' : 'Notifications Signalements'}
-                            </CardTitle>
-                            <CardDescription>
-                              {type === 'ORDER' && 'Configurez les notifications pour les commandes de produits'}
-                              {type === 'SERVICE' && 'Configurez les notifications pour les services et réservations'}
-                              {type === 'CONSULTATION' && 'Configurez les notifications pour les consultations'}
-                              {type === 'SIGNALEMENT' && 'Configurez les notifications pour les problèmes et réclamations'}
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <Switch 
-                          checked={config.isActive} 
-                          onCheckedChange={(checked) => toggleNotifications(type, checked)}
-                        />
-                      </div>
-                    </CardHeader>
-                    
-                    {config.isActive && (
-                      <CardContent className="space-y-4">
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium">Actions configurées</h4>
-                            
-                            <Dialog open={showAddAction} onOpenChange={setShowAddAction}>
-                              <DialogTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  className="flex items-center gap-2"
-                                  disabled={limitsStatus?.activityTypes?.[type]?.canAddMore === false}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                  Ajouter une action
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-md">
-                                <DialogHeader>
-                                  <DialogTitle>Choisir un type d'action</DialogTitle>
-                                </DialogHeader>
-                                <div className="grid gap-3">
-                                  {actionTypes.map((actionType) => {
-                                    const Icon = actionType.icon;
-                                    // Chercher si ce type est disponible dans availableActionTypes
-                                    const availableActionType = availableActionTypes.find(
-                                      at => at.actionType === actionType.value
-                                    );
-                                    const isAllowed = availableActionType ? availableActionType.isAllowed : true;
-                                    const requiresUpgrade = availableActionType ? availableActionType.requiresUpgrade : false;
-                                    
-                                    return (
-                                      <Button
-                                        key={actionType.value}
-                                        variant={isAllowed ? "outline" : "secondary"}
-                                        className={`justify-start h-auto p-4 ${!isAllowed ? 'opacity-60' : ''}`}
-                                        onClick={() => isAllowed ? addAction(actionType.value) : null}
-                                        disabled={!isAllowed}
-                                      >
-                                        <Icon className="h-5 w-5 mr-3" />
-                                        <div className="text-left">
-                                          <div className="font-medium">
-                                            {actionType.label}
-                                            {requiresUpgrade && <span className="ml-2 text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">PRO+</span>}
-                                          </div>
-                                          <div className="text-sm text-muted-foreground">
-                                            {availableActionType?.description || 
-                                              (actionType.value === 'EMAIL' && 'Envoyer un email de notification') ||
-                                              (actionType.value === 'WHATSAPP' && 'Envoyer via WhatsApp Business') ||
-                                              (actionType.value === 'SMS' && 'Envoyer un SMS') ||
-                                              (actionType.value === 'SLACK' && 'Notifier dans un canal Slack') ||
-                                              (actionType.value === 'PRINT' && 'Imprimer un ticket') ||
-                                              (actionType.value === 'CALENDAR' && 'Créer un événement calendar') ||
-                                              (actionType.value === 'N8N_WEBHOOK' && 'Déclencher un webhook N8N')
-                                            }
-                                            {requiresUpgrade && (
-                                              <div className="text-orange-600 text-xs mt-1">
-                                                Nécessite un plan supérieur
-                                              </div>
-                                            )}
-                                          </div>
+                                {actionTypes.map((actionType) => {
+                                  const Icon = actionType.icon;
+                                  // Chercher si ce type est disponible dans availableActionTypes
+                                  const availableActionType = availableActionTypes.find(
+                                    at => at.actionType === actionType.value
+                                  );
+                                  const isAllowed = availableActionType ? availableActionType.isAllowed : true;
+                                  const requiresUpgrade = availableActionType ? availableActionType.requiresUpgrade : false;
+                                  
+                                  return (
+                                    <Button
+                                      key={actionType.value}
+                                      variant={isAllowed ? "outline" : "secondary"}
+                                      className={`justify-start h-auto p-4 bg-white/5 border-white/20 text-white hover:bg-white/10 ${!isAllowed ? 'opacity-60' : ''}`}
+                                      onClick={() => isAllowed ? addAction(actionType.value) : null}
+                                      disabled={!isAllowed}
+                                    >
+                                      <Icon className="h-5 w-5 mr-3" />
+                                      <div className="text-left">
+                                        <div className="font-medium">
+                                          {actionType.label}
+                                          {requiresUpgrade && <span className="ml-2 text-xs bg-orange-500/20 text-orange-300 px-2 py-1 rounded">PRO+</span>}
                                         </div>
-                                      </Button>
-                                    );
-                                  })}
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                          
-                          {/* Message d'information sur les limites */}
-                          {limitsStatus?.activityTypes?.[type]?.canAddMore === false && (
-                            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mb-4">
-                              <div className="flex items-center gap-2 text-orange-800">
-                                <Bell className="h-4 w-4" />
-                                <span className="font-medium">Limite atteinte</span>
+                                        <div className="text-sm text-gray-400">
+                                          {availableActionType?.description || 
+                                            (actionType.value === 'EMAIL' && 'Envoyer un email de notification') ||
+                                            (actionType.value === 'WHATSAPP' && 'Envoyer via WhatsApp Business') ||
+                                            (actionType.value === 'SMS' && 'Envoyer un SMS') ||
+                                            (actionType.value === 'SLACK' && 'Notifier dans un canal Slack') ||
+                                            (actionType.value === 'PRINT' && 'Imprimer un ticket') ||
+                                            (actionType.value === 'CALENDAR' && 'Créer un événement calendar') ||
+                                            (actionType.value === 'N8N_WEBHOOK' && 'Déclencher un webhook N8N')
+                                          }
+                                          {requiresUpgrade && (
+                                            <div className="text-orange-300 text-xs mt-1">
+                                              Nécessite un plan supérieur
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </Button>
+                                  );
+                                })}
                               </div>
-                              <p className="text-sm text-orange-700 mt-1">
-                                Vous avez atteint la limite de {limitsStatus.limits.maxNotificationsPerType} notifications pour ce type d'activité. 
-                                {limitsStatus.limits.upgradeMessage && (
-                                  <span className="block mt-1 font-medium">
-                                    {limitsStatus.limits.upgradeMessage}
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          )}
+                            </DialogContent>
+                          </Dialog>
+                        </div>
 
-                          {config.actions?.length > 0 ? (
-                            <div className="space-y-2">
-                              {config.actions.map((action: any, index: number) => (
-                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center gap-2">
-                                    {getActionIcon(action.actionType || action.type)}
-                                    <Badge variant="outline">{action.actionType || action.type}</Badge>
-                                  </div>
-                                  <span className="text-sm">Priorité: {action.priority}</span>
-                                  <span className="text-sm">Délai: {action.delay}min</span>
-                                  <div className="ml-auto flex items-center gap-2">
-                                    {action.isActive && <Badge variant="default">Actif</Badge>}
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => openConfigModal(action, index)}
-                                      title="Configurer cette action"
-                                    >
-                                      <Settings className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => removeAction(index)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                              <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-muted-foreground text-sm mb-3">Aucune action configurée</p>
-                              <Button
-                                size="sm"
-                                variant="outline"
+                        {/* Liste des actions */}
+                        <div className="space-y-3">
+                          {config.actions?.length === 0 ? (
+                            <div className="text-center p-8">
+                              <div className="text-4xl mb-4">🔔</div>
+                              <h4 className="text-lg font-semibold text-white mb-2">Aucune action configurée</h4>
+                              <p className="text-gray-400 mb-4">
+                                Ajoutez votre première action pour commencer à recevoir des notifications
+                              </p>
+                              <Button 
                                 onClick={() => setShowAddAction(true)}
+                                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl"
                               >
                                 <Plus className="h-4 w-4 mr-2" />
                                 Ajouter votre première action
                               </Button>
                             </div>
+                          ) : (
+                            <div className="grid gap-3">
+                              {config.actions?.map((action: any, index: number) => (
+                                <div 
+                                  key={index}
+                                  className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all duration-300 group"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="p-2 bg-white/10 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                                        {getActionIcon(action.actionType)}
+                                      </div>
+                                      <div>
+                                        <h5 className="font-medium text-white">
+                                          {actionTypes.find(at => at.value === action.actionType)?.label || action.actionType}
+                                        </h5>
+                                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                                          <div className={`w-2 h-2 rounded-full ${action.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                                          <span>{action.isActive ? 'Actif' : 'Inactif'}</span>
+                                          {action.delay > 0 && (
+                                            <>
+                                              <span>•</span>
+                                              <span>Délai: {action.delay}min</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-white/10">
+                                          <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
+                                        <DropdownMenuItem 
+                                          onClick={() => openConfigModal(action, index)}
+                                          className="text-white hover:bg-gray-800"
+                                        >
+                                          <Settings className="h-4 w-4 mr-2" />
+                                          Configurer
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem 
+                                          className="text-red-400 hover:bg-gray-800"
+                                          onClick={() => removeAction(index)}
+                                        >
+                                          <Trash2 className="h-4 w-4 mr-2" />
+                                          Supprimer
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                      </CardContent>
+                      </div>
                     )}
-                  </Card>
-                </TabsContent>
-              );
-            })}
-          </Tabs>
-        </CardContent>
-      </Card>
-      
-      <ConfigurationModal
-        isOpen={configModalOpen}
-        onClose={() => setConfigModalOpen(false)}
-        action={selectedAction}
-        actionIndex={selectedActionIndex}
-        activityType={activeTab}
-        storeId={storeId}
-        onSave={saveActionConfig}
-      />
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de configuration */}
+      {configModalOpen && selectedAction && (
+        <ConfigurationModal
+          isOpen={configModalOpen}
+          onClose={() => {
+            setConfigModalOpen(false);
+            setSelectedAction(null);
+            setSelectedActionIndex(-1);
+          }}
+          onSave={(updatedAction) => {
+            saveActionConfig(updatedAction);
+            setConfigModalOpen(false);
+            setSelectedAction(null);
+            setSelectedActionIndex(-1);
+          }}
+          action={selectedAction}
+          storeId={storeId}
+          storeName={storeName}
+        />
+      )}
     </div>
   );
 }

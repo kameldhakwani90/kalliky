@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
-import NotificationsTab from '../NotificationsTab';
+import NotificationsTab from '../NotificationsTabNew';
 
 interface StoreData {
   id: string;

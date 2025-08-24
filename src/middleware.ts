@@ -32,8 +32,11 @@ export async function middleware(request: NextRequest) {
       '/api/webhooks/',     // Webhooks ont leur propre validation
       '/api/auth/login',    // Auth routes ont leur propre sécurité
       '/api/auth/register',
+      '/api/auth/auto-login-signup', // Auto-login après signup
       '/api/csrf',          // Route pour obtenir le token
-      '/api/stores/'        // APIs de gestion des stores (employees, etc.)
+      '/api/stores/',       // APIs de gestion des stores (employees, etc.)
+      '/api/restaurant/',   // APIs restaurant (activities, notifications, etc.)
+      '/api/stripe/checkout-signup' // Route publique de signup
     ];
 
     const isException = exceptions.some(exception => pathname.startsWith(exception));

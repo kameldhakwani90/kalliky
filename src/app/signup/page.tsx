@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CheckCircle2, Loader2, ArrowLeft, Star, Phone, Info } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TELNYX_COUNTRIES, POPULAR_COUNTRIES, OTHER_COUNTRIES, getTelnyxCountry, formatCountryPrice } from '@/lib/constants/countries';
@@ -111,6 +111,25 @@ const plans = [
   },
 ];
 
+// Types d'activité avec icônes
+const businessCategories = [
+  { value: 'RESTAURANT', label: 'Restaurant', icon: '🍕', description: 'Restaurant, fast-food, brasserie' },
+  { value: 'BEAUTY', label: 'Salon de beauté', icon: '💄', description: 'Instituts de beauté, soins esthétiques' },
+  { value: 'HAIRDRESSER', label: 'Coiffeur', icon: '✂️', description: 'Salons de coiffure, barbiers' },
+  { value: 'HEALTH', label: 'Santé', icon: '🏥', description: 'Cliniques, cabinets médicaux' },
+  { value: 'AUTOMOTIVE', label: 'Automobile', icon: '🚗', description: 'Garages, concessionnaires' },
+  { value: 'PROFESSIONAL', label: 'Services pro', icon: '💼', description: 'Conseils, expertise, consulting' },
+  { value: 'ENTERTAINMENT', label: 'Divertissement', icon: '🎭', description: 'Loisirs, spectacles, événements' },
+  { value: 'RETAIL', label: 'Commerce', icon: '🛒', description: 'Boutiques, magasins, vente' },
+  { value: 'SERVICES', label: 'Services', icon: '🔧', description: 'Réparations, maintenance' },
+  { value: 'MEDICAL', label: 'Médical', icon: '⚕️', description: 'Médecins, spécialistes' },
+  { value: 'LEGAL', label: 'Juridique', icon: '⚖️', description: 'Avocats, notaires, huissiers' },
+  { value: 'FITNESS', label: 'Fitness', icon: '💪', description: 'Salles de sport, coaching' },
+  { value: 'EDUCATION', label: 'Éducation', icon: '📚', description: 'Écoles, formations, cours' },
+  { value: 'TRANSPORT', label: 'Transport', icon: '🚛', description: 'Logistique, livraison' },
+  { value: 'IMMOBILIER', label: 'Immobilier', icon: '🏠', description: 'Agences, gestion locative' }
+];
+
 interface FormData {
   firstName: string;
   lastName: string;
@@ -125,6 +144,7 @@ interface FormData {
   storeAddress: string;
   storePhone: string;
   storeCountry: string; // NOUVEAU: Pays pour numéro Telnyx
+  businessCategory: string; // NOUVEAU: Type d'activité
   // Services multi-métiers
   hasProducts: boolean;
   hasReservations: boolean;
@@ -140,6 +160,7 @@ function SignupContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string>('PRO');
+  const { toast } = useToast();
   
   // Récupérer le plan depuis l'URL
   useEffect(() => {
@@ -168,6 +189,7 @@ function SignupContent() {
     storeAddress: '',
     storePhone: '',
     storeCountry: 'FR', // France par défaut
+    businessCategory: '', // Type d'activité à sélectionner
     // Services multi-métiers (tous activés par défaut)
     hasProducts: true,
     hasReservations: true,
@@ -235,6 +257,7 @@ function SignupContent() {
             address: formData.storeAddress,
             phone: formData.storePhone,
             country: formData.storeCountry,
+            businessCategory: formData.businessCategory,
             hasProducts: formData.hasProducts,
             hasReservations: formData.hasReservations,
             hasConsultations: formData.hasConsultations
@@ -255,7 +278,11 @@ function SignupContent() {
 
     } catch (error: any) {
       console.error('Signup error:', error);
-      toast.error(error.message || 'Une erreur est survenue');
+      toast({
+        title: "Erreur",
+        description: error.message || 'Une erreur est survenue',
+        variant: "destructive"
+      });
       setLoading(false);
     }
   };
@@ -475,6 +502,31 @@ function SignupContent() {
                         </div>
 
                         <div className="space-y-2">
+                          <Label htmlFor="businessCategory" className="text-gray-300">Type d'activité</Label>
+                          <Select 
+                            value={formData.businessCategory} 
+                            onValueChange={(value) => setFormData({...formData, businessCategory: value})}
+                          >
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue placeholder="Sélectionnez votre secteur d'activité" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {businessCategories.map((category) => (
+                                <SelectItem key={category.value} value={category.value}>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">{category.icon}</span>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{category.label}</span>
+                                      <span className="text-xs text-gray-500">{category.description}</span>
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
                           <Label htmlFor="storeAddress" className="text-gray-300">Adresse complète</Label>
                           <Input
                             id="storeAddress"
@@ -536,63 +588,13 @@ function SignupContent() {
                           </div>
                         </div>
 
-                        {/* Info sur le numéro virtuel */}
+                        {/* Info discrète sur les opérateurs */}
                         {formData.storeCountry && (
-                          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4">
-                            <div className="flex items-start gap-3">
-                              <Phone className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-green-100 font-medium mb-2">
-                                  📞 Numéro virtuel {getTelnyxCountry(formData.storeCountry)?.name} {getTelnyxCountry(formData.storeCountry)?.flag}
-                                </p>
-                                <p className="text-green-200 text-sm mb-2">
-                                  Un numéro de téléphone virtuel sera automatiquement attribué. <strong>Les appels ne sont généralement pas facturés</strong> car inclus dans la plupart des abonnements.
-                                </p>
-                                <div className="bg-green-600/20 rounded-lg p-3 border border-green-500/30">
-                                  <p className="text-green-100 text-xs leading-relaxed">
-                                    ⚠️ <strong>Important :</strong> Vérifiez que votre pays/opérateur choisi correspond bien à celui de vos clients. En cas d'erreur, des frais pourraient s'appliquer. La plupart des opérateurs incluent les appels vers les numéros locaux, sauf certaines lignes prépayées.
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
+                          <div className="text-xs text-gray-400 mt-2">
+                            La plupart des opérateurs incluent les appels vers les numéros locaux, sauf certaines lignes prépayées (ex: Lycamobile, Lebara).
                           </div>
                         )}
 
-                        <div className="space-y-4">
-                          <Label className="text-gray-300">Services inclus</Label>
-                          <div className="bg-green-500/20 border border-green-500/30 rounded-2xl p-6">
-                            <p className="text-green-400 font-medium mb-4 flex items-center gap-2">
-                              <CheckCircle2 className="h-5 w-5" />
-                              Tous les services sont inclus dans votre abonnement
-                            </p>
-                            <div className="grid grid-cols-1 gap-4">
-                              <div className="flex items-center gap-3">
-                                <span className="text-2xl">🍽️</span>
-                                <div>
-                                  <span className="text-white font-medium">Vente de Produits</span>
-                                  <p className="text-green-300 text-sm">Restaurant, boulangerie, café, fast-food...</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-2xl">📅</span>
-                                <div>
-                                  <span className="text-white font-medium">Réservations</span>
-                                  <p className="text-green-300 text-sm">Tables, chambres, créneaux, événements...</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-2xl">👨‍⚖️</span>
-                                <div>
-                                  <span className="text-white font-medium">Consultations</span>
-                                  <p className="text-green-300 text-sm">Avocat, médecin, conseiller, coach...</p>
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-green-300 text-sm mt-4">
-                              💡 Vous pourrez activer/désactiver chaque service selon vos besoins après inscription
-                            </p>
-                          </div>
-                        </div>
                       </div>
                     </div>
 

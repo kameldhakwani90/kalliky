@@ -92,6 +92,9 @@ export async function POST(request: NextRequest) {
               data: {
                 name: storeData.name,
                 address: storeData.address,
+                phone: storeData.phone,
+                country: storeData.country,
+                businessCategory: storeData.businessCategory || 'RESTAURANT',
                 businessId: business.id,
                 isActive: true,
                 // Services multi-métiers (tous activés par défaut)

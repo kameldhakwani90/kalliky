@@ -93,15 +93,21 @@ export async function GET(request: NextRequest) {
       take: 50
     });
 
-    // Statistiques
+    // Statistiques avec protection JSON
     const stats = {
       totalFailures: telnyxFailures.length,
-      pendingRefunds: refundActivities.filter(a => 
-        a.metadata && JSON.parse(a.metadata).requiresManualIntervention
-      ).length,
-      completedRefunds: refundActivities.filter(a => 
-        a.type === 'REFUND' && a.metadata && JSON.parse(a.metadata).status === 'COMPLETED'
-      ).length,
+      pendingRefunds: refundActivities.filter(a => {
+        if (!a.metadata) return false;
+        try {
+          return JSON.parse(a.metadata).requiresManualIntervention;
+        } catch { return false; }
+      }).length,
+      completedRefunds: refundActivities.filter(a => {
+        if (a.type !== 'REFUND' || !a.metadata) return false;
+        try {
+          return JSON.parse(a.metadata).status === 'COMPLETED';
+        } catch { return false; }
+      }).length,
       totalRefundAmount: refundActivities
         .filter(a => a.type === 'REFUND' && a.amount)
         .reduce((sum, a) => sum + (a.amount || 0), 0)
@@ -131,7 +137,15 @@ export async function GET(request: NextRequest) {
     });
 
     const formattedRefunds = refundActivities.map(activity => {
-      const metadata = activity.metadata ? JSON.parse(activity.metadata) : {};
+      let metadata = {};
+      if (activity.metadata) {
+        try {
+          metadata = JSON.parse(activity.metadata);
+        } catch (e) {
+          console.warn('Invalid JSON in activity metadata:', activity.id, e);
+          metadata = {};
+        }
+      }
       
       return {
         id: activity.id,
@@ -143,9 +157,9 @@ export async function GET(request: NextRequest) {
         store: activity.store,
         owner: activity.store?.business.owner,
         metadata,
-        status: metadata.status || (activity.type === 'REFUND' ? 'COMPLETED' : 'ERROR'),
-        refundId: metadata.refundId,
-        requiresIntervention: metadata.requiresManualIntervention
+        status: (metadata as any).status || (activity.type === 'REFUND' ? 'COMPLETED' : 'ERROR'),
+        refundId: (metadata as any).refundId,
+        requiresIntervention: (metadata as any).requiresManualIntervention
       };
     });
 

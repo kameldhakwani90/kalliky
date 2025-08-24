@@ -109,6 +109,9 @@ export async function POST(request: NextRequest) {
           data: {
             name: storeData.name,
             address: storeData.address,
+            phone: storeData.phone,
+            country: storeData.country,
+            businessCategory: storeData.businessCategory || 'RESTAURANT',
             businessId: business.id,
             isActive: true,
             hasProducts: storeData.hasProducts !== undefined ? storeData.hasProducts : true,
@@ -140,15 +143,6 @@ export async function POST(request: NextRequest) {
             isActive: true,
             stripeSubscriptionId: session.subscription as string,
             stripeCustomerId: session.customer as string
-          }
-        });
-
-        // Ajouter le numéro de téléphone
-        await prisma.phoneNumber.create({
-          data: {
-            number: storeData.phone,
-            businessId: business.id,
-            telnyxId: ''
           }
         });
 

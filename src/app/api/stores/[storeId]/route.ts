@@ -36,7 +36,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
       },
       include: {
-        business: true
+        business: {
+          include: {
+            phoneNumbers: true
+          }
+        }
       }
     });
 
@@ -131,7 +135,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         consultationsConfig: body.consultationsConfig !== undefined ? body.consultationsConfig : existingStore.consultationsConfig,
       },
       include: {
-        business: true
+        business: {
+          include: {
+            phoneNumbers: true
+          }
+        }
       }
     });
 

@@ -75,7 +75,7 @@ export class ProfitabilityService {
           orders: {
             where: {
               createdAt: { gte: startDate, lte: endDate },
-              status: { in: ['COMPLETED', 'DELIVERED'] }
+              status: { in: ['READY', 'DELIVERED'] }
             }
           },
           openaiUsages: {
@@ -345,7 +345,7 @@ export class ProfitabilityService {
             include: {
               orders: {
                 where: {
-                  status: { in: ['COMPLETED', 'DELIVERED'] }
+                  status: { in: ['READY', 'DELIVERED'] }
                 }
               }
             }

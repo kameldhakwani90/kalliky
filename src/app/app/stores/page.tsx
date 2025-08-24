@@ -844,7 +844,7 @@ function StoreWizard({ store, onSave, onCancel, isFirstActivity = false, userSta
                                         {businessCategories.map((category) => (
                                             <SelectItem key={category.category} value={category.category}>
                                                 <div className="flex items-center gap-2">
-                                                    <span>{getCategoryEmoji(category.category)}</span>
+                                                    <span>{category.icon}</span>
                                                     <span>{category.displayName}</span>
                                                 </div>
                                             </SelectItem>
@@ -1966,6 +1966,7 @@ function StoresContent() {
                             name: store.name,
                             address: store.address,
                             phone: store.phone || '',
+                            businessCategory: store.businessCategory,
                             status: store.isActive ? 'active' : 'inactive',
                             stripeStatus: 'disconnected', // À implémenter plus tard
                             currency: settings.currency || 'EUR',
@@ -2224,22 +2225,26 @@ function StoresContent() {
                         };
                         
                         const getStatusIcon = () => {
+                            // Trouver l'emoji de la catégorie depuis l'API
+                            const category = businessCategories.find(cat => cat.category === store.businessCategory);
+                            const categoryEmoji = category?.icon || '🏪'; // Emoji par défaut pour boutique
+                            
                             if (needsConfig) {
                                 return (
                                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25">
-                                        <Building className="h-6 w-6 text-white" />
+                                        <span className="text-2xl">{categoryEmoji}</span>
                                     </div>
                                 );
                             } else if (isActive) {
                                 return (
                                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/25">
-                                        <ConciergeBell className="h-6 w-6 text-white" />
+                                        <span className="text-2xl">{categoryEmoji}</span>
                                     </div>
                                 );
                             } else {
                                 return (
                                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-400 to-gray-500 shadow-lg shadow-gray-400/25">
-                                        <Building className="h-6 w-6 text-white" />
+                                        <span className="text-2xl">{categoryEmoji}</span>
                                     </div>
                                 );
                             }

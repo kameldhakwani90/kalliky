@@ -1267,6 +1267,7 @@ model BusinessCategoryConfig {
   id                    String           @id @default(uuid())
   category              BusinessCategory @unique
   displayName           String
+  icon                  String?          // Emoji pour l'icône de la catégorie
   systemPrompt          String           @db.Text
   menuExtractionPrompt  String?          @db.Text
   defaultParams         Json             @default("{}")

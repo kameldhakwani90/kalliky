@@ -226,7 +226,7 @@ export default function TelnyxFailuresManager() {
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.stats.totalFailures}</div>
+            <div className="text-2xl font-bold">{data?.stats?.totalFailures || 0}</div>
           </CardContent>
         </Card>
 
@@ -236,7 +236,7 @@ export default function TelnyxFailuresManager() {
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{data.stats.pendingRefunds}</div>
+            <div className="text-2xl font-bold text-yellow-600">{data?.stats?.pendingRefunds || 0}</div>
           </CardContent>
         </Card>
 

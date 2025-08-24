@@ -17,7 +17,28 @@ export async function GET(request: NextRequest) {
       include: { 
         businesses: {
           include: {
-            stores: true
+            stores: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+                city: true,
+                country: true,
+                businessId: true,
+                stripeAccountId: true,
+                createdAt: true,
+                updatedAt: true,
+                isActive: true,
+                businessCategory: true,
+                settings: true,
+                hasProducts: true,
+                hasReservations: true,
+                hasConsultations: true,
+                productsConfig: true,
+                reservationsConfig: true,
+                consultationsConfig: true
+              }
+            }
           }
         }
       }

@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 import { NotificationLimitsService } from '@/lib/services/notificationLimitsService';
 
 // GET - Récupérer toutes les configurations de notifications pour un store
 export async function GET(request: NextRequest) {
   try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
     const { searchParams } = new URL(request.url);
     const storeId = searchParams.get('storeId');
     const businessId = searchParams.get('businessId');
@@ -13,11 +21,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'storeId et businessId requis' }, { status: 400 });
     }
 
-    // Récupérer les configurations depuis le champ settings du store
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
+    // Vérifier que le store appartient à l'utilisateur
+    const store = await prisma.store.findFirst({
+      where: { 
+        id: storeId,
+        business: { ownerId: decoded.userId }
+      },
       select: { settings: true }
     });
+
+    if (!store) {
+      return NextResponse.json({ error: 'Store non trouvé ou non autorisé' }, { status: 403 });
+    }
+
 
     const settings = store?.settings ? (typeof store.settings === 'string' ? JSON.parse(store.settings) : store.settings) : {};
     const notificationConfigs = settings.notificationConfigs || {};
@@ -46,6 +62,13 @@ export async function GET(request: NextRequest) {
 // POST - Créer ou mettre à jour une configuration de notifications
 export async function POST(request: NextRequest) {
   try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
     const body = await request.json();
     const { storeId, businessId, activityType, isActive, conditions, actions } = body;
 
@@ -53,6 +76,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: 'storeId, businessId et activityType requis' 
       }, { status: 400 });
+    }
+
+    // Vérifier que le store appartient à l'utilisateur
+    const storeCheck = await prisma.store.findFirst({
+      where: { 
+        id: storeId,
+        business: { ownerId: decoded.userId }
+      }
+    });
+
+    if (!storeCheck) {
+      return NextResponse.json({ error: 'Store non trouvé ou non autorisé' }, { status: 403 });
     }
 
     // Vérifier les limitations avant d'ajouter des actions
@@ -132,6 +167,13 @@ export async function POST(request: NextRequest) {
 // DELETE - Supprimer une configuration
 export async function DELETE(request: NextRequest) {
   try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
     const { searchParams } = new URL(request.url);
     const configId = searchParams.get('configId');
 

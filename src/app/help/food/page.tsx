@@ -30,76 +30,56 @@ import {
 
 const guides = [
   {
-    title: 'Configuration Initiale',
-    description: 'Paramétrage de votre restaurant sur Kalliky',
-    icon: Settings,
-    color: 'from-blue-500 to-blue-600',
-    steps: [
-      'Création du profil restaurant',
-      'Configuration des horaires',
-      'Paramètres de livraison',
-      'Intégration téléphonique'
-    ]
-  },
-  {
-    title: 'Gestion des Menus',
-    description: 'Création et mise à jour de vos cartes',
+    title: 'Configuration des Services',
+    description: 'Paramétrage de vos services et créneaux',
     icon: Menu,
     color: 'from-green-500 to-green-600',
     steps: [
-      'Upload de menu avec IA',
-      'Catégorisation automatique',
-      'Gestion des prix et promotions',
-      'Synchronisation multi-plateforme'
-    ]
+      'Création et configuration des services',
+      'Définition des créneaux horaires',
+      'Gestion des ressources et équipements',
+      'Options additionnelles et personnalisations'
+    ],
+    href: '/help/food/services'
   },
   {
-    title: 'Commandes Téléphoniques',
-    description: 'Optimisation des prises de commande',
-    icon: Phone,
+    title: 'Gestion des Employés',
+    description: 'Organisation de votre équipe',
+    icon: Users,
     color: 'from-orange-500 to-orange-600',
     steps: [
-      'Configuration du numéro',
-      'Scripts d\'accueil personnalisés',
-      'Prise de commande assistée',
-      'Gestion des paiements'
-    ]
+      'Ajout et configuration des employés',
+      'Attribution des rôles et permissions',
+      'Gestion des horaires de travail',
+      'Suivi des performances'
+    ],
+    href: '/help/food/employees'
   },
   {
-    title: 'Livraisons & Logistics',
-    description: 'Organisation des livraisons',
-    icon: Truck,
+    title: 'Configuration Équipements',
+    description: 'Paramétrage des ressources matérielles',
+    icon: Settings,
     color: 'from-purple-500 to-purple-600',
     steps: [
-      'Zones de livraison',
-      'Calcul automatique des temps',
-      'Suivi en temps réel',
-      'Communication client'
-    ]
+      'Configuration des imprimantes',
+      'Paramètres des terminaux de paiement',
+      'Gestion des stocks et inventaire',
+      'Maintenance et surveillance'
+    ],
+    href: '/help/food/equipment'
   },
   {
-    title: 'Analytics & Reporting',
-    description: 'Suivi des performances',
-    icon: BarChart3,
-    color: 'from-red-500 to-red-600',
-    steps: [
-      'Tableaux de bord temps réel',
-      'Rapports de ventes',
-      'Analyse client',
-      'Optimisation des menus'
-    ]
-  },
-  {
-    title: 'Automatisation IA',
-    description: 'Intelligence artificielle avancée',
+    title: 'Configuration IA',
+    description: 'Intelligence artificielle et automatisation',
     icon: MessageCircle,
     color: 'from-cyan-500 to-cyan-600',
     steps: [
-      'Assistant vocal intelligent',
-      'Recommandations personnalisées',
-      'Gestion automatique des pics',
-      'Prédiction de la demande'
-    ]
+      'Upload et analyse de documents avec IA',
+      'Configuration de l\'assistant intelligent',
+      'Automatisation des processus',
+      'Optimisation par IA'
+    ],
+    href: '/help/food/ai-config'
   }
 ];
 
@@ -149,8 +129,8 @@ export default function FoodHelpPage() {
                   <ChefHat className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">Guide Restauration</h1>
-                  <p className="text-gray-300">Solutions complètes pour restaurants, cafés et food trucks</p>
+                  <h1 className="text-3xl font-bold text-white">Configuration Activité</h1>
+                  <p className="text-gray-300">Guide de configuration pour votre restaurant sur Kalliky</p>
                 </div>
               </div>
             </div>
@@ -236,9 +216,11 @@ export default function FoodHelpPage() {
                   ))}
                 </div>
                 
-                <Button className="w-full mt-6 bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-xl">
-                  Voir le guide complet
-                </Button>
+                <Link href={guide.href}>
+                  <Button className="w-full mt-6 bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-xl">
+                    Voir le guide complet
+                  </Button>
+                </Link>
               </div>
             ))}
           </div>

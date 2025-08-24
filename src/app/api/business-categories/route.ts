@@ -9,6 +9,7 @@ export async function GET() {
       select: {
         category: true,
         displayName: true,
+        icon: true,
         defaultParams: true,
         availableOptions: true
       },

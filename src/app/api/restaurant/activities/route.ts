@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         address: true,
+        businessCategory: true,
         settings: true
       }
     });
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
         id: store.id,
         name: store.name,
         address: store.address,
+        businessCategory: store.businessCategory,
         serviceType: store.settings && typeof store.settings === 'object' ? (store.settings as any).serviceType || 'products' : 'products'
       })),
       activities: transformedActivities

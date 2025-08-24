@@ -37,7 +37,6 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ProductLinkModal from '@/components/services/ProductLinkModal';
 import CompleteServiceConfigModal from '@/components/services/CompleteServiceConfigModal';
-import ServiceHelpModal from '@/components/services/ServiceHelpModal';
 
 interface Service {
   id: string;
@@ -70,7 +69,6 @@ export default function ServicesTab({ storeId, storeName, config, onConfigUpdate
   const [configuringService, setConfiguringService] = useState<Service | null>(null);
   const [showProductLinkModal, setShowProductLinkModal] = useState(false);
   const [linkingService, setLinkingService] = useState<Service | null>(null);
-  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [storeInfo, setStoreInfo] = useState<any>(null);
 
@@ -185,7 +183,7 @@ export default function ServicesTab({ storeId, storeName, config, onConfigUpdate
           <div className="flex gap-2">
             <Button 
               variant="outline"
-              onClick={() => setShowHelpModal(true)}
+              onClick={() => window.open('/help/food', '_blank')}
               className="bg-white/5 border-white/20 text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-300"
             >
               <HelpCircle className="h-4 w-4 mr-2" />
@@ -388,14 +386,6 @@ export default function ServicesTab({ storeId, storeName, config, onConfigUpdate
         />
       )}
 
-      {/* Modal d'aide */}
-      <ServiceHelpModal
-        isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-        onOpenUpload={() => setShowUploadModal(true)}
-        businessType={storeInfo?.business?.type}
-        businessCategory={storeInfo?.businessCategory}
-      />
     </div>
   );
 }

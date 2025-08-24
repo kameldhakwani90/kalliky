@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
+import { prisma } from '@/lib/prisma';
 import { notificationService } from '@/lib/services/notificationService';
 
 // POST - Déclencher des notifications pour une activité
 export async function POST(request: NextRequest) {
   try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
     const body = await request.json();
     const { 
       storeId, 
@@ -17,6 +26,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: 'storeId, businessId, activityType et activityData requis' 
       }, { status: 400 });
+    }
+
+    // Vérifier que le store appartient à l'utilisateur
+    const store = await prisma.store.findFirst({
+      where: { 
+        id: storeId,
+        business: { ownerId: decoded.userId }
+      }
+    });
+
+    if (!store) {
+      return NextResponse.json({ error: 'Store non trouvé ou non autorisé' }, { status: 403 });
     }
 
     // Générer un activityId si pas fourni
