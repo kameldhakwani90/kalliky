@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     // Définir le cookie auth-token
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith('https') || false,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 // 7 jours
     });

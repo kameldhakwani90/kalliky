@@ -121,7 +121,7 @@ export function setCSRFToken(response: NextResponse): NextResponse {
   // Définir le cookie avec des options sécurisées
   response.cookies.set(CSRF_COOKIE_NAME, token, {
     httpOnly: false, // Doit être accessible en JavaScript pour être envoyé dans les headers
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith('https') || false,
     sameSite: 'strict',
     path: '/',
     maxAge: 60 * 60 * 24 // 24 heures
